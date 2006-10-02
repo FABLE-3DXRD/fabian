@@ -1,0 +1,15 @@
+ImAM
+version 0.1
+Henning Osholm Sørensen & Erik Knudsen
+
+The ImAM is designed for the purpose of viewing image files series. In particular
+such image files obtained when doing experiments at the ESRF.
+
+To use this you need (besides a python interpreter) the python extensions:
+PIL (python imaging library) - www.pythonware.com
+Numeric - numeric.scipy.org
+pyopengl - pyopengl.sourceforge.net
+
+Supposedly,
+python setup.py install
+should do the trick for installation
