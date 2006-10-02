@@ -74,7 +74,19 @@ class edfimage:
       min_xel=Numeric.argmin(Numeric.ravel(self.data))
       self.minval=Numeric.ravel(self.data)[min_xel]
     return int(self.minval)
- 
+
+  def integrate_area(self,coords,floor=0):
+    if not self.data:
+      return 0
+    else:
+      if coords[0]>coords[2]:
+	coords[0:3:2]=[coords[2],coords[0]]
+      if coords[1]>coords[3]:
+	coords[1:4:2]=[coords[3],coords[1]]
+      S=Numeric.sum(Numeric.ravel(self.data[int(coords[0]):int(coords[2])+1,int(coords[1]):int(coords[3])+1]))
+      S=S-floor*(1+coords[2]-coords[0])*(1+coords[3]-coords[1])
+    return S
+
   def getmean(self):
     if self.m==None:
       self.m=Numeric.sum(Numeric.ravel(self.data.astype(Numeric.Float)))/(self.dim1*self.dim2)
@@ -155,6 +167,7 @@ if __name__=='__main__':
     I.rebin(4,2)
     I.write('jegErEnFil0000.edf')
     print sys.argv[1] + (": max=%d, min=%d, mean=%.2e, stddev=%.2e") % (I.getmax(),I.getmin(), I.getmean(), I.getstddev()) 
+    print 'integrated intensity (%d %d %d %d) =%.3f' % (10,20,120,220,I.integrate_area((10,20,120,220)))
     sys.argv[1:]=sys.argv[2:]
   e=time.clock()
   print (e-b)
