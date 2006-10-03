@@ -9,23 +9,23 @@ Authors: Henning O. Sorensen & Erik Knudsen
          email:henning.sorensen@risoe.dk
 
 
-Known bugs:
+#KNOWN BUGS:
 The file number no more comes up in the scalebar - DONE
 
-Upon Opening a new data set with a different fileprefix,  Next/previous picture function is disfunctioned due to a not updated fileprefix somewhere. - DONE
+Upon Opening a new data set with a different fileprefix,  Next/previous picture function is disfunctioned due to a not updated fileprefix somewhere - DONE
 
 Still some problems with the canvas size resetting after opening a new data set with a larger image y size.
 
-The new relief plot function missing to remove the aoi in the main image after closing child window DONE
+The new relief plot function missing to remove the aoi in the main image after closing child window - DONE
 
-correct numbering of child windows - separate lists fro zoom and relief?
+Correct numbering of child windows - separate lists fro zoom and relief?
 
 
 #TODO
-put under cvs control
-write setup script and compile executable for windows
-add some kind of AOI-integration over file series - add function to edfimage.py that sums over rectangle?
-list of AOIs - possibly with load/save functionality
+Put under cvs control - DONE
+Write setup script and compile executable for windows
+Add some kind of AOI-integration over file series - add function to edfimage.py that sums over rectangle?
+List of AOIs - possibly with load/save functionality
 
 
 """
@@ -33,6 +33,7 @@ from Tkinter import *
 import  Numeric
 import sys
 import edfimage
+import tifimage
 from string import *
 from PIL import Image, ImageTk, ImageDraw, ImageFile
 from tkFileDialog import *
@@ -256,7 +257,7 @@ class imageWin:
     self.maxval.set("%.0f"%scaled_max)
 
 class appWin(imageWin):
-  def __init__(self,master,fileprefix=None,filenumber=0,filename=None,zoomfactor=1,mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None):
+  def __init__(self,master,fileprefix=None,filenumber=0,filename=None,filetype=None,zoomfactor=1,mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None):
     #initialize var
     self.master=master
     #these keep track of the AOIs
@@ -269,9 +270,10 @@ class appWin(imageWin):
     self.minval=StringVar()
     self.displaynumber=StringVar()
     self.filename=StringVar()
+    self.filetype = filetype
    
     if filename==None and fileprefix!=None:
-      self.filename.set("%s%0.4d.edf"%(fileprefix,filenumber))
+      self.filename.set("%s%0.4d.%s"%(fileprefix,filenumber,self.filetype))
       self.displaynumber.set(filenumber)
       self.fileprefix=fileprefix
     elif filename:
@@ -285,10 +287,8 @@ class appWin(imageWin):
     #display image and reset scale if scaling is not given
     self.openimage()
     self.reset_scale()
-    
-    self.zoomarea[0]=self.zoomarea[1]=0
-    self.zoomarea[2]=self.xsize
-    self.zoomarea[3]=self.ysize
+
+    self.zoomarea = [0,0,self.xsize,self.ysize]
     #set the image dimensions and zoom out if it is big
     if self.ysize > 1560:
       self.zoomfactor = 0.25
@@ -360,10 +360,11 @@ class appWin(imageWin):
     frameMenubar.tk_menuBar((CmdBtn, CmdBtn2))
 
   def OpenFile(self,filename=True):
-    self.filename.set(askopenfilename(filetypes=[("EDF files", "*.edf"),("All Files", "*")]))
-    m=re.match(r"(.+)([0-9]{4})\.edf",self.filename.get())
+    self.filename.set(askopenfilename(filetypes=[("EDF files", "*.edf"),("Tif files", "*.tif"),("All Files", "*")]))
+    m=re.match(r"(.+)([0-9]{4})\.((edf|tif))",self.filename.get())
     newfilenumber=atoi(m.group(2))
     self.displaynumber.set(newfilenumber)
+    self.filetype = m.group(3)
     if filename == None: # No image has been opened before
       return 
     else:
@@ -398,11 +399,11 @@ class appWin(imageWin):
   
   def gotoimage(self,event=None):
     #extract old filenumber from filename
-    m=re.match(r"(.+)([0-9]{4})\.edf",self.filename.get())
+    m=re.match(r"(.+)([0-9]{4})\.((edf,tif))",self.filename.get())
     filenumber=atoi(m.group(2))
     #update filename, prefix and number
     newfilenumber=int(self.displaynumber.get())
-    self.filename.set("%s%0.4d.edf"%(m.group(1),newfilenumber))
+    self.filename.set("%s%0.4d.%s"%(m.group(1),newfilenumber,m.group(3)))
     print self.filename.get()
     try:
       self.openimage()#try to open that file
@@ -418,12 +419,12 @@ class appWin(imageWin):
   def nextimage(self):
     #update filename, prefix and number
     newfilenumber=int(self.displaynumber.get())+1
-    self.filename.set("%s%0.4d.edf"%(self.fileprefix,newfilenumber))
+    self.filename.set("%s%0.4d.%s"%(self.fileprefix,newfilenumber,self.filetype))
     try:
       self.openimage()#try to open that file
       self.update(newimage=self.im)
     except IOError:
-      self.filename.set("%s%0.4d.edf"%(self.fileprefix,newfilenumber-1))
+      self.filename.set("%s%0.4d.%s"%(self.fileprefix,newfilenumber-1,self.filetype))
       return False
     self.displaynumber.set(newfilenumber)
     return True
@@ -435,17 +436,40 @@ class appWin(imageWin):
       self.openimage()#try to open that file
       self.update(newimage=self.im)
     except IOError:
-      self.filename.set("%s%0.4d.edf"%(self.fileprefix,newfilenumber+1))
+      self.filename.set("%s%0.4d.%s"%(self.fileprefix,newfilenumber+1,self.filetype))
       return False
     self.displaynumber.set(newfilenumber)
     return True
   
   def openimage(self):
-    try:
-      edfimg=edfimage.edfimage()
-      edfimg.read(self.filename.get())
-      self.im=edfimg.toPIL16()
-      (self.xsize, self.ysize)=(edfimg.dim1, edfimg.dim2)
+    print self.filename.get()
+    if self.filetype == 'edf':
+      try:
+        edfimg=edfimage.edfimage()
+        edfimg.read(self.filename.get())
+        self.im=edfimg.toPIL16()
+        print self.im.mode
+        (self.xsize, self.ysize)=(edfimg.dim1, edfimg.dim2)
+      except IOError:
+        e=Error()
+        msg="No such file: %s " %(self.filename.get())
+        e.Er(msg)
+        raise IOError
+    elif self.filetype == 'tif':
+      try:
+        tifimg=tifimage.tifimage()
+        tifimg.read(self.filename.get())
+        self.im = tifimg.toPIL32()
+        #print 'TIF'
+        (self.xsize, self.ysize)=(tifimg.dim1, tifimg.dim2)
+        #(self.xsize, self.ysize) = self.im.size
+      except IOError:
+        e=Error()
+        msg="No such file: %s " %(self.filename.get())
+        e.Er(msg)
+        raise IOError
+
+
       self.zoomarea=[0,0,0,0]
       
       #set the image dimensions and zoom out if it is big
@@ -460,11 +484,6 @@ class appWin(imageWin):
       self.zoomarea[3]=self.ysize
 
       self.master.title("ImAM - %s" %(self.filename.get()))
-    except IOError:
-      e=Error()
-      msg="No such file: %s " %(self.filename.get())
-      e.Er(msg)
-      raise IOError
       
   def about(self):
     About()
@@ -609,19 +628,22 @@ email: henning.sorensen@risoe.dk"
 ##########################
 if __name__=='__main__':
   if len(sys.argv) > 2:
-    fileprefix = sys.argv[1]
-    filenostart = atoi(sys.argv[2])
-  elif len(sys.argv) == 2:
-    import re
-    m=re.match(r"(.+)([0-9]{4})\.(edf|tif|bmp)",sys.argv[1])
-    filenostart=atoi(m.group(2))
-    fileprefix=m.group(1)
-    print m.group(3)
+       print "Only the first file will be opened"
+  if len(sys.argv) >= 2:
+    try:
+	m=re.match(r"(.+)([0-9]{4})\.((tif|edf))",sys.argv[1])
+	filenostart=atoi(m.group(2))
+	fileprefix=m.group(1)
+        filetype=m.group(3)
+    except:	
+	print "The file specified need to be of type edf or tif!"	
+        filename=fileprefix=filetype=None
+    	filenostart=0
   else:
     filename=fileprefix=None
     filenostart=0
   root=Tk()
-  mainwin = appWin(root,fileprefix=fileprefix,filenumber=filenostart,zoomfactor=0.5,mainwin='yes')
+  mainwin = appWin(root,fileprefix=fileprefix,filenumber=filenostart,filetype=filetype,zoomfactor=0.5,mainwin='yes')
   root.option_add('*font', ('helvetica', 10, 'bold'))
   sw = root.winfo_screenwidth()
   sh = root.winfo_screenheight()
