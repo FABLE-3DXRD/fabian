@@ -33,7 +33,7 @@ class edfimage:
 	
   def read(self,fname,verbose=0):
     import os
-    f=open(fname)
+    f=open(fname,"rb")
     l=f.readline()
     while '}' not in l:
       if '=' in l:
@@ -124,6 +124,9 @@ class edfimage:
     if (mx!=0.5 or my!=0.5):
       print 'Rebin factors not power of 2 not supported (yet)'
       return
+    if int(self.dim1/x_rebin_fact)*x_rebin_fact!=self.dim1 or int(self.dim2/x_rebin_fact)*x_rebin_fact!=self.dim2:
+      print 'image size is not divisible by rebin factor - skipping rebin'
+      return
     self.data.savespace(1)#avoid the upcasting behaviour
     i=1
     while i<x_rebin_fact:
@@ -138,10 +141,12 @@ class edfimage:
     self.dim2=self.dim2/y_rebin_fact
     self.header['Dim_1']=self.dim1
     self.header['Dim_2']=self.dim2
+    self.header['col_end']=self.dim1-1
+    self.header['row_end']=self.dim2-1
     print self.dim1, self.dim2, Numeric.shape(self.data)
   
   def write(self,fname):
-    f=open(fname,'w')
+    f=open(fname,"wb")
     f.write('{\n')
     i=4
     for k in self.header_keys:
@@ -163,11 +168,10 @@ if __name__=='__main__':
   b=time.clock()
   while (sys.argv[1:]):
     I.read(sys.argv[1])
-    print I.data[12][134]
-    I.rebin(4,2)
+    I.rebin(2,2)
     I.write('jegErEnFil0000.edf')
     print sys.argv[1] + (": max=%d, min=%d, mean=%.2e, stddev=%.2e") % (I.getmax(),I.getmin(), I.getmean(), I.getstddev()) 
-    print 'integrated intensity (%d %d %d %d) =%.3f' % (10,20,120,220,I.integrate_area((10,20,120,220)))
+    print 'integrated intensity (%d %d %d %d) =%.3f' % (10,20,20,40,I.integrate_area((10,20,20,40)))
     sys.argv[1:]=sys.argv[2:]
   e=time.clock()
   print (e-b)
