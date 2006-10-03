@@ -596,6 +596,14 @@ email: henning.sorensen@risoe.dk"
         self.master.destroy()
                                                                                 
 
+  def split_filename(filename):
+    import re
+    m=re.match(r"(.+)([0-9]{4})\.(edf|tif|bmp)",sys.argv[1])
+    return (m.group(1),m.group(2),.mgroup(3))
+
+  def join_filename(parts):
+    return "%s%0.4d.%s"%(parts)
+
 ##########################
 #   Main                 #
 ##########################
@@ -605,9 +613,10 @@ if __name__=='__main__':
     filenostart = atoi(sys.argv[2])
   elif len(sys.argv) == 2:
     import re
-    m=re.match(r"(.+)([0-9]{4})\.edf",sys.argv[1])
+    m=re.match(r"(.+)([0-9]{4})\.(edf|tif|bmp)",sys.argv[1])
     filenostart=atoi(m.group(2))
     fileprefix=m.group(1)
+    print m.group(3)
   else:
     filename=fileprefix=None
     filenostart=0
