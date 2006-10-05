@@ -1,0 +1,19 @@
+#KNOWN BUGS:
+The file number no more comes up in the scalebar - DONE
+
+Upon Opening a new data set with a different fileprefix,  Next/previous picture function is disfunctioned due to a not updated fileprefix somewhere - DONE
+
+Still some problems with the canvas size resetting after opening a new data set with a larger image y size.
+
+The new relief plot function missing to remove the aoi in the main image after closing child window - DONE
+
+Correct numbering of child windows - separate lists fro zoom and relief?
+
+When creating an AOI and mouse moves outside top left corner the created zoom-window shows the uncropped base image
+
+#TODO
+Put under cvs control - DONE
+Write setup script and compile executable for windows
+Add some kind of AOI-integration over file series - add function to edfimage.py that sums over rectangle?
+List of AOIs - possibly with load/save functionality
+clean up the filname splitting and joining code - it is a jumbled mess right now
