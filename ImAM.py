@@ -7,27 +7,6 @@ Authors: Henning O. Sorensen & Erik Knudsen
          Frederiksborgvej 399
          DK-4000 Roskilde
          email:henning.sorensen@risoe.dk
-
-
-#KNOWN BUGS:
-The file number no more comes up in the scalebar - DONE
-
-Upon Opening a new data set with a different fileprefix,  Next/previous picture function is disfunctioned due to a not updated fileprefix somewhere - DONE
-
-Still some problems with the canvas size resetting after opening a new data set with a larger image y size.
-
-The new relief plot function missing to remove the aoi in the main image after closing child window - DONE
-
-Correct numbering of child windows - separate lists fro zoom and relief?
-
-
-#TODO
-Put under cvs control - DONE
-Write setup script and compile executable for windows
-Add some kind of AOI-integration over file series - add function to edfimage.py that sums over rectangle?
-List of AOIs - possibly with load/save functionality
-
-
 """
 from Tkinter import *
 import  Numeric
@@ -38,6 +17,7 @@ from string import *
 from PIL import Image, ImageTk, ImageDraw, ImageFile
 from tkFileDialog import *
 import re
+import os
 
 class imageWin:
   def __init__(self,master,fileprefix=None,filenumber=0,title=None,zoomfactor=1,mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None):
@@ -361,10 +341,11 @@ class appWin(imageWin):
 
   def OpenFile(self,filename=True):
     self.filename.set(askopenfilename(filetypes=[("EDF files", "*.edf"),("Tif files", "*.tif"),("All Files", "*")]))
-    m=re.match(r"(.+)([0-9]{4})\.((edf|tif))",self.filename.get())
-    newfilenumber=atoi(m.group(2))
+    (self.fileprefix,newfilenumber,self.filetype)=split_filename(self.filename.get())
+    #m=re.match(r"(.+)([0-9]{4})\.((edf|tif))",self.filename.get())
+    #newfilenumber=atoi(m.group(2))
     self.displaynumber.set(newfilenumber)
-    self.filetype = m.group(3)
+    #self.filetype = m.group(3)
     if filename == None: # No image has been opened before
       return 
     else:
@@ -399,7 +380,7 @@ class appWin(imageWin):
   
   def gotoimage(self,event=None):
     #extract old filenumber from filename
-    m=re.match(r"(.+)([0-9]{4})\.((edf,tif))",self.filename.get())
+    m=re.match(r"(.+)([0-9]{4})\.((edf|tif))",self.filename.get())
     filenumber=atoi(m.group(2))
     #update filename, prefix and number
     newfilenumber=int(self.displaynumber.get())
@@ -431,7 +412,7 @@ class appWin(imageWin):
       
   def previousimage(self):
     newfilenumber=int(self.displaynumber.get())-1
-    self.filename.set("%s%0.4d.edf"%(self.fileprefix,newfilenumber))
+    self.filename.set("%s%0.4d.%s"%(self.fileprefix,newfilenumber,self.filetype))
     try:
       self.openimage()#try to open that file
       self.update(newimage=self.im)
@@ -442,7 +423,7 @@ class appWin(imageWin):
     return True
   
   def openimage(self):
-    print self.filename.get()
+    #print self.filename.get()
     if self.filetype == 'edf':
       try:
         edfimg=edfimage.edfimage()
@@ -469,21 +450,20 @@ class appWin(imageWin):
         e.Er(msg)
         raise IOError
 
-
-      self.zoomarea=[0,0,0,0]
+    self.zoomarea=[0,0,0,0]
       
-      #set the image dimensions and zoom out if it is big
-      #if self.ysize > 1560:
-      #  self.zoomfactor = 0.25
-      #elif self.ysize > 768:
-      #  self.zoomfactor = 0.5
-      #else:
-      #  self.zoomfactor = 1
+    #set the image dimensions and zoom out if it is big
+    #if self.ysize > 1560:
+    #  self.zoomfactor = 0.25
+    #elif self.ysize > 768:
+    #  self.zoomfactor = 0.5
+    #else:
+    #  self.zoomfactor = 1
 
-      self.zoomarea[2]=self.xsize
-      self.zoomarea[3]=self.ysize
+    self.zoomarea[2]=self.xsize
+    self.zoomarea[3]=self.ysize
 
-      self.master.title("ImAM - %s" %(self.filename.get()))
+    self.master.title("ImAM - %s" %(self.filename.get()))
       
   def about(self):
     About()
@@ -613,34 +593,34 @@ email: henning.sorensen@risoe.dk"
 
     def quit(self):
         self.master.destroy()
-                                                                                
+ 
 
-  def split_filename(filename):
-    import re
-    m=re.match(r"(.+)([0-9]{4})\.(edf|tif|bmp)",sys.argv[1])
-    return (m.group(1),m.group(2),.mgroup(3))
+def split_filename(filename):
+    m=re.match(r"(.+)([0-9]{4})\.((edf|tif|bmp))$",filename)
+    return (m.group(1),int(m.group(2)),m.group(3))
 
-  def join_filename(parts):
-    return "%s%0.4d.%s"%(parts)
+def join_filename(parts):
+    return os.path.join(parts[0],(("%04d."% parts[1]) + parts[2]))
 
 ##########################
 #   Main                 #
 ##########################
 if __name__=='__main__':
   if len(sys.argv) > 2:
-       print "Only the first file will be opened"
+    print "Only the first file will be opened"
   if len(sys.argv) >= 2:
     try:
-	m=re.match(r"(.+)([0-9]{4})\.((tif|edf))",sys.argv[1])
-	filenostart=atoi(m.group(2))
-	fileprefix=m.group(1)
-        filetype=m.group(3)
-    except:	
-	print "The file specified need to be of type edf or tif!"	
+	(fileprefix,filenostart,filetype)=split_filename(sys.argv[1])
+	#m=re.match(r"(.+)([0-9]{4})\.((tif|edf))",sys.argv[1])
+	#filenostart=atoi(m.group(2))
+	#fileprefix=m.group(1)
+        #filetype=m.group(3)
+    except:
+	print "The file specified needs to be of type edf or tif!"	
         filename=fileprefix=filetype=None
-    	filenostart=0
+	filenostart=0
   else:
-    filename=fileprefix=None
+    filename=fileprefix=filetype=None
     filenostart=0
   root=Tk()
   mainwin = appWin(root,fileprefix=fileprefix,filenumber=filenostart,filetype=filetype,zoomfactor=0.5,mainwin='yes')
