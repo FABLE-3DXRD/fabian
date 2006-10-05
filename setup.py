@@ -12,6 +12,6 @@ setup(name='ImAM',
   maintainer='Henning Osholm Soerensen',
   maintainer_email='osho@risoe.dk',
   url='http://fable.sourceforge.net',
-  py_modules=['edfimage'],
+  py_modules=['edfimage','tifimage'],
   scripts=["ImAM.py"])
 
