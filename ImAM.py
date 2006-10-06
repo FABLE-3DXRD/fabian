@@ -14,7 +14,7 @@ import sys
 import edfimage
 import tifimage
 from string import *
-from PIL import Image, ImageTk, ImageDraw, ImageFile
+from PIL import Image, ImageTk, ImageFile, ImageStat
 from tkFileDialog import *
 import re
 import os
@@ -58,8 +58,6 @@ class imageWin:
     self.canvas.pack(side=TOP,fill=BOTH, expand='yes')
     frameImage.pack(side=TOP,expand=1, pady=10, padx=5)
     
-    #make the filename zoom, coordinate, and intensity displays    
-    self.make_status_bar(frame)
 
     #bind events
     self.canvas.bind('<Button-3>', self.Mouse3Press)
@@ -73,11 +71,13 @@ class imageWin:
     master.bind('<FocusIn>',self.MouseEntry)
     #display the images
     self.update()
+    #make the filename zoom, coordinate, and intensity displays    
+    self.make_status_bar(frame)
   
   def make_status_bar(self,master):
     frameInfo = Frame(master, bd=0, bg="white")
-    #self.FileInfo = Label(frameInfo, textvariable=self.filename, bg ='white',bd=1, relief=SUNKEN, anchor=W)
-    #self.FileInfo.pack(side=LEFT)
+    self.ImgMin = Label(frameInfo, text="Min %i" %(self.im_min), bg ='white',bd=1, relief=SUNKEN, anchor=W).pack(side=LEFT)
+    self.ImgMax = Label(frameInfo, text="Max %i" %(self.im_max), bg ='white',bd=1, relief=SUNKEN, anchor=W).pack(side=LEFT)
     self.ShowInt = Label(frameInfo, text='    0', width=5, bg='white', bd=1, relief=RIDGE, anchor=W)
     self.ShowInt.pack(side=RIGHT, padx=2)
     self.ShowCoor = Label(frameInfo, text='    0,    0', width =10, bg ='white',bd=1, relief=RIDGE, anchor=W)
@@ -208,9 +208,14 @@ class imageWin:
     self.im8c = self.im.point(lambda i: i * self.scale + self.offset).convert('L')
     if self.zoomarea[2]!=self.xsize and self.zoomarea[3]!=self.ysize:
       self.img = ImageTk.PhotoImage(self.im8c.crop(self.zoomarea).resize((self.canvas_xsize,self.canvas_ysize)))
+      self.imcrop = self.im.crop(self.zoomarea)
+      self.im_min,self.im_max = self.imcrop.getextrema()
     else:
       #image should not be cropped
       self.img = ImageTk.PhotoImage(self.im8c.resize((self.canvas_xsize,self.canvas_ysize)))
+      self.im_min,self.im_max = self.im.getextrema()
+      #self.imstat = ImageStat.Stat(self.im)
+      #self.im_mean = self.imstat.mean
     self.currentImage = self.canvas.create_image(0,0,anchor=NW, image=self.img)
     self.canvas.lower(self.currentImage)
     #update children
