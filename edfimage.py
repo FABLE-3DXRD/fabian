@@ -64,7 +64,7 @@ class edfimage:
     self.resetvals()
     
   def getmax(self):
-    if self.minval==None:
+    if self.maxval==None:
       max_xel=Numeric.argmax(Numeric.ravel(self.data))
       self.maxval=Numeric.ravel(self.data)[max_xel]
     return int(self.maxval)
@@ -168,6 +168,7 @@ if __name__=='__main__':
   b=time.clock()
   while (sys.argv[1:]):
     I.read(sys.argv[1])
+    r=I.toPIL16()
     I.rebin(2,2)
     I.write('jegErEnFil0000.edf')
     print sys.argv[1] + (": max=%d, min=%d, mean=%.2e, stddev=%.2e") % (I.getmax(),I.getmin(), I.getmean(), I.getstddev()) 
