@@ -16,9 +16,18 @@ import tifimage
 from string import *
 from PIL import Image, ImageTk, ImageFile, ImageStat
 from tkFileDialog import *
+import tkFont
 import re
 import os
 
+class ImAMImage(Image.Image):
+  def __init__(self):
+    Image.Image.__init__(self)
+    self.minval=0
+    self.maxval=0
+    self.meanval=0
+    self.stddev=0
+    
 class imageWin:
   def __init__(self,master,fileprefix=None,filenumber=0,title=None,zoomfactor=1,mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None):
     #initialize var
@@ -68,6 +77,7 @@ class imageWin:
     self.canvas.bind('<Control-Button-3>', self.Mouse3Press)
     self.canvas.bind('<Control-Button3-Motion>', self.Mouse3PressMotion)
     self.canvas.bind('<Control-Button3-ButtonRelease>', self.CtrlMouse3Release)
+    master.bind('q',self.quit)
     master.bind('<FocusIn>',self.MouseEntry)
     #display the images
     self.update()
@@ -76,8 +86,9 @@ class imageWin:
   
   def make_status_bar(self,master):
     frameInfo = Frame(master, bd=0, bg="white")
-    self.ImgMin = Label(frameInfo, text="Min %i" %(self.im_min), bg ='white',bd=1, relief=SUNKEN, anchor=W).pack(side=LEFT)
-    self.ImgMax = Label(frameInfo, text="Max %i" %(self.im_max), bg ='white',bd=1, relief=SUNKEN, anchor=W).pack(side=LEFT)
+    Label(frameInfo, text="Min %i" %(self.im_min), bg ='white',bd=1, relief=SUNKEN, anchor=W).pack(side=LEFT)
+    Label(frameInfo, text="Max %i" %(self.im_max), bg ='white',bd=1, relief=SUNKEN, anchor=W).pack(side=LEFT)
+    Label(frameInfo, text="Mean %i" %(self.im_mean), bg ='white',bd=1, relief=SUNKEN, anchor=W).pack(side=LEFT)
     self.ShowInt = Label(frameInfo, text='    0', width=5, bg='white', bd=1, relief=RIDGE, anchor=W)
     self.ShowInt.pack(side=RIGHT, padx=2)
     self.ShowCoor = Label(frameInfo, text='    0,    0', width =10, bg ='white',bd=1, relief=RIDGE, anchor=W)
@@ -165,11 +176,10 @@ class imageWin:
       self.update()
 
   def openzoom(self,tag):
-    #def __init__(self,master,filename=None,zoomfactor=1,mainwin=no,zoomable=yes,x1=-1,y1=-1,x2=-1,y2=-1,image=None):
     w=Toplevel(self.master)
     t=self.transientcorners
     corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
-    newwin=imageWin(w,title=tag,fileprefix=None,zoomfactor=self.zoomfactor*3,coords=corners,image=self.im)
+    newwin=imageWin(w,title=tag,fileprefix=None,zoomfactor=self.zoomfactor*4,coords=corners,image=self.im)
     return newwin
 
   def openrelief(self,tag):
@@ -205,24 +215,28 @@ class imageWin:
     if newimage: self.im=newimage
     
     # scale convert from 16bit to 8bit for Tkinter
-    self.im8c = self.im.point(lambda i: i * self.scale + self.offset).convert('L')
     if self.zoomarea[2]!=self.xsize and self.zoomarea[3]!=self.ysize:
-      self.img = ImageTk.PhotoImage(self.im8c.crop(self.zoomarea).resize((self.canvas_xsize,self.canvas_ysize)))
       self.imcrop = self.im.crop(self.zoomarea)
+      self.im8c = self.imcrop.point(lambda i: i * self.scale + self.offset).convert('L')
+      self.img = ImageTk.PhotoImage(self.im8c.resize((self.canvas_xsize,self.canvas_ysize)))
       self.im_min,self.im_max = self.imcrop.getextrema()
+      l=list(self.imcrop.getdata())
+      self.im_mean=sum(l)/len(l)
     else:
       #image should not be cropped
+      self.im8c = self.im.point(lambda i: i * self.scale + self.offset).convert('L')
       self.img = ImageTk.PhotoImage(self.im8c.resize((self.canvas_xsize,self.canvas_ysize)))
       self.im_min,self.im_max = self.im.getextrema()
-      #self.imstat = ImageStat.Stat(self.im)
-      #self.im_mean = self.imstat.mean
+      if self.im.meanval:
+	self.im_mean=self.im.meanval
+      else:
+	self.im_mean=-1
     self.currentImage = self.canvas.create_image(0,0,anchor=NW, image=self.img)
     self.canvas.lower(self.currentImage)
     #update children
     self.children = self.master.winfo_children()
     for k in self.aoi.keys():
       w=self.aoi[k]
-      #print "We are updating zoom", k,w,scaled_min,scaled_max
       w['zoomwin'].update(scaled_min,scaled_max,newimage=newimage)
     return True
   
@@ -240,6 +254,9 @@ class imageWin:
       cc = cc + hist[i]
     scaled_max = ((self.im_max - self.im_min)/255 *i)+self.im_min
     self.maxval.set("%.0f"%scaled_max)
+
+  def quit(self,event=None):
+    self.master.destroy()
 
 class appWin(imageWin):
   def __init__(self,master,fileprefix=None,filenumber=0,filename=None,filetype=None,zoomfactor=1,mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None):
@@ -305,7 +322,7 @@ class appWin(imageWin):
     e.bind('<KP_Enter>',self.rescale)
     e.pack(side=LEFT,padx=4)
     Label(frameScale,text='max: ', bg='white').pack(side=LEFT)
-    e=Entry(frameScale, textvariable=self.maxval,validate="focusout", vcmd=self.rescale, bg='white', width=6)
+    e=Entry(frameScale, textvariable=self.maxval, bg='white', width=6)
     e.bind('<FocusOut>',self.rescale)
     e.bind('<Return>',self.rescale)
     e.bind('<KP_Enter>',self.rescale)
@@ -347,10 +364,7 @@ class appWin(imageWin):
   def OpenFile(self,filename=True):
     self.filename.set(askopenfilename(filetypes=[("EDF files", "*.edf"),("Tif files", "*.tif"),("All Files", "*")]))
     (self.fileprefix,newfilenumber,self.filetype)=split_filename(self.filename.get())
-    #m=re.match(r"(.+)([0-9]{4})\.((edf|tif))",self.filename.get())
-    #newfilenumber=atoi(m.group(2))
     self.displaynumber.set(newfilenumber)
-    #self.filetype = m.group(3)
     if filename == None: # No image has been opened before
       return 
     else:
@@ -434,7 +448,10 @@ class appWin(imageWin):
         edfimg=edfimage.edfimage()
         edfimg.read(self.filename.get())
         self.im=edfimg.toPIL16()
-        print self.im.mode
+        self.im.minval=edfimg.getmin()
+	self.im.maxval=edfimg.getmax()
+	self.im.meanval=edfimg.getmean()
+	print self.im.mode
         (self.xsize, self.ysize)=(edfimg.dim1, edfimg.dim2)
       except IOError:
         e=Error()
@@ -446,7 +463,10 @@ class appWin(imageWin):
         tifimg=tifimage.tifimage()
         tifimg.read(self.filename.get())
         self.im = tifimg.toPIL32()
-        #print 'TIF'
+        self.im.minval=tifimg.getmin()
+	self.im.maxval=tifimg.getmax()
+	self.im.meanval=tifimg.getmean()
+	#print 'TIF'
         (self.xsize, self.ysize)=(tifimg.dim1, tifimg.dim2)
         #(self.xsize, self.ysize) = self.im.size
       except IOError:
@@ -457,14 +477,6 @@ class appWin(imageWin):
 
     self.zoomarea=[0,0,0,0]
       
-    #set the image dimensions and zoom out if it is big
-    #if self.ysize > 1560:
-    #  self.zoomfactor = 0.25
-    #elif self.ysize > 768:
-    #  self.zoomfactor = 0.5
-    #else:
-    #  self.zoomfactor = 1
-
     self.zoomarea[2]=self.xsize
     self.zoomarea[3]=self.ysize
 
@@ -473,8 +485,8 @@ class appWin(imageWin):
   def about(self):
     About()
     
-  def quit(self):
-    self.master.destroy()
+#  def quit(self):
+#    self.master.destroy()
 
 class ReliefPlot:
     def __init__(self,master,data=None,extrema=None):
@@ -611,6 +623,8 @@ def join_filename(parts):
 #   Main                 #
 ##########################
 if __name__=='__main__':
+  import time
+  t1=time.clock()
   if len(sys.argv) > 2:
     print "Only the first file will be opened"
   if len(sys.argv) >= 2:
@@ -629,7 +643,8 @@ if __name__=='__main__':
     filenostart=0
   root=Tk()
   mainwin = appWin(root,fileprefix=fileprefix,filenumber=filenostart,filetype=filetype,zoomfactor=0.5,mainwin='yes')
-  root.option_add('*font', ('helvetica', 10, 'bold'))
+  t2=time.clock()
+  print "time:",t2-t1
   sw = root.winfo_screenwidth()
   sh = root.winfo_screenheight()
   root.mainloop()
