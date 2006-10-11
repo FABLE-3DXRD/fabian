@@ -80,15 +80,18 @@ class imageWin:
     master.bind('q',self.quit)
     master.bind('<FocusIn>',self.MouseEntry)
     #display the images
-    self.update()
     #make the filename zoom, coordinate, and intensity displays    
     self.make_status_bar(frame)
+    self.update()
   
   def make_status_bar(self,master):
     frameInfo = Frame(master, bd=0, bg="white")
-    Label(frameInfo, text="Min %i" %(self.im_min), bg ='white',bd=1, relief=SUNKEN, anchor=W).pack(side=LEFT)
-    Label(frameInfo, text="Max %i" %(self.im_max), bg ='white',bd=1, relief=SUNKEN, anchor=W).pack(side=LEFT)
-    Label(frameInfo, text="Mean %i" %(self.im_mean), bg ='white',bd=1, relief=SUNKEN, anchor=W).pack(side=LEFT)
+    self.ShowMin = Label(frameInfo, text="Min -1",  bg ='white',bd=1, relief=SUNKEN, anchor=W)
+    self.ShowMin.pack(side=LEFT)
+    self.ShowMax = Label(frameInfo, text="Max -1" , bg ='white',bd=1, relief=SUNKEN, anchor=W)
+    self.ShowMax.pack(side=LEFT)
+    self.ShowMean = Label(frameInfo, text="Mean -1", bg ='white',bd=1, relief=SUNKEN, anchor=W)
+    self.ShowMean.pack(side=LEFT)
     self.ShowInt = Label(frameInfo, text='    0', width=5, bg='white', bd=1, relief=RIDGE, anchor=W)
     self.ShowInt.pack(side=RIGHT, padx=2)
     self.ShowCoor = Label(frameInfo, text='    0,    0', width =10, bg ='white',bd=1, relief=RIDGE, anchor=W)
@@ -231,6 +234,9 @@ class imageWin:
 	self.im_mean=self.im.meanval
       else:
 	self.im_mean=-1
+    self.ShowMin.config(text="Min %i" %(self.im_min))
+    self.ShowMax.config(text="Max %i" %(self.im_max))
+    self.ShowMean.config(text="Mean %i" %(self.im_mean))
     self.currentImage = self.canvas.create_image(0,0,anchor=NW, image=self.img)
     self.canvas.lower(self.currentImage)
     #update children
