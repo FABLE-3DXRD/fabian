@@ -9,6 +9,7 @@ Authors: Henning O. Sorensen & Erik Knudsen
          email:henning.sorensen@risoe.dk
 """
 from Tkinter import *
+import Pmw
 import  Numeric
 import sys
 import edfimage
@@ -19,6 +20,7 @@ from tkFileDialog import *
 import tkFont
 import re
 import os
+import time
 
 class ImAMImage(Image.Image):
   def __init__(self):
@@ -58,16 +60,24 @@ class imageWin:
     frame = Frame(master, bd=0, bg="white") #, width=600, height=600) 
     frame.pack()
 
-    #make imagecanvas
-    frameImage = Frame(frame, bd=0, bg="white")
+    #display the images
+    self.make_image_canvas(frame)
+  
+    #make the filename zoom, coordinate, and intensity displays    
+    self.make_status_bar(frame)
     
+    #run update to set scalings and actually display the images
+    #change this to draw/redraw set of functions at some point?
+    self.update()
+
+  def make_image_canvas(self,container):
+    #make imagecanvas
+    frameImage = Frame(container, bd=0, bg="white")
     self.canvas_xsize = int(self.xsize*self.zoomfactor)
     self.canvas_ysize = int(self.ysize*self.zoomfactor)
     self.canvas = Canvas(frameImage, width=self.canvas_xsize, height=self.canvas_ysize)
     self.canvas.pack(side=TOP,fill=BOTH, expand='yes')
     frameImage.pack(side=TOP,expand=1, pady=10, padx=5)
-    
-
     #bind events
     self.canvas.bind('<Button-3>', self.Mouse3Press)
     self.canvas.bind('<Button3-Motion>', self.Mouse3PressMotion)
@@ -77,15 +87,9 @@ class imageWin:
     self.canvas.bind('<Control-Button-3>', self.Mouse3Press)
     self.canvas.bind('<Control-Button3-Motion>', self.Mouse3PressMotion)
     self.canvas.bind('<Control-Button3-ButtonRelease>', self.CtrlMouse3Release)
-    master.bind('q',self.quit)
-    master.bind('<FocusIn>',self.MouseEntry)
-    #display the images
-    #make the filename zoom, coordinate, and intensity displays    
-    self.make_status_bar(frame)
-    self.update()
-  
-  def make_status_bar(self,master):
-    frameInfo = Frame(master, bd=0, bg="white")
+    
+  def make_status_bar(self,container):
+    frameInfo = Frame(container, bd=0, bg="white")
     self.ShowMin = Label(frameInfo, text="Min -1",  bg ='white',bd=1, relief=SUNKEN, anchor=W)
     self.ShowMin.pack(side=LEFT)
     self.ShowMax = Label(frameInfo, text="Max -1" , bg ='white',bd=1, relief=SUNKEN, anchor=W)
@@ -279,7 +283,9 @@ class appWin(imageWin):
     self.displaynumber=StringVar()
     self.filename=StringVar()
     self.filetype = filetype
-   
+    master.bind('q',self.quit)
+    master.bind('<FocusIn>',self.MouseEntry)
+
     if filename==None and fileprefix!=None:
       self.filename.set("%s%0.4d.%s"%(fileprefix,filenumber,self.filetype))
       self.displaynumber.set(filenumber)
@@ -310,13 +316,58 @@ class appWin(imageWin):
 
     #add menubar
     self.make_command_menu(frame)
+
+    #Add Notebook tabs
+    self.noteb1 = Pmw.NoteBook(frame)
+    self.noteb1.pack(fill='both')
+    self.page1 = self.noteb1.add('Image')
+    self.page2 = self.noteb1.add('Info')
     
     #call __init__ in the parent class
-    imageWin.__init__(self,master,fileprefix=fileprefix,filenumber=filenumber,zoomfactor=self.zoomfactor,coords=(0,0,self.xsize,self.ysize),image=self.im)
-
-    #make scaling buttons
-    self.make_scaling_ctls(frame)
+    self.make_scaling_ctls(self.page1)
     
+    self.make_image_canvas(self.page1)
+    #imageWin.__init__(self,master,page1,fileprefix=fileprefix,filenumber=filenumber,zoomfactor=self.zoomfactor,coords=(0,0,self.xsize,self.ysize),image=self.im)
+    self.make_header_info()
+    self.make_status_bar(self.page1)
+    self.noteb1.setnaturalsize()
+    
+    # Put header on page2 Info
+    self.HeaderFrame = Pmw.ScrolledFrame(self.page2, labelpos=N)
+    self.HeaderFrame.pack(fill=BOTH, expand=YES)
+    testframe = self.HeaderFrame.interior()
+    self.headcheck=[]
+    self.headtext={}
+    self.newitem={}
+    for self.item in self.im.header:
+      fm = Frame(testframe)
+      self.newitem[self.item]=StringVar()
+      #clab= Checkbutton(fm, bg='white').pack(side=LEFT,anchor=W)
+      self.headcheck.append(Checkbutton(fm,text='%s' %(self.item), command=self.update_header_label,variable=self.newitem[self.item], bg='white',anchor=W,width=20).pack(side=LEFT,anchor=W))
+      self.headtext[self.item]= Label(fm,text='%s' %(self.im.header[self.item]), bg='white',anchor=W,width=100)
+      self.headtext[self.item].pack(side=LEFT,fill=X,expand='yes')
+      fm.pack(side=TOP,anchor=W)
+    
+    #run update to set scalings and actually display the images
+    #change this to draw/redraw set of functions at some point?
+    self.update()
+
+  def make_header_info(self):
+    self.HeaderInfo = Label(self.page1, text='', anchor=W)
+    self.HeaderInfo.pack(side=TOP,fill=BOTH)
+  
+
+  def update_header_label(self):
+    headertext = ''
+    for item in self.newitem:
+      if self.newitem[item].get() == '1':
+            headertext = headertext+item+': '+self.im.header[item] +'; '
+    self.HeaderInfo.config(text='%s' %(headertext))
+
+  def update_header_page(self):
+      for item in self.im.header:
+        self.headtext[item].config(text='%s' %(self.im.header[item]))
+        
   def make_scaling_ctls(self,master):
     frameScale = Frame(master, bd=0, bg="white")
     # Image scale controls  
@@ -353,9 +404,8 @@ class appWin(imageWin):
     CmdBtn.pack(side=LEFT, padx="2m")
     CmdBtn.menu =Menu(CmdBtn)
     CmdBtn.menu.add_command(label='Open',command=self.OpenFile)
+    #CmdBtn.menu.add_command(label='Close')
     #CmdBtn.menu.entryconfig(0,state=DISABLED)
-    CmdBtn.menu.add_command(label='Close')
-    CmdBtn.menu.entryconfig(0,state=DISABLED)
     CmdBtn.menu.add_command(label='Exit',command=self.quit)
     CmdBtn['menu']=CmdBtn.menu
     CmdBtn2 = Menubutton(frameMenubar, text='Help',underline=0)
@@ -415,6 +465,8 @@ class appWin(imageWin):
       self.openimage()#try to open that file
       self.fileprefix = m.group(1) # Update fileprefix
       self.update(newimage=self.im)
+      self.update_header_page()
+      self.update_header_label()
     except IOError:
       self.filename.set("%s%0.4d.edf"%(self.fileprefix, filenumber) )
       self.displaynumber.set(filenumber)
@@ -429,6 +481,8 @@ class appWin(imageWin):
     try:
       self.openimage()#try to open that file
       self.update(newimage=self.im)
+      self.update_header_page()
+      self.update_header_label()
     except IOError:
       self.filename.set("%s%0.4d.%s"%(self.fileprefix,newfilenumber-1,self.filetype))
       return False
@@ -441,6 +495,9 @@ class appWin(imageWin):
     try:
       self.openimage()#try to open that file
       self.update(newimage=self.im)
+      self.update_header_page()
+      self.update_header_label()
+
     except IOError:
       self.filename.set("%s%0.4d.%s"%(self.fileprefix,newfilenumber+1,self.filetype))
       return False
@@ -453,17 +510,18 @@ class appWin(imageWin):
       try:
         edfimg=edfimage.edfimage()
         edfimg.read(self.filename.get())
+        self.im_mean = 0 #edfimg.getmean()
         self.im=edfimg.toPIL16()
         self.im.minval=edfimg.getmin()
 	self.im.maxval=edfimg.getmax()
 	self.im.meanval=edfimg.getmean()
-	print self.im.mode
+        self.im.header = edfimg.getheader()
         (self.xsize, self.ysize)=(edfimg.dim1, edfimg.dim2)
       except IOError:
         e=Error()
         msg="No such file: %s " %(self.filename.get())
         e.Er(msg)
-        raise IOError
+        raise IOError, msg
     elif self.filetype == 'tif':
       try:
         tifimg=tifimage.tifimage()
@@ -472,6 +530,7 @@ class appWin(imageWin):
         self.im.minval=tifimg.getmin()
 	self.im.maxval=tifimg.getmax()
 	self.im.meanval=tifimg.getmean()
+        self.im.header = tifimg.getheader()
 	#print 'TIF'
         (self.xsize, self.ysize)=(tifimg.dim1, tifimg.dim2)
         #(self.xsize, self.ysize) = self.im.size
@@ -563,9 +622,6 @@ class ReliefPlot:
              GL.glEnd()
          GL.glEnable(GL.GL_LIGHTING)
          GL.glPopMatrix()
-                                                                                                                                                 
-
-
 
 class Error:
     def Er(self,message):
@@ -619,16 +675,26 @@ email: henning.sorensen@risoe.dk"
  
 
 def split_filename(filename):
-    m=re.match(r"(.+)([0-9]{4})\.((edf|tif|bmp))$",filename)
-    return (m.group(1),int(m.group(2)),m.group(3))
-
-def join_filename(parts):
-    return os.path.join(parts[0],(("%04d."% parts[1]) + parts[2]))
+    m=re.match(r"(.+?)([0-9]{0,4})\.((edf|tif|bmp))$",filename)
+    if m.group(2):
+      return (m.group(1),int(m.group(2)),m.group(3))
+    else:
+      return (m.group(1),0,m.group(3))
+      
+def join_filename(oldfilename,parts):
+    import string
+    m=re.match(r"(.+?)([0-9]{0,4})\.((edf|tif|bmp))$",oldfilename)
+    print m.group(1),m.group(2),m.group(3)
+    if m.group(2):
+      return parts[0]+ string.zfill(parts[1],len(m.group(2))) + '.' + parts[2]
+    else:
+      return parts[0]+ '.' + parts[2]
 
 ##########################
 #   Main                 #
 ##########################
 if __name__=='__main__':
+
   import time
   t1=time.clock()
   if len(sys.argv) > 2:
