@@ -63,6 +63,11 @@ class edfimage:
       if verbose: print 'using high byte first (network order)'
     self.resetvals()
     
+  def getheader(self):
+    if self.header=={}:
+      print "No file loaded"
+    return self.header
+  
   def getmax(self):
     if self.maxval==None:
       max_xel=Numeric.argmax(Numeric.ravel(self.data))
@@ -94,7 +99,7 @@ class edfimage:
     
   def getstddev(self):
     if self.m==None:
-      self.m=self.getmean()
+      self.getmean()
       print "recalc mean"
     if self.stddev==None:
       N=self.dim1*self.dim2-1
@@ -117,13 +122,11 @@ class edfimage:
     self.m=self.stddev=self.maxval=self.minval=None
   
   def rebin(self,x_rebin_fact,y_rebin_fact):
-    print Numeric.shape(self.data)
     if self.data==None:
       print 'Please read the file you wish to rebin first'
       return
     (mx,ex)=math.frexp(x_rebin_fact)
     (my,ey)=math.frexp(y_rebin_fact)
-    print mx,ex,my,ey
     if (mx!=0.5 or my!=0.5):
       print 'Rebin factors not power of 2 not supported (yet)'
       return
@@ -142,11 +145,11 @@ class edfimage:
     self.resetvals()
     self.dim1=self.dim1/x_rebin_fact
     self.dim2=self.dim2/y_rebin_fact
+    #update header
     self.header['Dim_1']=self.dim1
     self.header['Dim_2']=self.dim2
     self.header['col_end']=self.dim1-1
     self.header['row_end']=self.dim2-1
-    print self.dim1, self.dim2, Numeric.shape(self.data)
   
   def write(self,fname):
     f=open(fname,"wb")

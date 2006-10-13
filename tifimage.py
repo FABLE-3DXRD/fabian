@@ -26,12 +26,12 @@ class tifimage:
       self.read(filename)
       # For some odd reason the getextrema does not work on unsigned 16 bit
       # but it does on 32 bit images, hence convert
-      PILimage = self.data#.convert('I')
+      PILimage = self.data
       return PILimage
     else:
       # For some odd reason the getextrema does not work on unsigned 16 bit
       # but it does on 32 bit images, hence convert
-      PILimage = self.data#.convert('I')
+      PILimage = self.data
       return PILimage
 	
   def read(self,fname,verbose=0):
@@ -68,6 +68,9 @@ class tifimage:
       S=sum(l)/N
       self.stddev=S
     return self.stddev
-    
+   
+  def getheader(self):
+    return {}
+   
   def rebin(self,x_rebin_factor, y_rebin_factor):
     print "rebinning not implemented - yet!"
