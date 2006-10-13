@@ -102,6 +102,9 @@ class edfimage:
       self.stddev=S/(self.dim1*self.dim2-1)
     return float(self.stddev)
 
+  def getheader(self):
+    return self.header
+
   def add(self, otherImage):
     if not hasattr(otherImage,'data'):
       print 'edfimage.add() called with something that does not have a data field'
