@@ -42,6 +42,8 @@ class imageWin:
     self.transientaoi=None
     self.maxval=StringVar()
     self.minval=StringVar()
+    master.bind('q',self.quit)
+    master.bind('<FocusIn>',self.MouseEntry)
     
     if title: self.master.title(title)
     
@@ -316,7 +318,6 @@ class appWin(imageWin):
 
     #add menubar
     self.make_command_menu(frame)
-
     #Add Notebook tabs
     self.noteb1 = Pmw.NoteBook(frame)
     self.noteb1.pack(fill='both')
@@ -355,7 +356,7 @@ class appWin(imageWin):
   def make_header_info(self):
     self.HeaderInfo = Label(self.page1, text='', anchor=W)
     self.HeaderInfo.pack(side=TOP,fill=BOTH)
-  
+    print 'hello' 
 
   def update_header_label(self):
     headertext = ''
@@ -372,20 +373,20 @@ class appWin(imageWin):
     frameScale = Frame(master, bd=0, bg="white")
     # Image scale controls  
     Label(frameScale,text='Scale: ', bg='white').pack(side=LEFT)
-    Label(frameScale,text='min: ', bg='white').pack(side=LEFT)
+    Label(frameScale,text='min:', bg='white').pack(side=LEFT)
     e=Entry(frameScale, textvariable=self.minval, bg='white', width=6)
     e.bind('<FocusOut>',self.rescale)
     e.bind('<Return>',self.rescale)
     e.bind('<KP_Enter>',self.rescale)
     e.pack(side=LEFT,padx=4)
-    Label(frameScale,text='max: ', bg='white').pack(side=LEFT)
+    Label(frameScale,text='max:', bg='white').pack(side=LEFT)
     e=Entry(frameScale, textvariable=self.maxval, bg='white', width=6)
     e.bind('<FocusOut>',self.rescale)
     e.bind('<Return>',self.rescale)
     e.bind('<KP_Enter>',self.rescale)
-    e.pack(side=LEFT,padx=8)
+    e.pack(side=LEFT,padx=4)
     
-    Button(frameScale,text='update', bg='white', command=self.update).pack(side=LEFT,padx=0)
+    Button(frameScale,text='update', bg='white', command=self.update).pack(side=LEFT,padx=2)
     Button(frameScale,text='reset', bg='white', command=self.reset_scale).pack(side=LEFT,padx=2)
     
     Button(frameScale,text='next', bg='white', command=self.nextimage).pack(side=RIGHT)
@@ -497,7 +498,6 @@ class appWin(imageWin):
       self.update(newimage=self.im)
       self.update_header_page()
       self.update_header_label()
-
     except IOError:
       self.filename.set("%s%0.4d.%s"%(self.fileprefix,newfilenumber+1,self.filetype))
       return False
