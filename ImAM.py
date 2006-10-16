@@ -336,27 +336,34 @@ class appWin(imageWin):
     # Put header on page2 Info
     self.HeaderFrame = Pmw.ScrolledFrame(self.page2, labelpos=N)
     self.HeaderFrame.pack(fill=BOTH, expand=YES)
-    testframe = self.HeaderFrame.interior()
-    self.headcheck=[]
-    self.headtext={}
-    self.newitem={}
-    for self.item in self.im.header:
-      fm = Frame(testframe)
-      self.newitem[self.item]=StringVar()
-      #clab= Checkbutton(fm, bg='white').pack(side=LEFT,anchor=W)
-      self.headcheck.append(Checkbutton(fm,text='%s' %(self.item), command=self.update_header_label,variable=self.newitem[self.item], bg='white',anchor=W,width=20).pack(side=LEFT,anchor=W))
-      self.headtext[self.item]= Label(fm,text='%s' %(self.im.header[self.item]), bg='white',anchor=W,width=100)
-      self.headtext[self.item].pack(side=LEFT,fill=X,expand='yes')
-      fm.pack(side=TOP,anchor=W)
+    self.HeaderInterior = self.HeaderFrame.interior()
+    self.make_header_page()
     
     #run update to set scalings and actually display the images
     #change this to draw/redraw set of functions at some point?
     self.update()
 
+  def make_header_page(self):
+      self.headcheck=[]
+      print self.headcheck
+      self.headtext={}
+      self.newitem={}
+      for self.item in self.im.header:
+        self.fm = Frame(self.HeaderInterior)
+        self.newitem[self.item]=StringVar()
+        self.headcheck.append(Checkbutton(self.fm,text='%s' %(self.item), command=self.update_header_label,variable=self.newitem[self.item], bg='white',anchor=W,width=20).pack(side=LEFT,anchor=W))
+        self.headtext[self.item]= Label(self.fm,text='%s' %(self.im.header[self.item]), bg='white',anchor=W,width=100)
+        self.headtext[self.item].pack(side=LEFT,fill=X,expand='yes')
+        self.fm.pack(side=TOP,anchor=W)
+
+
   def make_header_info(self):
     self.HeaderInfo = Label(self.page1, text='', anchor=W)
     self.HeaderInfo.pack(side=TOP,fill=BOTH)
-    print 'hello' 
+  
+  def update_header_page(self):
+      for item in self.im.header:
+        self.headtext[item].config(text='%s' %(self.im.header[item]))
 
   def update_header_label(self):
     headertext = ''
@@ -365,9 +372,6 @@ class appWin(imageWin):
             headertext = headertext+item+': '+self.im.header[item] +'; '
     self.HeaderInfo.config(text='%s' %(headertext))
 
-  def update_header_page(self):
-      for item in self.im.header:
-        self.headtext[item].config(text='%s' %(self.im.header[item]))
         
   def make_scaling_ctls(self,master):
     frameScale = Frame(master, bd=0, bg="white")
@@ -425,6 +429,7 @@ class appWin(imageWin):
     if filename == None: # No image has been opened before
       return 
     else:
+      self.make_header_page()
       self.gotoimage()
   
   def rescale(self,event=None):
