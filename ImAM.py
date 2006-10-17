@@ -197,7 +197,6 @@ class imageWin:
       
       self.reliefmap = list(self.im.crop(corners).getdata())
       self.reliefextrema = [min(self.reliefmap),max(self.reliefmap)]
-      print self.reliefextrema
       self.reliefmap = Numeric.reshape( self.reliefmap,[corners[3]-corners[1], corners[2]-corners[0]])
       reli=Toplevel(self.master)
       reli.title(tag)
@@ -343,7 +342,6 @@ class appWin(imageWin):
 
   def make_header_page(self):
       self.headcheck=[]
-      print self.headcheck
       self.headtext={}
       self.newitem={}
       for self.item in self.im.header:
@@ -434,28 +432,6 @@ class appWin(imageWin):
     self.update()
     return True
 
-  def scaleimage___(self,scaled_min=0,scaled_max=0):
-    #obsolete
-    if self.scale==0:
-      self.reset_scale()
-    #scale this instance itself and all its children
-    if (scaled_min==scaled_max==0):
-      scaled_min = atof(self.minval.get())
-      scaled_max = atof(self.maxval.get())
-    else:
-      self.minval.set(scaled_min)
-      self.maxval.set(scaled_max)
-    self.maxval.set(scaled_max)
-    self.scale = 255.0 / (scaled_max - scaled_min)
-    self.offset = - scaled_min * self.scale
-   
-    #scale children
-    self.children = self.master.winfo_children()
-    for k in self.aoi.keys():
-      w=self.aoi[k]
-      print "We are updating zoom", k,w
-      w['zoomwin'].scaleimage___(scaled_min,scaled_max)
-    
   
   def gotoimage(self,event=None):
     newfilenumber=int(self.displaynumber.get())
@@ -558,7 +534,6 @@ class ReliefPlot:
         import OpenGL.GL as GL
         import OpenGL.Tk as oTk
         self.master = master
-        print master
 	self.f=oTk.Frame(self.master)
         self.f.pack(side=oTk.BOTTOM,expand=oTk.NO,fill=oTk.X)
         self.dataoff=0
@@ -570,26 +545,25 @@ class ReliefPlot:
         self.map = Numeric.transpose(self.map)
         self.sizex = self.map.shape[0]
         self.sizey = self.map.shape[1]
-        print self.map.shape
         self.size = (self.sizex+ self.sizey)/2.0
-        self.scale = self.size/(extrema[1]-extrema[0])
-        self.map = self.map*self.scale
-        self.o = oTk.Opengl(self.f,width = 500, height = 500, double = 1)
-        self.o.redraw = self.redraw
-        self.o.autospin_allowed = 1
+        self.zscale = self.size/(extrema[1]-extrema[0])
+        self.map = self.map*self.zscale
         if self.sizex > self.sizey:
-          self.o.set_eyepoint(13.*self.sizex)
+          self.scale = 0.75/self.sizex
         else:
-          self.o.set_eyepoint(13.*self.sizey)
-        self.zcenter = -(extrema[1]+extrema[0])*self.scale/2.0
-        self.o.fovy=5
-        self.o.near=1e2
-        self.o.far=1e-6
+          self.scale = 0.75/self.sizey
+        self.zcenter = -(extrema[1]+extrema[0])*self.zscale/2.0
+        self.reliefWin = oTk.Opengl(self.f,width = 500, height = 500, double = 1)
+        self.reliefWin.redraw = self.redraw
+        self.reliefWin.autospin_allowed = 1
+        self.reliefWin.fovy=5
+        self.reliefWin.near=1e2
+        self.reliefWin.far=1e-6
         import math
-        self.o.pack(side = oTk.TOP, expand = oTk.YES, fill = oTk.BOTH)
+        self.reliefWin.pack(side = oTk.TOP, expand = oTk.YES, fill = oTk.BOTH)
         GL.glEnableClientState(GL.GL_VERTEX_ARRAY)
-        oTk.Button(self.f,text="Help",command=self.o.help).pack(side=oTk.LEFT)
-        oTk.Button(self.f,text="Reset",command=self.o.reset).pack(side=oTk.LEFT)
+        oTk.Button(self.f,text="Help",command=self.reliefWin.help).pack(side=oTk.LEFT)
+        oTk.Button(self.f,text="Reset",command=self.reliefWin.reset).pack(side=oTk.LEFT)
         oTk.Button(self.f,text="Quit",command=self.quit).pack(side=oTk.RIGHT)
 
     def quit(self):
@@ -607,6 +581,7 @@ class ReliefPlot:
          GL.glColor3f(1.0, 1.0, 1.0) # white
          GL.glPointSize(self.pointsize)
          GL.glPushMatrix()
+         GL.glScale(self.scale,self.scale,self.scale)
          GL.glRotate(-20,0,0,1)
          GL.glRotate(-110,1,0,0)
          GL.glTranslatef(-self.sizex/2.0,-self.sizey/2.0,self.zcenter)
