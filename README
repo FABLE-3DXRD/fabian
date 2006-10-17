@@ -6,9 +6,10 @@ The ImAM is designed for the purpose of viewing image files series. In particula
 such image files obtained when doing experiments at the ESRF.
 
 To use this you need (besides a python interpreter) the python extensions:
-PIL (python imaging library) - www.pythonware.com
-Numeric - numeric.scipy.org
-pyopengl - pyopengl.sourceforge.net
+PIL (python imaging library) -  http://www.pythonware.com
+Numeric -  http://numeric.scipy.org
+pyopengl - http://pyopengl.sourceforge.net
+Pmw - Python Mega Widgets -  http://pmw.sourceforge.net
 
 Supposedly,
 python setup.py install

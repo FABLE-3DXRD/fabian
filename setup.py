@@ -10,8 +10,8 @@ setup(name='ImAM',
   description='Image viewer for edf-image file series',
   license='GPL',
   maintainer='Henning Osholm Soerensen',
-  maintainer_email='osho@risoe.dk',
+  maintainer_email='henning.sorensen@risoe.dk',
   url='http://fable.sourceforge.net',
-  py_modules=['edfimage','tifimage'],
+  py_modules=['edfimage','tifimage','adscimage'],
   scripts=["ImAM.py"])
 

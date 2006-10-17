@@ -12,8 +12,7 @@ from Tkinter import *
 import Pmw
 import  Numeric
 import sys
-import edfimage
-import tifimage
+import edfimage, tifimage, adscimage
 from string import *
 from PIL import Image, ImageTk, ImageFile, ImageStat
 from tkFileDialog import *
@@ -423,7 +422,7 @@ class appWin(imageWin):
     frameMenubar.tk_menuBar((CmdBtn, CmdBtn2))
 
   def OpenFile(self,filename=True):
-    self.filename.set(askopenfilename(filetypes=[("EDF files", "*.edf"),("Tif files", "*.tif"),("All Files", "*")]))
+    self.filename.set(askopenfilename(filetypes=[("EDF files", "*.edf"),("Tif files", "*.tif"),("ADSC files", "*.img"),("All Files", "*")]))
     (self.fileprefix,newfilenumber,self.filetype)=split_filename(self.filename.get())
     self.displaynumber.set(newfilenumber)
     if filename == None: # No image has been opened before
@@ -461,7 +460,7 @@ class appWin(imageWin):
   
   def gotoimage(self,event=None):
     #extract old filenumber from filename
-    m=re.match(r"(.+)([0-9]{4})\.((edf|tif))",self.filename.get())
+    m=re.match(r"(.+)([0-9]{4})\.((edf|tif|img))",self.filename.get())
     filenumber=atoi(m.group(2))
     #update filename, prefix and number
     newfilenumber=int(self.displaynumber.get())
@@ -474,7 +473,7 @@ class appWin(imageWin):
       self.update_header_page()
       self.update_header_label()
     except IOError:
-      self.filename.set("%s%0.4d.edf"%(self.fileprefix, filenumber) )
+      self.filename.set("%s%0.4d.%s"%(self.fileprefix,newfilenumber,self.filetype))
       self.displaynumber.set(filenumber)
       return False
     self.displaynumber.set(newfilenumber)
@@ -544,6 +543,22 @@ class appWin(imageWin):
         msg="No such file: %s " %(self.filename.get())
         e.Er(msg)
         raise IOError
+    elif self.filetype == 'img':
+      try:
+        adscimg=adscimage.adscimage()
+        adscimg.read(self.filename.get())
+        self.im_mean = 0 #edfimg.getmean()
+        self.im=adscimg.toPIL16()
+        self.im.minval=adscimg.getmin()
+	self.im.maxval=adscimg.getmax()
+	self.im.meanval=adscimg.getmean()
+        self.im.header = adscimg.getheader()
+        (self.xsize, self.ysize)=(adscimg.dim1, adscimg.dim2)
+      except IOError:
+        e=Error()
+        msg="No such file: %s " %(self.filename.get())
+        e.Er(msg)
+        raise IOError, msg
 
     self.zoomarea=[0,0,0,0]
       
@@ -680,7 +695,7 @@ email: henning.sorensen@risoe.dk"
  
 
 def split_filename(filename):
-    m=re.match(r"(.+?)([0-9]{0,4})\.((edf|tif|bmp))$",filename)
+    m=re.match(r"(.+?)([0-9]{0,4})\.((edf|tif|img))$",filename)
     if m.group(2):
       return (m.group(1),int(m.group(2)),m.group(3))
     else:
@@ -688,7 +703,7 @@ def split_filename(filename):
       
 def join_filename(oldfilename,parts):
     import string
-    m=re.match(r"(.+?)([0-9]{0,4})\.((edf|tif|bmp))$",oldfilename)
+    m=re.match(r"(.+?)([0-9]{0,4})\.((edf|tif|img))$",oldfilename)
     print m.group(1),m.group(2),m.group(3)
     if m.group(2):
       return parts[0]+ string.zfill(parts[1],len(m.group(2))) + '.' + parts[2]
@@ -712,7 +727,7 @@ if __name__=='__main__':
 	#fileprefix=m.group(1)
         #filetype=m.group(3)
     except:
-	print "The file specified needs to be of type edf or tif!"	
+	print "The file specified needs to be of type edf, tif or img (ADSC)!"	
         filename=fileprefix=filetype=None
 	filenostart=0
   else:
