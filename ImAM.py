@@ -460,14 +460,12 @@ class appWin(imageWin):
   def gotoimage(self,event=None):
     newfilenumber=int(self.displaynumber.get())
     newfilename=construct_filename(self.filename.get(),newfilenumber)
-    print "goto:", newfilename
     try:
       self.openimage(newfilename)#try to open that file
     except IOError:
       try:
 	#that didn't work - so try the unpadded version
 	newfilename=construct_filename(self.filename.get(),newfilenumber,padding=False)
-	print "goto:",newfilename
 	self.openimage(newfilename)
       except IOError:
 	e=Error()
@@ -486,7 +484,6 @@ class appWin(imageWin):
     #update filename, prefix and number
     newfilenumber=int(self.displaynumber.get())+1
     newfilename=construct_filename(self.filename.get(),newfilenumber)
-    print "next:",newfilename
     #self.filename.set("%s%0.4d.%s"%((self.fileprefix,newfilenumber,self.filetype)))
     try:
       self.openimage(newfilename)#try to open that file
@@ -507,13 +504,11 @@ class appWin(imageWin):
     newfilenumber=int(self.displaynumber.get())-1
     try:
       newfilename=construct_filename(self.filename.get(),newfilenumber)
-      print "prev:",newfilename
       self.openimage(newfilename)#try to open that file
     except IOError:
       try:
 	#that didn't work - so try the unpadded version
 	newfilename=construct_filename(self.filename.get(),newfilenumber,padding=False)
-	print "prev:",newfilename
 	self.openimage(newfilename)
       except IOError:
         e=Error()
@@ -539,7 +534,6 @@ class appWin(imageWin):
       filetype=os.path.splitext(filename)[1][1:]
     
     #if filetype in ('edf',tif,'img'):
-    print "in openimage:",filename,filetype
     img=eval( filetype+'image.'+filetype+'image()')
     print img
     try:
