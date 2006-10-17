@@ -537,55 +537,21 @@ class appWin(imageWin):
       filetype=self.filetype
     else:
       filetype=os.path.splitext(filename)[1][1:]
-      
-    #print self.filename.get()
-    if filetype == 'edf':
-      try:
-        edfimg=edfimage.edfimage()
-        edfimg.read(filename)
-        self.im=edfimg.toPIL16()
-        self.im.minval=edfimg.getmin()
-	self.im.maxval=edfimg.getmax()
-	self.im.meanval=edfimg.getmean()
-        self.im.header = edfimg.getheader()
-        (self.xsize, self.ysize)=(edfimg.dim1, edfimg.dim2)
-      except IOError:
-        raise IOError
-    elif filetype == 'tif':
-      try:
-        tifimg=tifimage.tifimage()
-        tifimg.read(filename)
-        self.im = tifimg.toPIL32()
-        self.im.minval=tifimg.getmin()
-	self.im.maxval=tifimg.getmax()
-	self.im.meanval=tifimg.getmean()
-        self.im.header = tifimg.getheader()
-	#print 'TIF'
-        (self.xsize, self.ysize)=(tifimg.dim1, tifimg.dim2)
-        #(self.xsize, self.ysize) = self.im.size
-      except IOError:
-        raise IOError
-    elif self.filetype == 'img':
-      try:
-        adscimg=adscimage.adscimage()
-        adscimg.read(filename)
-        self.im=adscimg.toPIL16()
-        self.im.minval=adscimg.getmin()
-	self.im.maxval=adscimg.getmax()
-	self.im.meanval=adscimg.getmean()
-        self.im.header = adscimg.getheader()
-        (self.xsize, self.ysize)=(adscimg.dim1, adscimg.dim2)
-      except IOError:
-        raise IOError
-    else:
-      print 'unrecognized filetype'
-
-    self.zoomarea=[0,0,0,0]
-      
-    self.zoomarea[2]=self.xsize
-    self.zoomarea[3]=self.ysize
-
+    
+    #if filetype in ('edf',tif,'img'):
+    print "in openimage:",filename,filetype
+    img=eval( filetype+'image.'+filetype+'image()')
+    print img
+    try:
+      self.im=img.read(filename).toPIL16()
+      (self.im.minval,self.im.maxval,self.im.meanval)=(img.getmin(),img.getmax(),img.getmean())
+      self.im.header=img.getheader()
+      (self.xsize, self.ysize)=(img.dim1, img.dim2)
+    except IOError:
+      raise
+    self.zoomarea=[0,0,self.xsize,self.ysize]
     self.master.title("ImAM - %s" %(filename))
+
       
   def about(self):
     About()
