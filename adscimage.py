@@ -65,7 +65,8 @@ class adscimage:
       self.bytecode=Numeric.UInt16
       if verbose: print 'using high byte first (network order)'
     self.resetvals()
-    
+    return self
+
   def getheader(self):
     if self.header=={}:
       print "No file loaded"

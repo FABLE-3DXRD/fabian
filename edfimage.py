@@ -13,6 +13,7 @@ Authors: Henning O. Sorensen & Erik Knudsen
 import Numeric
 import math
 from PIL import Image
+import os
 
 class edfimage:
   data=None
@@ -32,7 +33,6 @@ class edfimage:
       return PILimage
 	
   def read(self,fname,verbose=0):
-    import os
     f=open(fname,"rb")
     l=f.readline()
     while '}' not in l:
@@ -62,7 +62,8 @@ class edfimage:
       self.bytecode=Numeric.UInt16
       if verbose: print 'using high byte first (network order)'
     self.resetvals()
-    
+    return self
+
   def getheader(self):
     if self.header=={}:
       print "No file loaded"

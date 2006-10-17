@@ -20,7 +20,7 @@ class tifimage:
   m=maxval=stddev=minval=None
   header_keys=[]
   bytecode=None
-  
+ 
   def toPIL32(self,filename=None):
     if filename:
       self.read(filename)
@@ -34,12 +34,17 @@ class tifimage:
       PILimage = self.data
       return PILimage
 	
+  #ugly hack but apparently necessary for some reason which escapes me (Erik)
+  def toPIL16(self,filename=None):
+    return self.toPIL32(filename)
+ 
   def read(self,fname,verbose=0):
     print fname
     self.data=Image.open(fname).convert('I')
     print self.data
     (self.dim1, self.dim2) = self.data.size
-  
+    return self
+
   def write(self):
     pass
     
