@@ -287,18 +287,17 @@ class appWin(imageWin):
     master.bind('q',self.quit)
     master.bind('<FocusIn>',self.MouseEntry)
 
-    if filename==None and fileprefix!=None:
-      self.filename.set("%s%0.4d.%s"%(fileprefix,filenumber,self.filetype))
-      self.displaynumber.set(filenumber)
-      self.fileprefix=fileprefix
-    elif filename:
+    if filename:
       self.filename.set(filename)
-      #TODO: extract the filenumber if necessary
+      self.displaynumber.set(extract_filenumber(filename))
+      if not filetype:
+	self.filetype=os.path.splitext(filename)[1][1:]
+      else:
+	self.filetype=filetype
     else:
       self.OpenFile(filename=None)
 
     self.zoomfactor=zoomfactor
-
     #display image and reset scale if scaling is not given
     self.openimage()
     self.reset_scale()
@@ -459,62 +458,91 @@ class appWin(imageWin):
     
   
   def gotoimage(self,event=None):
-    #extract old filenumber from filename
-    m=re.match(r"(.+)([0-9]{4})\.((edf|tif|img))",self.filename.get())
-    filenumber=atoi(m.group(2))
-    #update filename, prefix and number
     newfilenumber=int(self.displaynumber.get())
-    self.filename.set("%s%0.4d.%s"%(m.group(1),newfilenumber,m.group(3)))
-    print self.filename.get()
+    newfilename=construct_filename(self.filename.get(),newfilenumber)
+    print "goto:", newfilename
     try:
-      self.openimage()#try to open that file
-      self.fileprefix = m.group(1) # Update fileprefix
-      self.update(newimage=self.im)
-      self.update_header_page()
-      self.update_header_label()
+      self.openimage(newfilename)#try to open that file
     except IOError:
-      self.filename.set("%s%0.4d.%s"%(self.fileprefix,newfilenumber,self.filetype))
-      self.displaynumber.set(filenumber)
-      return False
+      try:
+	#that didn't work - so try the unpadded version
+	newfilename=construct_filename(self.filename.get(),newfilenumber,padding=False)
+	print "goto:",newfilename
+	self.openimage(newfilename)
+      except IOError:
+	e=Error()
+	msg="No such file: %s " %(newfilename)
+	e.Er(msg)
+	return False
+    #image loaded ok
+    self.update(newimage=self.im)
+    self.update_header_page()
+    self.update_header_label()
+    self.filename.set(newfilename)
     self.displaynumber.set(newfilenumber)
     return True
 
   def nextimage(self):
     #update filename, prefix and number
     newfilenumber=int(self.displaynumber.get())+1
-    self.filename.set("%s%0.4d.%s"%(self.fileprefix,newfilenumber,self.filetype))
+    newfilename=construct_filename(self.filename.get(),newfilenumber)
+    print "next:",newfilename
+    #self.filename.set("%s%0.4d.%s"%((self.fileprefix,newfilenumber,self.filetype)))
     try:
-      self.openimage()#try to open that file
-      self.update(newimage=self.im)
-      self.update_header_page()
-      self.update_header_label()
+      self.openimage(newfilename)#try to open that file
     except IOError:
-      self.filename.set("%s%0.4d.%s"%(self.fileprefix,newfilenumber-1,self.filetype))
+      e=Error()
+      msg="No such file: %s " %(newfilename)
+      e.Er(msg)
       return False
+    #image loaded ok
+    self.update(newimage=self.im)
+    self.update_header_page()
+    self.update_header_label()
+    self.filename.set(newfilename)
     self.displaynumber.set(newfilenumber)
     return True
       
   def previousimage(self):
     newfilenumber=int(self.displaynumber.get())-1
-    self.filename.set("%s%0.4d.%s"%(self.fileprefix,newfilenumber,self.filetype))
     try:
-      self.openimage()#try to open that file
-      self.update(newimage=self.im)
-      self.update_header_page()
-      self.update_header_label()
+      newfilename=construct_filename(self.filename.get(),newfilenumber)
+      print "prev:",newfilename
+      self.openimage(newfilename)#try to open that file
     except IOError:
-      self.filename.set("%s%0.4d.%s"%(self.fileprefix,newfilenumber+1,self.filetype))
-      return False
+      try:
+	#that didn't work - so try the unpadded version
+	newfilename=construct_filename(self.filename.get(),newfilenumber,padding=False)
+	print "prev:",newfilename
+	self.openimage(newfilename)
+      except IOError:
+        e=Error()
+        msg="No such file: %s " %(newfilename)
+        e.Er(msg)
+	return False
+    #image loaded ok
+    self.update(newimage=self.im)
+    self.update_header_page()
+    self.update_header_label()
+    self.filename.set(newfilename)
     self.displaynumber.set(newfilenumber)
     return True
   
-  def openimage(self):
+  def openimage(self,filename=None):
+    #if a filename is supplied use that - otherwise get it from the GUI
+    if filename==None:
+      filename=self.filename.get()
+    #if the filetype instance variable is set use that - otherwise extract it from the filename extension
+    if self.filetype:
+      filetype=self.filetype
+    else:
+      filetype=os.path.splitext(filename)[1][1:]
+      
     #print self.filename.get()
-    if self.filetype == 'edf':
+    if filetype == 'edf':
       try:
         edfimg=edfimage.edfimage()
-        edfimg.read(self.filename.get())
-        self.im_mean = 0 #edfimg.getmean()
+        edfimg.read(filename)
         self.im=edfimg.toPIL16()
         self.im.minval=edfimg.getmin()
 	self.im.maxval=edfimg.getmax()
@@ -522,14 +550,11 @@ class appWin(imageWin):
         self.im.header = edfimg.getheader()
         (self.xsize, self.ysize)=(edfimg.dim1, edfimg.dim2)
       except IOError:
-        e=Error()
-        msg="No such file: %s " %(self.filename.get())
-        e.Er(msg)
-        raise IOError, msg
-    elif self.filetype == 'tif':
+        raise IOError
+    elif filetype == 'tif':
       try:
         tifimg=tifimage.tifimage()
-        tifimg.read(self.filename.get())
+        tifimg.read(filename)
         self.im = tifimg.toPIL32()
         self.im.minval=tifimg.getmin()
 	self.im.maxval=tifimg.getmax()
@@ -539,15 +564,11 @@ class appWin(imageWin):
         (self.xsize, self.ysize)=(tifimg.dim1, tifimg.dim2)
         #(self.xsize, self.ysize) = self.im.size
       except IOError:
-        e=Error()
-        msg="No such file: %s " %(self.filename.get())
-        e.Er(msg)
         raise IOError
     elif self.filetype == 'img':
       try:
         adscimg=adscimage.adscimage()
-        adscimg.read(self.filename.get())
-        self.im_mean = 0 #edfimg.getmean()
+        adscimg.read(filename)
         self.im=adscimg.toPIL16()
         self.im.minval=adscimg.getmin()
 	self.im.maxval=adscimg.getmax()
@@ -555,17 +576,16 @@ class appWin(imageWin):
         self.im.header = adscimg.getheader()
         (self.xsize, self.ysize)=(adscimg.dim1, adscimg.dim2)
       except IOError:
-        e=Error()
-        msg="No such file: %s " %(self.filename.get())
-        e.Er(msg)
-        raise IOError, msg
+        raise IOError
+    else:
+      print 'unrecognized filetype'
 
     self.zoomarea=[0,0,0,0]
       
     self.zoomarea[2]=self.xsize
     self.zoomarea[3]=self.ysize
 
-    self.master.title("ImAM - %s" %(self.filename.get()))
+    self.master.title("ImAM - %s" %(filename))
       
   def about(self):
     About()
@@ -693,15 +713,41 @@ email: henning.sorensen@risoe.dk"
     def quit(self):
         self.master.destroy()
  
-
 def split_filename(filename):
     m=re.match(r"(.+?)([0-9]{0,4})\.((edf|tif|img))$",filename)
     if m.group(2):
       return (m.group(1),int(m.group(2)),m.group(3))
     else:
       return (m.group(1),0,m.group(3))
-      
-def join_filename(oldfilename,parts):
+
+def construct_filename_pattern():
+  pass
+
+def construct_filename(oldfilename,newfilenumber,padding=True):
+  #some code to replace the filenumber in oldfilename with newfilenumber
+  #by figuring out how the files are named
+  import string
+  #p=re.compile(r"^(.*?)(-?[0-9]{0,4})(\D*)\.(.+)$")
+  p=re.compile(r"^(.*?)(-?[0-9]{0,4})(\D*)$")
+  m=re.match(p,oldfilename)
+  #print m.group(1),m.group(2),m.group(3)
+  if padding==False:
+    return m.group(1) + str(newfilenumber) + m.group(3)
+  if m.group(2)!='':
+    return m.group(1) + string.zfill(newfilenumber,len(m.group(2))) + m.group(3)# +'.' + m.group(4)
+  else:
+    return oldfilename
+
+def extract_filenumber(filename):
+  #p=re.compile(r"^(.*?)(-?[0-9]{0,4})(\D*)\.(.+)$")
+  p=re.compile(r"^(.*?)(-?[0-9]{0,4})(\D*)$")
+  m=re.match(p,filename)
+  if m==None or m.group(2)=='':
+    return 0;
+  else:
+    return int(m.group(2))
+
+def join_filename(parts,oldfilename=None):
     import string
     m=re.match(r"(.+?)([0-9]{0,4})\.((edf|tif|img))$",oldfilename)
     print m.group(1),m.group(2),m.group(3)
@@ -714,27 +760,18 @@ def join_filename(oldfilename,parts):
 #   Main                 #
 ##########################
 if __name__=='__main__':
-
   import time
   t1=time.clock()
   if len(sys.argv) > 2:
     print "Only the first file will be opened"
   if len(sys.argv) >= 2:
-    try:
-	(fileprefix,filenostart,filetype)=split_filename(sys.argv[1])
-	#m=re.match(r"(.+)([0-9]{4})\.((tif|edf))",sys.argv[1])
-	#filenostart=atoi(m.group(2))
-	#fileprefix=m.group(1)
-        #filetype=m.group(3)
-    except:
-	print "The file specified needs to be of type edf, tif or img (ADSC)!"	
-        filename=fileprefix=filetype=None
-	filenostart=0
+    f=sys.argv[1]
   else:
-    filename=fileprefix=filetype=None
-    filenostart=0
+    f=None
+  
   root=Tk()
-  mainwin = appWin(root,fileprefix=fileprefix,filenumber=filenostart,filetype=filetype,zoomfactor=0.5,mainwin='yes')
+  mainwin = appWin(root,filename=f,zoomfactor=0.5,mainwin='yes')
+    
   t2=time.clock()
   print "time:",t2-t1
   sw = root.winfo_screenwidth()
