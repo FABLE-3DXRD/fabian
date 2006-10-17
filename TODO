@@ -5,7 +5,7 @@ Upon Opening a new data set with a different fileprefix,  Next/previous picture 
 
 The new relief plot function missing to remove the aoi in the main image after closing child window - DONE
 
-Correct numbering of child windows - separate lists fro zoom and relief? - DONE?
+Correct numbering of child windows - separate lists for zoom and relief? - DONE
 
 In gotoimage an edf filename was constructed if the filenumber was not found no matter what filetype we had. - DONE   
 
@@ -14,10 +14,10 @@ When creating an AOI and mouse moves outside top left corner the created zoom-wi
 Still some problems with the canvas size resetting after opening a new data set with a larger image y size.
 Also problems since the old headinfo is not removed. Fx it complaints if a new header item is found upon "File - Open".
 
-
 #TODO
 Put under cvs control - DONE
 Write setup script and compile executable for windows
 Add some kind of AOI-integration over file series - add function to edfimage.py that sums over rectangle?
 List of AOIs - possibly with load/save functionality
 clean up the filename splitting and joining code - it is a jumbled mess right now
+implement getheader functionality in tifimage.py
