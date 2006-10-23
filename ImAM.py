@@ -30,7 +30,7 @@ class ImAMImage(Image.Image):
     self.stddev=0
     
 class imageWin:
-  def __init__(self,master,fileprefix=None,filenumber=0,title=None,zoomfactor=1,mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None):
+  def __init__(self,master,fileprefix=None,filenumber=0,title=None,zoomfactor=1,mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None,tool=None):
     #initialize var
     self.master=master
     #these keep track of the AOIs
@@ -41,6 +41,7 @@ class imageWin:
     self.transientaoi=None
     self.maxval=StringVar()
     self.minval=StringVar()
+    self.tool =tool
     master.bind('q',self.quit)
     master.bind('<FocusIn>',self.MouseEntry)
     
@@ -171,7 +172,7 @@ class imageWin:
 	t='relief of main'
       #tag the rectangle for later reference
       r=self.canvas.create_rectangle(self.transientcorners,outline='LimeGreen',tag=t)
-      self.aoi[t]={'coords': self.transientcorners, 'aoi':r, 'zoomwin': self.openrelief(t)}
+      self.aoi[t]={'coords': self.transientcorners, 'aoi':r, 'zoomwin': self.openrelief(t), 'wintype':'relief'}
       #self.openrelief(t)
     else:
       if 'zoom' in self.master.wm_title():
@@ -180,14 +181,18 @@ class imageWin:
 	t='zoom %d'% len(self.aoi)
       #tag the rectangle for later reference
       r=self.canvas.create_rectangle(self.transientcorners,outline='red',tag=t)
-      self.aoi[t]={'coords': self.transientcorners, 'aoi':r, 'zoomwin': self.openzoom(t)}
+      self.aoi[t]={'coords': self.transientcorners, 'aoi':r, 'zoomwin': self.openzoom(t), 'wintype':'zoom'}
       self.update()
 
   def openzoom(self,tag):
     w=Toplevel(self.master)
     t=self.transientcorners
     corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
-    newwin=imageWin(w,title=tag,fileprefix=None,zoomfactor=self.zoomfactor*4,coords=corners,image=self.im)
+    if self.tool:
+      newwin=imageWin(w,title=tag,fileprefix=None,zoomfactor=self.zoomfactor*4,coords=corners,image=self.im,tool=self.tool)
+      newwin.tool=self.tool
+    else:
+      newwin=imageWin(w,title=tag,fileprefix=None,zoomfactor=self.zoomfactor*4,coords=corners,image=self.im,tool=None)
     return newwin
 
   def openrelief(self,tag):
@@ -248,6 +253,7 @@ class imageWin:
     for k in self.aoi.keys():
       w=self.aoi[k]
       w['zoomwin'].update(scaled_min,scaled_max,newimage=newimage)
+      w['zoomwin'].setbindings()
     return True
   
   def reset_scale(self):
@@ -264,6 +270,30 @@ class imageWin:
       cc = cc + hist[i]
     scaled_max = ((self.im_max - self.im_min)/255 *i)+self.im_min
     self.maxval.set("%.0f"%scaled_max)
+
+  def setbindings(self):
+    try:
+      self.tool = self.ToolType.get()
+    except:
+      pass
+    #update children
+    self.updatebindings(tool=self.tool)
+    self.children = self.master.winfo_children()
+    for k in self.aoi.keys():
+      w=self.aoi[k]
+      w['zoomwin'].tool=self.tool
+      w['zoomwin'].setbindings()
+
+  def updatebindings(self,tool=None):
+    if tool=='Zoom':
+      self.canvas.bind('<Button-1>', self.Mouse3Press)
+      self.canvas.bind('<Button1-Motion>', self.Mouse3PressMotion)
+      self.canvas.bind('<Button1-ButtonRelease>', self.Mouse3Release)
+    if  tool=='Relief':
+      self.canvas.bind('<Button-1>', self.Mouse3Press)
+      self.canvas.bind('<Button1-Motion>', self.Mouse3PressMotion)
+      self.canvas.bind('<Button1-ButtonRelease>', self.CtrlMouse3Release)
+
 
   def quit(self,event=None):
     self.master.destroy()
@@ -283,6 +313,9 @@ class appWin(imageWin):
     self.displaynumber=StringVar()
     self.filename=StringVar()
     self.filetype = filetype
+    self.ToolType = StringVar() 
+    self.tool = 'Zoom' # Set default event of mouse bottom 1 to Zoom  
+    self.ToolType.set(self.tool) 
     master.bind('q',self.quit)
     master.bind('<FocusIn>',self.MouseEntry)
 
@@ -314,10 +347,10 @@ class appWin(imageWin):
     frame.pack(fill=X)
 
     #add menubar
-    self.make_command_menu(frame)
+
     #Add Notebook tabs
     self.noteb1 = Pmw.NoteBook(frame)
-    self.noteb1.pack(fill='both')
+    self.noteb1.pack(side=BOTTOM,fill='both')
     self.page1 = self.noteb1.add('Image')
     self.page2 = self.noteb1.add('Info')
     
@@ -326,6 +359,8 @@ class appWin(imageWin):
     
     self.make_image_canvas(self.page1)
     #imageWin.__init__(self,master,page1,fileprefix=fileprefix,filenumber=filenumber,zoomfactor=self.zoomfactor,coords=(0,0,self.xsize,self.ysize),image=self.im)
+    self.make_command_menu(frame)
+    
     self.make_header_info()
     self.make_status_bar(self.page1)
     self.noteb1.setnaturalsize()
@@ -339,6 +374,7 @@ class appWin(imageWin):
     #run update to set scalings and actually display the images
     #change this to draw/redraw set of functions at some point?
     self.update()
+    self.setbindings()
 
   def make_header_page(self):
       self.headcheck=[]
@@ -406,17 +442,22 @@ class appWin(imageWin):
     CmdBtn.menu =Menu(CmdBtn)
     CmdBtn.menu.add_command(label='Open',command=self.OpenFile)
     #CmdBtn.menu.add_command(label='Close')
-    #CmdBtn.menu.entryconfig(0,state=DISABLED)
     CmdBtn.menu.add_command(label='Exit',command=self.quit)
     CmdBtn['menu']=CmdBtn.menu
-    CmdBtn2 = Menubutton(frameMenubar, text='Help',underline=0)
-    CmdBtn2.pack(side=LEFT, padx="2m")
-    CmdBtn2.menu =Menu(CmdBtn2)
-    CmdBtn2.menu.add_command(label='About',command=self.about)
-    CmdBtn2['menu']=CmdBtn2.menu
+    ToolBtn = Menubutton(frameMenubar, text='Tools',underline=0)
+    ToolBtn.pack(side=LEFT, padx="2m")
+    ToolBtn.menu =Menu(ToolBtn)
+    ToolBtn.menu.add_radiobutton(label='Zoom',command=self.setbindings,variable=self.ToolType,value='Zoom')
+    ToolBtn.menu.add_radiobutton(label='Relief',command=self.setbindings,variable=self.ToolType,value='Relief')
+    ToolBtn['menu']=ToolBtn.menu
+    CmdBtn3 = Menubutton(frameMenubar, text='Help',underline=0)
+    CmdBtn3.pack(side=LEFT, padx="2m")
+    CmdBtn3.menu =Menu(CmdBtn3)
+    CmdBtn3.menu.add_command(label='About',command=self.about)
+    CmdBtn3['menu']=CmdBtn3.menu
     #return CmdBtn, CmdBtn2
     frameMenubar.pack(fill=X,side=TOP)
-    frameMenubar.tk_menuBar((CmdBtn, CmdBtn2))
+    frameMenubar.tk_menuBar((CmdBtn, ToolBtn, CmdBtn3))
 
   def OpenFile(self,filename=True):
     self.filename.set(askopenfilename(filetypes=[("EDF files", "*.edf"),("Tif files", "*.tif"),("ADSC files", "*.img"),("All Files", "*")]))
@@ -510,6 +551,7 @@ class appWin(imageWin):
       filetype=os.path.splitext(filename)[1][1:]
     
     #if filetype in ('edf',tif,'img'):
+    if filetype == 'img': filetype = 'adsc'
     img=eval( filetype+'image.'+filetype+'image()')
     print img
     try:
@@ -566,6 +608,9 @@ class ReliefPlot:
         oTk.Button(self.f,text="Reset",command=self.reliefWin.reset).pack(side=oTk.LEFT)
         oTk.Button(self.f,text="Quit",command=self.quit).pack(side=oTk.RIGHT)
 
+    def setbindings(self):
+      pass
+    
     def quit(self):
         self.master.destroy()
     
