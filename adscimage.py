@@ -46,7 +46,6 @@ class adscimage:
     bin = f.read(int(self.header['HEADER_BYTES'])-bytesread)
     l=f.read()
     f.close()
-    print self.header
     #now read the data into the array
     (self.dim1,self.dim2)=int(self.header['SIZE1']),int(self.header['SIZE2'])
     if 'little' in self.header['BYTE_ORDER']:
