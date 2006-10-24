@@ -46,12 +46,12 @@ class brukerimage:
         key=key.strip()         # remove the whitespace (why?)
         val=val.strip()
         if self.header.has_key(key):             # append lines if key already there
-            self.header[key]=Header[key]+'\n'+val
+            self.header[key]=self.header[key]+'\n'+val
         else:
             self.header[key]=val
         i=i+80                  # next 80 characters
 
-    nhdrblks=int(Header['HDRBLKS'])    # we must have read this in the first 512 bytes.
+    nhdrblks=int(self.header['HDRBLKS'])    # we must have read this in the first 512 bytes.
     # print "got first chunk, headerblocks is",nhdrblks
     # Now read in the rest of the header blocks, appending to what we have
     rest=f.read(512*(nhdrblks-1))
@@ -64,9 +64,9 @@ class brukerimage:
             key=key.strip()
             val=val.strip()
             if self.header.has_key(key):
-                self.eader[key]=Header[key]+'\n'+val
+                self.header[key]=self.header[key]+'\n'+val
             else:
-                self.eader[key]=val
+                self.header[key]=val
         i=i+80
     self.header['datastart']=f.tell()        # make a header item called "datastart"
 
@@ -81,8 +81,9 @@ class brukerimage:
     cols   =int(self.header['NCOLS'])
     # We are now at the start of the image - assuming readbrukerheader worked
     size=rows*cols*npixelb
-    self.data=readbytestream(f,f.tell(),rows,cols,npixelb,datatype="int",signed='n',swap='n')
+    self.data=self.readbytestream(f,f.tell(),rows,cols,npixelb,datatype="int",signed='n',swap='n')
     no=int(self.header['NOVERFL'])        # now process the overflows
+    print no
     if no>0:   # Read in the overflows
         # need at least Int32 sized data I guess - can reach 2^21
         self.data=self.data.astype(Numeric.UInt32)
@@ -98,14 +99,14 @@ class brukerimage:
     f.close()
     self.header["Dim_1"]=rows
     self.header["Dim_2"]=cols
-
+    
     #now read the data into the array
     (self.dim1,self.dim2)=int(self.header['Dim_1']),int(self.header['Dim_2'])
-
+    print self.dim1, self.dim2
     self.resetvals()
     return self
 
-def readbytestream(file,offset,x,y,nbytespp,datatype='int',signed='n',
+  def readbytestream(self,file,offset,x,y,nbytespp,datatype='int',signed='n',
                    swap='n',typeout=Numeric.UInt16):
     """
     Reads in a bytestream from a file (which may be a string indicating
@@ -124,6 +125,7 @@ def readbytestream(file,offset,x,y,nbytespp,datatype='int',signed='n',
     PLEASE LEAVE THE STRANGE INTERFACE ALONE - IT IS USEFUL FOR THE BRUKER FORMAT
     """
     tin="dunno"
+    print datatype
     len=nbytespp*x*y # bytes per pixel times number of pixels
     if datatype=='int' and signed=='n':
         if nbytespp==1 : tin=Numeric.UInt8
@@ -152,7 +154,6 @@ def readbytestream(file,offset,x,y,nbytespp,datatype='int',signed='n',
         ar=Numeric.array(Numeric.reshape(
                                Numeric.fromstring(f.read(len),tin) ,(x,y)),typeout)
     return ar
-
 
   def getheader(self):
     if self.header=={}:
