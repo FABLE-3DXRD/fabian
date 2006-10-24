@@ -460,7 +460,7 @@ class appWin(imageWin):
     frameMenubar.tk_menuBar((CmdBtn, ToolBtn, CmdBtn3))
 
   def OpenFile(self,filename=True):
-    self.filename.set(askopenfilename(filetypes=[("EDF files", "*.edf"),("Tif files", "*.tif"),("ADSC files", "*.img"),("All Files", "*")]))
+    self.filename.set(askopenfilename(filetypes=[("EDF files", "*.edf"),("Tif files", "*.tif"),("ADSC files", "*.img"),("Bruker files", "*.*"),("All Files", "*")]))
     (self.fileprefix,newfilenumber,self.filetype)=split_filename(self.filename.get())
     self.displaynumber.set(newfilenumber)
     if filename == None: # No image has been opened before
@@ -694,11 +694,19 @@ email: henning.sorensen@risoe.dk"
         self.master.destroy()
  
 def split_filename(filename):
+  try:
     m=re.match(r"(.+?)([0-9]{0,4})\.((edf|tif|img))$",filename)
     if m.group(2):
       return (m.group(1),int(m.group(2)),m.group(3))
     else:
       return (m.group(1),0,m.group(3))
+  except:
+    try:
+      m=re.match(r"(.+?)\.([0-9]{0,4})$",filename)
+      return m.group(1),int(m.group(2)),'bruker'
+    except:
+      return False
+      
 
 def construct_filename_pattern():
   pass
