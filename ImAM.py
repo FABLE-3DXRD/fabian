@@ -10,16 +10,13 @@ Authors: Henning O. Sorensen & Erik Knudsen
 """
 from Tkinter import *
 import Pmw
-import  Numeric
-import sys
-import edfimage, tifimage, adscimage
+import Numeric
+import edfimage, tifimage, adscimage, brukerimage
 from string import *
 from PIL import Image, ImageTk, ImageFile, ImageStat
 from tkFileDialog import *
 import tkFont
-import re
-import os
-import time
+import re,os,sys,time
 
 class ImAMImage(Image.Image):
   def __init__(self):
@@ -321,7 +318,8 @@ class appWin(imageWin):
 
     if filename:
       self.filename.set(filename)
-      self.displaynumber.set(extract_filenumber(filename))
+      (newfilenumber,filetype)=deconstruct_filename(filename)
+      self.displaynumber.set(newfilenumber)
       if not filetype:
 	self.filetype=os.path.splitext(filename)[1][1:]
       else:
@@ -461,7 +459,9 @@ class appWin(imageWin):
 
   def OpenFile(self,filename=True):
     self.filename.set(askopenfilename(filetypes=[("EDF files", "*.edf"),("Tif files", "*.tif"),("ADSC files", "*.img"),("Bruker files", "*.*"),("All Files", "*")]))
-    (self.fileprefix,newfilenumber,self.filetype)=split_filename(self.filename.get())
+    #(self.fileprefix,newfilenumber,self.filetype)=split_filename(self.filename.get())
+    (newfilenumber,filetype)=deconstruct_filename(self.filename.get())
+    self.filetype=filetype
     self.displaynumber.set(newfilenumber)
     if filename == None: # No image has been opened before
       return 
@@ -692,33 +692,13 @@ email: henning.sorensen@risoe.dk"
 
     def quit(self):
         self.master.destroy()
- 
-def split_filename(filename):
-  try:
-    m=re.match(r"(.+?)([0-9]{0,4})\.((edf|tif|img))$",filename)
-    if m.group(2):
-      return (m.group(1),int(m.group(2)),m.group(3))
-    else:
-      return (m.group(1),0,m.group(3))
-  except:
-    try:
-      m=re.match(r"(.+?)\.([0-9]{0,4})$",filename)
-      return m.group(1),int(m.group(2)),'bruker'
-    except:
-      return False
-      
-
-def construct_filename_pattern():
-  pass
 
 def construct_filename(oldfilename,newfilenumber,padding=True):
   #some code to replace the filenumber in oldfilename with newfilenumber
   #by figuring out how the files are named
   import string
-  #p=re.compile(r"^(.*?)(-?[0-9]{0,4})(\D*)\.(.+)$")
   p=re.compile(r"^(.*?)(-?[0-9]{0,4})(\D*)$")
   m=re.match(p,oldfilename)
-  #print m.group(1),m.group(2),m.group(3)
   if padding==False:
     return m.group(1) + str(newfilenumber) + m.group(3)
   if m.group(2)!='':
@@ -726,44 +706,50 @@ def construct_filename(oldfilename,newfilenumber,padding=True):
   else:
     return oldfilename
 
-def extract_filenumber(filename):
-  #p=re.compile(r"^(.*?)(-?[0-9]{0,4})(\D*)\.(.+)$")
+def deconstruct_filename(filename):
   p=re.compile(r"^(.*?)(-?[0-9]{0,4})(\D*)$")
   m=re.match(p,filename)
   if m==None or m.group(2)=='':
-    return 0;
+    number=0;
   else:
-    return int(m.group(2))
+    number=int(m.group(2))
+  ext=os.path.splitext(filename)
+  filetype={'edf': 'edf',
+    'tif': 'tif',
+    'tiff': 'tif',
+    'img': 'adsc',
+    m.group(2): 'bruker'}[ext[1][1:]]
+  return (number,filetype)
 
-def join_filename(parts,oldfilename=None):
-    import string
-    m=re.match(r"(.+?)([0-9]{0,4})\.((edf|tif|img))$",oldfilename)
-    print m.group(1),m.group(2),m.group(3)
-    if m.group(2):
-      return parts[0]+ string.zfill(parts[1],len(m.group(2))) + '.' + parts[2]
-    else:
-      return parts[0]+ '.' + parts[2]
+def extract_filenumber(filename):
+  return deconstruct_filename(filename)[0]
 
 ##########################
 #   Main                 #
 ##########################
 if __name__=='__main__':
-  import time
-  t1=time.clock()
-  if len(sys.argv) > 2:
-    print "Only the first file will be opened"
-  if len(sys.argv) >= 2:
-    f=sys.argv[1]
-  else:
-    f=None
+  def start():
+    import time
+    t1=time.clock()
+    if len(sys.argv) > 2:
+      print "Only the first file will be opened"
+    if len(sys.argv) >= 2:
+      f=sys.argv[1]
+    else:
+      f=None
   
-  root=Tk()
-  mainwin = appWin(root,filename=f,zoomfactor=0.5,mainwin='yes')
+    root=Tk()
+    mainwin = appWin(root,filename=f,zoomfactor=0.5,mainwin='yes')
     
-  t2=time.clock()
-  print "time:",t2-t1
-  sw = root.winfo_screenwidth()
-  sh = root.winfo_screenheight()
-  root.mainloop()
+    t2=time.clock()
+    print "time:",t2-t1
+    sw = root.winfo_screenwidth()
+    sh = root.winfo_screenheight()
+    root.mainloop()
+  start()
 ######## THE END ##############
-
+#import profile
+#profile.run('start()','profile_results')
+#import pstats
+#p=pstats.Stats('profile_results')
+#p.sort_stats('cumulative').print_stats(40)
