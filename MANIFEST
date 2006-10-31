@@ -3,5 +3,7 @@ README
 edfimage.py
 tifimage.py
 adscimage.py
+brukerimage.py
+marccdimage.py
 setup.py
 TODO
