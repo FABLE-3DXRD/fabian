@@ -11,7 +11,7 @@ Authors: Henning O. Sorensen & Erik Knudsen
 from Tkinter import *
 import Pmw
 import Numeric
-import edfimage, tifimage, adscimage, brukerimage
+import edfimage, tifimage, adscimage, brukerimage, marccdimage
 from string import *
 from PIL import Image, ImageTk, ImageFile, ImageStat
 from tkFileDialog import *
@@ -458,7 +458,7 @@ class appWin(imageWin):
     frameMenubar.tk_menuBar((CmdBtn, ToolBtn, CmdBtn3))
 
   def OpenFile(self,filename=True):
-    self.filename.set(askopenfilename(filetypes=[("EDF files", "*.edf"),("Tif files", "*.tif"),("ADSC files", "*.img"),("Bruker files", "*.*"),("All Files", "*")]))
+    self.filename.set(askopenfilename(filetypes=[("EDF files", "*.edf"),("Tif files", "*.tif"),("MarCCD/Mosaic files", "*.mccd"),("ADSC files", "*.img"),("Bruker files", "*.*"),("All Files", "*")]))
     #(self.fileprefix,newfilenumber,self.filetype)=split_filename(self.filename.get())
     (newfilenumber,filetype)=deconstruct_filename(self.filename.get())
     self.filetype=filetype
@@ -550,8 +550,6 @@ class appWin(imageWin):
     else:
       filetype=os.path.splitext(filename)[1][1:]
     
-    #if filetype in ('edf',tif,'img'):
-    if filetype == 'img': filetype = 'adsc'
     img=eval( filetype+'image.'+filetype+'image()')
     print img
     try:
@@ -718,6 +716,7 @@ def deconstruct_filename(filename):
     'tif': 'tif',
     'tiff': 'tif',
     'img': 'adsc',
+    'mccd': 'marccd',
     m.group(2): 'bruker'}[ext[1][1:]]
   return (number,filetype)
 
