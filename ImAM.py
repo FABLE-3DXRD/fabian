@@ -11,6 +11,7 @@ Authors: Henning O. Sorensen & Erik Knudsen
 from Tkinter import *
 import Pmw
 import Numeric
+import math
 import edfimage, tifimage, adscimage, brukerimage, marccdimage,bruker100image
 from string import *
 from PIL import Image, ImageTk, ImageFile, ImageStat
@@ -36,6 +37,7 @@ class imageWin:
     self.scale=0
     self.offset=0
     self.transientaoi=None
+    self.transientline=None
     self.maxval=StringVar()
     self.minval=StringVar()
     self.tool =tool
@@ -86,7 +88,11 @@ class imageWin:
     self.canvas.bind('<Control-Button-3>', self.Mouse3Press)
     self.canvas.bind('<Control-Button3-Motion>', self.Mouse3PressMotion)
     self.canvas.bind('<Control-Button3-ButtonRelease>', self.CtrlMouse3Release)
-    
+    #New bindings for LineProfile
+    self.canvas.bind('<Shift-Button-3>', self.AltMouse3Press)
+    self.canvas.bind('<Shift-Button3-Motion>', self.AltMouse3PressMotion)
+    self.canvas.bind('<Shift-Button3-ButtonRelease>', self.AltMouse3Release)
+  
   def make_status_bar(self,container):
     frameInfo = Frame(container, bd=0, bg="white")
     self.ShowMin = Label(frameInfo, text="Min -1",  bg ='white',bd=1, relief=SUNKEN, anchor=W)
@@ -149,7 +155,29 @@ class imageWin:
       if not w['zoomwin'].master in children:
         self.canvas.delete(w['aoi'])
         self.aoi.pop(k)
- 
+
+ # NEW bindings for LineProfile
+  def AltMouse3Press(self, event):
+    x=self.canvas.canvasx(event.x)
+    y=self.canvas.canvasx(event.y)
+    if self.val_canvas_coord((x,y)):
+      self.transientcorners=[x,y,x,y]
+    self.drawLine()
+
+  def AltMouse3PressMotion(self, event):
+    x=self.canvas.canvasx(event.x)
+    y=self.canvas.canvasy(event.y)
+    if self.val_canvas_coord((x,y)):
+      self.transientcorners[2:]=[x,y]
+    self.drawLine()
+
+  def AltMouse3Release(self, event):
+    x=self.canvas.canvasx(event.x)
+    y=self.canvas.canvasy(event.y)
+    if self.val_canvas_coord((x,y)):
+      self.transientcorners[2:]=[x,y]
+    self.drawLine(transient=0)
+
   def val_canvas_coord(self,c):
     if c[0]<0 or c[0]>self.canvas_xsize or c[1]<0 or c[1]>self.canvas_ysize:
       return False
@@ -181,6 +209,72 @@ class imageWin:
       self.aoi[t]={'coords': self.transientcorners, 'aoi':r, 'zoomwin': self.openzoom(t), 'wintype':'zoom'}
       self.update()
 
+  def drawLine(self,transient=1,fix=0):
+    if self.transientline:
+      for obj in self.transientline:
+        self.canvas.delete(obj)#the last element of the list is the one to be redrawn.
+      self.transientline=[]
+    else:
+      self.transientline=[]
+    if transient==1:
+      r=self.canvas.create_line(self.transientcorners,fill='RoyalBlue')
+      self.transientline.append(r)
+      endsec = Numeric.array([self.transientcorners[2]-self.transientcorners[0], self.transientcorners[3]-self.transientcorners[1]])
+      normendsec = math.sqrt(sum(endsec*endsec))
+      if endsec == 0:
+        endsec = [0, 0]
+      else:
+        endsec = endsec/math.sqrt(sum(endsec*endsec))
+      t = 4
+      # first end 1 
+      self.endline = [self.transientcorners[0], self.transientcorners[1], self.transientcorners[0]-t*endsec[1], self.transientcorners[1]+t*endsec[0]]
+      r=self.canvas.create_line(self.endline,fill='RoyalBlue')
+      self.transientline.append(r)
+      # first end 2 
+      self.endline = [self.transientcorners[0], self.transientcorners[1], self.transientcorners[0]+t*endsec[1], self.transientcorners[1]-t*endsec[0]]
+      r=self.canvas.create_line(self.endline,fill='RoyalBlue')
+      self.transientline.append(r)
+      # second end 1 
+      self.endline = [self.transientcorners[2], self.transientcorners[3], self.transientcorners[2]-t*endsec[1], self.transientcorners[3]+t*endsec[0]]
+      r=self.canvas.create_line(self.endline,fill='RoyalBlue')
+      self.transientline.append(r)
+      # second end 2
+      self.endline = [self.transientcorners[2], self.transientcorners[3], self.transientcorners[2]+t*endsec[1], self.transientcorners[3]-t*endsec[0]]
+      r=self.canvas.create_line(self.endline,fill='RoyalBlue')
+      self.transientline.append(r)
+    else:
+      if 'zoom' in self.master.wm_title():
+	t= self.master.wm_title() +'.%d' % len(self.aoi)
+      else:
+	t='zoom %d'% len(self.aoi)
+      #tag the rectangle for later reference
+      linecolor2 = 'red'
+      r=self.canvas.create_line(self.transientcorners,fill=linecolor2)
+      self.transientline.append(r)
+      endsec = Numeric.array([self.transientcorners[2]-self.transientcorners[0], self.transientcorners[3]-self.transientcorners[1]])
+      endsec = endsec/math.sqrt(sum(endsec*endsec))
+      t = 4
+      # first end 1 
+      self.endline = [self.transientcorners[0], self.transientcorners[1], self.transientcorners[0]-t*endsec[1], self.transientcorners[1]+t*endsec[0]]
+      r=self.canvas.create_line(self.endline,fill=linecolor2)
+      self.transientline.append(r)
+      # first end 2 
+      self.endline = [self.transientcorners[0], self.transientcorners[1], self.transientcorners[0]+t*endsec[1], self.transientcorners[1]-t*endsec[0]]
+      r=self.canvas.create_line(self.endline,fill=linecolor2)
+      self.transientline.append(r)
+      # second end 1 
+      self.endline = [self.transientcorners[2], self.transientcorners[3], self.transientcorners[2]-t*endsec[1], self.transientcorners[3]+t*endsec[0]]
+      r=self.canvas.create_line(self.endline,fill=linecolor2)
+      self.transientline.append(r)
+      # second end 2
+      self.endline = [self.transientcorners[2], self.transientcorners[3], self.transientcorners[2]+t*endsec[1], self.transientcorners[3]-t*endsec[0]]
+      r=self.canvas.create_line(self.endline,fill=linecolor2)
+      self.transientline.append(r)
+      self.aoi[t]={'coords': self.transientcorners, 'aoi':r, 'zoomwin': self.openlineprofile(t), 'wintype':'lineprofile'}
+      #self.openlineprofile(t)
+      self.update()
+
+ 
   def openzoom(self,tag):
     w=Toplevel(self.master)
     t=self.transientcorners
@@ -204,6 +298,35 @@ class imageWin:
       reli.title(tag)
       newReli=ReliefPlot(reli,data=self.reliefmap,extrema=self.reliefextrema)
       return newReli
+
+  def openlineprofile(self,tag):
+      # Make lineprofile  relief window
+      t=self.transientcorners
+      corners=[(self.zoomarea[0]+t[0]/self.zoomfactor), (self.zoomarea[1]+t[1]/self.zoomfactor), (self.zoomarea[0]+t[2]/self.zoomfactor), (self.zoomarea[1]+t[3]/self.zoomfactor)]
+      import pylab
+
+      print corners
+      import pixel_trace
+
+      pixels = pixel_trace.pixel_trace(corners)
+      t = []
+      pixval = []
+      path = 0
+      pylab.clf()
+      for i in range(len(pixels)):
+        path = path + pixels[i][2]
+        t.append(i)
+        pixval.append(self.im.getpixel((pixels[i][0],pixels[i][1])))
+        
+      
+      pylab.plot(t, pixval, 'b-')
+      pylab.title('lineprofile')
+      pylab.show()
+      #reli=Toplevel(self.master)
+      #reli.title(tag)
+      #newReli=ReliefPlot(reli,data=self.reliefmap,extrema=self.reliefextrema)
+      #return newReli
+      return 
     
   def update(self,scaled_min=0,scaled_max=0,newimage=None):
     if self.scale==0:
@@ -305,6 +428,7 @@ class appWin(imageWin):
     self.scale=0
     self.offset=0
     self.transientaoi=None
+    self.transientline=None
     self.maxval=StringVar()
     self.minval=StringVar()
     self.displaynumber=StringVar()
