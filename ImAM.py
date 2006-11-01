@@ -11,7 +11,7 @@ Authors: Henning O. Sorensen & Erik Knudsen
 from Tkinter import *
 import Pmw
 import Numeric
-import edfimage, tifimage, adscimage, brukerimage, marccdimage
+import edfimage, tifimage, adscimage, brukerimage, marccdimage,bruker100image
 from string import *
 from PIL import Image, ImageTk, ImageFile, ImageStat
 from tkFileDialog import *
@@ -225,16 +225,16 @@ class imageWin:
     
     # scale convert from 16bit to 8bit for Tkinter
     if self.zoomarea[2]!=self.xsize and self.zoomarea[3]!=self.ysize:
-      self.imcrop = self.im.crop(self.zoomarea)
-      self.im8c = self.imcrop.point(lambda i: i * self.scale + self.offset).convert('L')
-      self.img = ImageTk.PhotoImage(self.im8c.resize((self.canvas_xsize,self.canvas_ysize)))
-      self.im_min,self.im_max = self.imcrop.getextrema()
-      l=list(self.imcrop.getdata())
+      imcrop = self.im.crop(self.zoomarea)
+      im8c = imcrop.point(lambda i: i * self.scale + self.offset).convert('L')
+      self.img = ImageTk.PhotoImage(im8c.resize((self.canvas_xsize,self.canvas_ysize)))
+      self.im_min,self.im_max = imcrop.getextrema()
+      l=list(imcrop.getdata())
       self.im_mean=sum(l)/len(l)
     else:
       #image should not be cropped
-      self.im8c = self.im.point(lambda i: i * self.scale + self.offset).convert('L')
-      self.img = ImageTk.PhotoImage(self.im8c.resize((self.canvas_xsize,self.canvas_ysize)))
+      im8c = self.im.point(lambda i: i * self.scale + self.offset).convert('L')
+      self.img = ImageTk.PhotoImage(im8c.resize((self.canvas_xsize,self.canvas_ysize)))
       self.im_min,self.im_max = self.im.getextrema()
       if self.im.meanval:
 	self.im_mean=self.im.meanval
@@ -717,7 +717,9 @@ def deconstruct_filename(filename):
     'tiff': 'tif',
     'img': 'adsc',
     'mccd': 'marccd',
-    m.group(2): 'bruker'}[ext[1][1:]]
+    'sfrm': 'bruker100',
+    m.group(2): 'bruker'
+    }[ext[1][1:]]
   return (number,filetype)
 
 def extract_filenumber(filename):
