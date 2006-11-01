@@ -20,6 +20,6 @@ Write setup script and compile executable for windows
 Add some kind of AOI-integration over file series - add function to edfimage.py that sums over rectangle?
 List of AOIs - possibly with load/save functionality
 clean up the filename splitting and joining code - it is a jumbled mess right now
-implement getheader functionality in tifimage.py
+implement getheader functionality in tifimage.py DONE
 add possibility for reading MarCCD/MarMosaic images - DONE
-add possibility for reading bruker images 
+add possibility for reading bruker images DONE 
