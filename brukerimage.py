@@ -35,50 +35,55 @@ class brukerimage:
       PILimage= Image.frombuffer("F",(self.dim1,self.dim2),self.data,"raw","F;16",0,-1)
       return PILimage
 
-	
-  def read(self,fname,verbose=0):
-    f=open(fname,"rb")
+  def _readheader(self,f):
     l=f.read(512)
     i = 80
     self.header = {}
     while i < 512:
-       	key,val=l[i-80:i].split(":",1)   # uses 80 char lines in key : value format
-        key=key.strip()         # remove the whitespace (why?)
-        val=val.strip()
-        if self.header.has_key(key):             # append lines if key already there
-            self.header[key]=self.header[key]+'\n'+val
-        else:
-            self.header[key]=val
-        i=i+80                  # next 80 characters
+      key,val=l[i-80:i].split(":",1)   # uses 80 char lines in key : value format
+      key=key.strip()         # remove the whitespace (why?)
+      val=val.strip()
+      if self.header.has_key(key):             # append lines if key already there
+	self.header[key]=self.header[key]+'\n'+val
+      else:
+	self.header[key]=val
+      i=i+80                  # next 80 characters
 
     nhdrblks=int(self.header['HDRBLKS'])    # we must have read this in the first 512 bytes.
-    # print "got first chunk, headerblocks is",nhdrblks
     # Now read in the rest of the header blocks, appending to what we have
     rest=f.read(512*(nhdrblks-1))
     l = l[i-80:512] + rest
     j=512*nhdrblks
     while i < j :
-        # print i,"*",block[i-80:i].strip(),"*"
-        if l[i-80:i].find(":") > 0:          # as for first 512 bytes of header
-            key,val=l[i-80:i].split(":",1)
-            key=key.strip()
-            val=val.strip()
-            if self.header.has_key(key):
-                self.header[key]=self.header[key]+'\n'+val
-            else:
-                self.header[key]=val
-        i=i+80
+      # print i,"*",block[i-80:i].strip(),"*"
+      if l[i-80:i].find(":") > 0:          # as for first 512 bytes of header
+	key,val=l[i-80:i].split(":",1)
+        key=key.strip()
+        val=val.strip()
+        if self.header.has_key(key):
+	  self.header[key]=self.header[key]+'\n'+val
+        else:
+          self.header[key]=val
+      i=i+80
     self.header['datastart']=f.tell()        # make a header item called "datastart"
-
+	
+  def read(self,fname,verbose=0):
+    f=open(fname,"rb")
+    
     try:
-        npixelb=int(self.header['NPIXELB'])   # you had to read the Bruker docs to know this!
+      self._readheader(f)
     except:
-        print "length",len(self.header['NPIXELB'])
-        for c in self.header['NPIXELB']:
-            print "char:",c,ord(c)
-        raise
+      raise
     rows   =int(self.header['NROWS'])
     cols   =int(self.header['NCOLS'])
+    
+    try:
+      npixelb=int(self.header['NPIXELB'])   # you had to read the Bruker docs to know this!
+    except:
+      print "length",len(self.header['NPIXELB'])
+      for c in self.header['NPIXELB']:
+	print "char:",c,ord(c)
+      raise
     # We are now at the start of the image - assuming readbrukerheader worked
     size=rows*cols*npixelb
     self.data=self.readbytestream(f,f.tell(),rows,cols,npixelb,datatype="int",signed='n',swap='n')
@@ -97,17 +102,15 @@ class brukerimage:
             #print "Overflow ",r,c,intensity,position,self.data[r,c],self.data[c,r]
             self.data[c,r]=intensity
     f.close()
-    self.header["Dim_1"]=rows
-    self.header["Dim_2"]=cols
     
     #now read the data into the array
-    (self.dim1,self.dim2)=int(self.header['Dim_1']),int(self.header['Dim_2'])
+    (self.dim1,self.dim2)=(rows,cols)
     print self.dim1, self.dim2
     self.resetvals()
     return self
 
   def readbytestream(self,file,offset,x,y,nbytespp,datatype='int',signed='n',
-                   swap='n',typeout=Numeric.UInt16):
+		swap='n',typeout=Numeric.UInt16):
     """
     Reads in a bytestream from a file (which may be a string indicating
     a filename, or an already opened file (should be "rb"))
@@ -205,7 +208,7 @@ class brukerimage:
 
   def add(self, otherImage):
     if not hasattr(otherImage,'data'):
-      print 'edfimage.add() called with something that does not have a data field'
+      print 'brukerimage.add() called with something that does not have a data field'
     try:
       self.data=Numeric.clip(self.data+otherImage.data,0,65535)
     except:
@@ -215,6 +218,7 @@ class brukerimage:
     self.m=self.stddev=self.maxval=self.minval=None
   
   def rebin(self,x_rebin_fact,y_rebin_fact):
+    #not in working order yet
     if self.data==None:
       print 'Please read the file you wish to rebin first'
       return
@@ -269,7 +273,6 @@ if __name__=='__main__':
     I.read(sys.argv[1])
     r=I.toPIL16()
     I.rebin(2,2)
-    I.write('jegErEnFil0000.frm')
     print sys.argv[1] + (": max=%d, min=%d, mean=%.2e, stddev=%.2e") % (I.getmax(),I.getmin(), I.getmean(), I.getstddev()) 
     print 'integrated intensity (%d %d %d %d) =%.3f' % (10,20,20,40,I.integrate_area((10,20,20,40)))
     sys.argv[1:]=sys.argv[2:]
