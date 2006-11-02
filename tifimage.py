@@ -39,9 +39,7 @@ class tifimage:
     return self.toPIL32(filename)
  
   def read(self,fname,verbose=0):
-    print fname
     self.data=Image.open(fname).convert('I')
-    print self.data
     (self.dim1, self.dim2) = self.data.size
     return self
 
@@ -73,7 +71,13 @@ class tifimage:
       S=sum(l)/N
       self.stddev=S
     return self.stddev
-   
+  
+  def integrate_area(self,coords):
+    c=(coords[0],coords[1],coords[2]+1,coords[3]+1)
+    datacrop = self.data.crop(c)
+    l=Numeric.array(datacrop.getdata())
+    return Numeric.sum(l)
+  
   def getheader(self):
     return {}
    
