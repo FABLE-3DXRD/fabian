@@ -4,6 +4,7 @@ edfimage.py
 tifimage.py
 adscimage.py
 brukerimage.py
+bruker100image.py
 marccdimage.py
 setup.py
 TODO
