@@ -201,16 +201,16 @@ class imageWin:
       if 'zoom' in self.master.wm_title():
         t= 'relief of ' + self.master.wm_title()
       else:
-	t='relief of main'
+        t='relief of main'
       #tag the rectangle for later reference
       r=self.canvas.create_rectangle(self.transientcorners,outline='LimeGreen',tag=t)
       self.aoi[t]={'coords': self.transientcorners, 'aoi':r, 'zoomwin': self.openrelief(t), 'wintype':'relief'}
       #self.openrelief(t)
     else:
       if 'zoom' in self.master.wm_title():
-	t= self.master.wm_title() +'.%d' % len(self.aoi)
+        t= self.master.wm_title() +'.%d' % len(self.aoi)
       else:
-	t='zoom %d'% len(self.aoi)
+        t='zoom %d'% len(self.aoi)
       #tag the rectangle for later reference
       r=self.canvas.create_rectangle(self.transientcorners,outline='red',tag=t)
       self.aoi[t]={'coords': self.transientcorners, 'aoi':r, 'zoomwin': self.openzoom(t), 'wintype':'zoom'}
@@ -251,9 +251,9 @@ class imageWin:
       self.transientline.append(r)
     else:
       if 'zoom' in self.master.wm_title():
-	t= self.master.wm_title() +'.%d' % len(self.aoi)
+        t= self.master.wm_title() +'.%d' % len(self.aoi)
       else:
-	t='zoom %d'% len(self.aoi)
+        t='zoom %d'% len(self.aoi)
       #tag the rectangle for later reference
       linecolor2 = 'red'
       r=self.canvas.create_line(self.transientcorners,fill=linecolor2)
@@ -280,7 +280,6 @@ class imageWin:
       self.aoi[t]={'coords': self.transientcorners, 'aoi':r, 'zoomwin': self.openlineprofile(t), 'wintype':'lineprofile'}
       #self.openlineprofile(t)
       self.update()
-
  
   def openzoom(self,tag):
     w=Toplevel(self.master)
@@ -324,8 +323,6 @@ class imageWin:
         path = path + pixels[i][2]
         t.append(i)
         pixval.append(self.im.getpixel((pixels[i][0],pixels[i][1])))
-        
-      
       pylab.plot(t, pixval, 'b-')
       pylab.title('lineprofile')
       pylab.show()
@@ -369,8 +366,7 @@ class imageWin:
     self.ShowMin.config(text="Min %i" %(self.im_min))
     self.ShowMax.config(text="Max %i" %(self.im_max))
     self.ShowMean.config(text="Mean %i" %(self.im_mean))
-    self.currentImage = self.canvas.create_image(0,0,anchor=NW, image=self.img)
-    self.canvas.lower(self.currentImage)
+    self.canvas.lower(self.canvas.create_image(0,0,anchor=NW, image=self.img))
     #update children
     self.children = self.master.winfo_children()
     for k in self.aoi.keys():
@@ -437,9 +433,9 @@ class appWin(imageWin):
     self.displaynumber=StringVar()
     self.filename=StringVar()
     self.filetype = filetype
-    self.ToolType = StringVar() 
+    self.ToolType = StringVar()
     self.tool = 'Zoom' # Set default event of mouse bottom 1 to Zoom  
-    self.ToolType.set(self.tool) 
+    self.ToolType.set(self.tool)
     master.bind('q',self.quit)
     master.bind('<FocusIn>',self.MouseEntry)
 
@@ -448,9 +444,9 @@ class appWin(imageWin):
       (newfilenumber,filetype)=deconstruct_filename(filename)
       self.displaynumber.set(newfilenumber)
       if not filetype:
-	self.filetype=os.path.splitext(filename)[1][1:]
+        self.filetype=os.path.splitext(filename)[1][1:]
       else:
-	self.filetype=filetype
+        self.filetype=filetype
     else:
       self.OpenFile(filename=None)
 
@@ -505,23 +501,35 @@ class appWin(imageWin):
       self.headcheck=[]
       self.headtext={}
       self.newitem={}
-      for self.item in self.im.header:
-        self.fm = Frame(self.HeaderInterior)
-        self.newitem[self.item]=StringVar()
-        self.headcheck.append(Checkbutton(self.fm,text='%s' %(self.item), command=self.update_header_label,variable=self.newitem[self.item], bg='white',anchor=W,width=20).pack(side=LEFT,anchor=W))
-        self.headtext[self.item]= Label(self.fm,text='%s' %(self.im.header[self.item]), bg='white',anchor=W,width=100)
-        self.headtext[self.item].pack(side=LEFT,fill=X,expand='yes')
-        self.fm.pack(side=TOP,anchor=W)
-
+      for item in self.im.header:
+        fm = Frame(self.HeaderInterior)
+        self.newitem[item]=StringVar()
+        c=Checkbutton(fm,text='%s' %(item), command=self.update_header_label,variable=self.newitem[item], bg='white',anchor=W,width=20).pack(side=LEFT,anchor=W)
+        self.headcheck.append(c)
+        #self.headcheck.append(Checkbutton(fm,tag='headercheck',text='%s' %(item), command=self.update_header_label,variable=self.newitem[item], bg='white',anchor=W,width=20).pack(side=LEFT,anchor=W))
+        self.headtext[item]= Label(fm,text='%s' %(self.im.header[item]), bg='white',anchor=W,width=100)
+        self.headtext[item].pack(side=LEFT,fill=X,expand='yes')
+        fm.pack(side=TOP,anchor=W)
 
   def make_header_info(self):
     self.HeaderInfo = Label(self.page1, text='', anchor=W)
     self.HeaderInfo.pack(side=TOP,fill=BOTH)
-  
-  def update_header_page(self):
-      for item in self.im.header:
-        self.headtext[item].config(text='%s' %(self.im.header[item]))
+    
+  def clear_header_page(self):
+    for child in self.HeaderInterior.winfo_children():
+      child.destroy()
 
+  def update_header_page(self):
+    #check if the set of (possibly newly read from disk) header items is compatible with the ones displayed
+    if set(self.im.header.keys())==set(self.headtext.keys()):
+      #they seem to be compatible, note - this keeps the checked checkboxes alive
+      for item,value in self.im.header.iteritems():
+        self.headtext[item].config(text='%s' % value)
+    else:
+      #they differ - make a new header page from scratch
+      self.clear_header_page()
+      self.make_header_page()
+      
   def update_header_label(self):
     headertext = ''
     for item in self.newitem:
@@ -593,7 +601,6 @@ class appWin(imageWin):
     if filename == None: # No image has been opened before
       return 
     else:
-      self.make_header_page()
       self.gotoimage()
   
   def rescale(self,event=None):
@@ -615,14 +622,14 @@ class appWin(imageWin):
       self.openimage(newfilename)#try to open that file
     except IOError:
       try:
-	#that didn't work - so try the unpadded version
-	newfilename=construct_filename(self.filename.get(),newfilenumber,padding=False)
-	self.openimage(newfilename)
+        #that didn't work - so try the unpadded version
+        newfilename=construct_filename(self.filename.get(),newfilenumber,padding=False)
+        self.openimage(newfilename)
       except IOError:
-	e=Error()
-	msg="No such file: %s " %(newfilename)
-	e.Er(msg)
-	return False
+        e=Error()
+        msg="No such file: %s " %(newfilename)
+        e.Er(msg)
+        return False
     #image loaded ok
     self.update(newimage=self.im)
     self.update_header_page()
@@ -658,14 +665,14 @@ class appWin(imageWin):
       self.openimage(newfilename)#try to open that file
     except IOError:
       try:
-	#that didn't work - so try the unpadded version
-	newfilename=construct_filename(self.filename.get(),newfilenumber,padding=False)
-	self.openimage(newfilename)
+        #that didn't work - so try the unpadded version
+        newfilename=construct_filename(self.filename.get(),newfilenumber,padding=False)
+        self.openimage(newfilename)
       except IOError:
         e=Error()
         msg="No such file: %s " %(newfilename)
         e.Er(msg)
-	return False
+        return False
     #image loaded ok
     self.update(newimage=self.im)
     self.update_header_page()
@@ -708,7 +715,7 @@ class ReliefPlot:
         import OpenGL.GL as GL
         import OpenGL.Tk as oTk
         self.master = master
-	self.f=oTk.Frame(self.master)
+        self.f=oTk.Frame(self.master)
         self.f.pack(side=oTk.BOTTOM,expand=oTk.NO,fill=oTk.X)
         self.dataoff=0
         if data!=None:
@@ -747,7 +754,7 @@ class ReliefPlot:
         self.master.destroy()
     
     def update(self,whatever,whoever,newimage=None):
-	pass
+        pass
     
     def redraw(self,o):
          import OpenGL.GL as GL
@@ -794,7 +801,7 @@ class Error:
         Button(frameError,text='Too bad', bg='red', command=self.quit)\
                                           .pack(side=RIGHT)
         frameError.pack(expand=1, pady=10, padx=5)
-	
+        
     def quit(self):
         self.master.destroy()
 
@@ -806,7 +813,7 @@ class About:
         frame.pack()
 
         frameAbout = Frame(frame, bd=0)
-	message = "\nImAM (Image Analysis Module) was brought to you by \n\n\
+        message = "\nImAM (Image Analysis Module) was brought to you by \n\n\
 Henning O. Sorensen & Erik Knudsen\n\
 Center for Fundamental Research: Metal Structures in Four Dimensions\n\
 Risoe National Laboratory\n\
