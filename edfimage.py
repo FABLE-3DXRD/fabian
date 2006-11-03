@@ -10,7 +10,7 @@ Authors: Henning O. Sorensen & Erik Knudsen
 
 """
 
-import Numeric
+import numpy as Numeric
 import math
 from PIL import Image
 import os
@@ -82,15 +82,20 @@ class edfimage:
     return int(self.minval)
 
   def integrate_area(self,coords,floor=0):
-    if not self.data:
+    if self.data==None:
       return 0
     else:
       if coords[0]>coords[2]:
 	coords[0:3:2]=[coords[2],coords[0]]
       if coords[1]>coords[3]:
 	coords[1:4:2]=[coords[3],coords[1]]
-      S=Numeric.sum(Numeric.ravel(self.data[int(coords[0]):int(coords[2])+1,int(coords[1]):int(coords[3])+1]))
-      S=S-floor*(1+coords[2]-coords[0])*(1+coords[3]-coords[1])
+      #normally coordinates are given as (x,y) whereas a matrix is given as row,col
+      #also the (for whichever reason) the image is flipped upside down wrt to the matrix
+      # hence these tranformations
+      c=(self.dim2-coords[3]-1,coords[0],self.dim2-coords[1]-1,coords[2])
+      S=Numeric.sum(Numeric.ravel(self.data[int(c[0]):int(c[2])+1,int(c[1]):int(c[3])+1]))
+      
+      S=S-floor*(1+c[2]-c[0])*(1+c[3]-c[1])
     return S
 
   def getmean(self):
