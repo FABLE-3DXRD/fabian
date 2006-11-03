@@ -74,8 +74,8 @@ class imageWin:
   def make_image_canvas(self,container):
     #make imagecanvas
     frameImage = Frame(container, bd=0, bg="white")
-    self.canvas_xsize = int(self.xsize*self.zoomfactor)
-    self.canvas_ysize = int(self.ysize*self.zoomfactor)
+    self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
+    self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
     self.canvas = Canvas(frameImage, width=self.canvas_xsize, height=self.canvas_ysize)
     self.canvas.pack(side=TOP,fill=BOTH, expand='yes')
     frameImage.pack(side=TOP,expand=1, pady=10, padx=5)
@@ -122,29 +122,30 @@ class imageWin:
   def Mouse3Press(self, event):
     x=self.canvas.canvasx(event.x)
     y=self.canvas.canvasx(event.y)
-    if self.val_canvas_coord((x,y)):
-      self.transientcorners=[x,y,x,y]
+    x,y=self.val_canvas_coord((x,y))
+    self.transientcorners=[x,y,x,y]
     self.drawAoi()
 
   def Mouse3PressMotion(self, event):
     x=self.canvas.canvasx(event.x)
     y=self.canvas.canvasy(event.y)
-    if self.val_canvas_coord((x,y)):
-      self.transientcorners[2:]=[x,y]
+    #check for boundary overruns
+    x,y=self.val_canvas_coord((x,y))
+    self.transientcorners[2:]=[x,y]
     self.drawAoi()
 
   def Mouse3Release(self, event):
     x=self.canvas.canvasx(event.x)
     y=self.canvas.canvasy(event.y)
-    if self.val_canvas_coord((x,y)):
-      self.transientcorners[2:]=[x,y]
+    x,y=self.val_canvas_coord((x,y))
+    self.transientcorners[2:]=[x,y]
     self.drawAoi(transient=0)
 
   def CtrlMouse3Release(self, event):
     x=self.canvas.canvasx(event.x)
     y=self.canvas.canvasy(event.y)
-    if self.val_canvas_coord((x,y)):
-      self.transientcorners[2:]=[x,y]
+    x,y=self.val_canvas_coord((x,y))
+    self.transientcorners[2:]=[x,y]
     self.drawAoi(transient=2)
 
   def MouseEntry(self,event):
@@ -160,30 +161,36 @@ class imageWin:
   def AltMouse3Press(self, event):
     x=self.canvas.canvasx(event.x)
     y=self.canvas.canvasx(event.y)
-    if self.val_canvas_coord((x,y)):
-      self.transientcorners=[x,y,x,y]
+    x,y=self.val_canvas_coord((x,y))
+    self.transientcorners=[x,y,x,y]
     self.drawLine()
 
   def AltMouse3PressMotion(self, event):
     x=self.canvas.canvasx(event.x)
     y=self.canvas.canvasy(event.y)
-    if self.val_canvas_coord((x,y)):
-      self.transientcorners[2:]=[x,y]
+    x,y=self.val_canvas_coord((x,y))
+    self.transientcorners[2:]=[x,y]
     self.drawLine()
 
   def AltMouse3Release(self, event):
     x=self.canvas.canvasx(event.x)
     y=self.canvas.canvasy(event.y)
-    if self.val_canvas_coord((x,y)):
-      self.transientcorners[2:]=[x,y]
+    x,y=self.val_canvas_coord((x,y))
+    self.transientcorners[2:]=[x,y]
     self.drawLine(transient=0)
 
   def val_canvas_coord(self,c):
-    if c[0]<0 or c[0]>self.canvas_xsize or c[1]<0 or c[1]>self.canvas_ysize:
-      return False
-    else:
-      return True
-
+    c_new=[c[0],c[1]]
+    if c[0]<0:
+      c_new[0]=0
+    elif c[0]>self.canvas_xsize:
+      c_new[0]=self.canvas_xsize
+    if c[1]<0:
+      c_new[1]=0
+    elif c[1]>self.canvas_ysize:
+      c_new[1]=self.canvas_ysize
+    return c_new
+    
   def drawAoi(self,transient=1,fix=0):
     if self.transientaoi:
       self.canvas.delete(self.transientaoi)#the last element of the list is the one to be redrawn. 
@@ -327,12 +334,20 @@ class imageWin:
       #newReli=ReliefPlot(reli,data=self.reliefmap,extrema=self.reliefextrema)
       #return newReli
       return 
-    
+  
+  def get_img_stats(self, image):
+    #this is a hack _while thinking of a better solution
+    imin,imax=image.getextrema()
+    l=list(image.getdata())
+    imean=sum(l)/len(l)
+    return (imin,imax,imean) 
+   
   def update(self,scaled_min=0,scaled_max=0,newimage=None):
     if self.scale==0:
       self.reset_scale()
     #scale this instance itself and all its children
     if (scaled_min,scaled_max,newimage)==(atof(self.minval.get()),atof(self.maxval.get()),None):
+      #no need to rescale or redraw
       return True
     elif (scaled_min==scaled_max==0):
       scaled_min = atof(self.minval.get())
@@ -340,29 +355,17 @@ class imageWin:
     else:
       self.minval.set(scaled_min)
       self.maxval.set(scaled_max)
-    self.maxval.set(scaled_max)
+    #self.maxval.set(scaled_max)
     self.scale = 255.0 / (scaled_max - scaled_min)
     self.offset = - scaled_min * self.scale
     
     if newimage: self.im=newimage
     
-    # scale convert from 16bit to 8bit for Tkinter
-    if self.zoomarea[2]!=self.xsize and self.zoomarea[3]!=self.ysize:
-      imcrop = self.im.crop(self.zoomarea)
-      im8c = imcrop.point(lambda i: i * self.scale + self.offset).convert('L')
-      self.img = ImageTk.PhotoImage(im8c.resize((self.canvas_xsize,self.canvas_ysize)))
-      self.im_min,self.im_max = imcrop.getextrema()
-      l=list(imcrop.getdata())
-      self.im_mean=sum(l)/len(l)
-    else:
-      #image should not be cropped
-      im8c = self.im.point(lambda i: i * self.scale + self.offset).convert('L')
-      self.img = ImageTk.PhotoImage(im8c.resize((self.canvas_xsize,self.canvas_ysize)))
-      self.im_min,self.im_max = self.im.getextrema()
-      if self.im.meanval:
-	self.im_mean=self.im.meanval
-      else:
-	self.im_mean=-1
+    imcrop = self.im.crop(self.zoomarea)
+    im8c = imcrop.point(lambda i: i * self.scale + self.offset).convert('L')
+    self.img = ImageTk.PhotoImage(im8c.resize((self.canvas_xsize,self.canvas_ysize)))
+    self.im_min,self.im_max,self.im_mean = self.get_img_stats(imcrop)
+    
     self.ShowMin.config(text="Min %i" %(self.im_min))
     self.ShowMax.config(text="Max %i" %(self.im_max))
     self.ShowMean.config(text="Mean %i" %(self.im_mean))
@@ -597,6 +600,13 @@ class appWin(imageWin):
     self.update()
     return True
 
+  def get_img_stats(self, image):
+    #this is a hack _while thinking of a better solution
+    #override the imageWin version to use optimized
+    #implementation in the specific image classes
+    imin,imax=image.getextrema()
+    imean=self.im.meanval
+    return (imin,imax,imean)
   
   def gotoimage(self,event=None):
     newfilenumber=int(self.displaynumber.get())
