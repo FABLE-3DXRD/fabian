@@ -33,7 +33,15 @@ class edfimage:
       return PILimage
 	
   def read(self,fname,verbose=0):
-    f=open(fname,"rb")
+    # Check whether edf file has been compressed
+    if os.path.splitext(fname)[1] == '.gz':
+      import gzip
+      f=gzip.GzipFile(fname,"rb")
+    elif os.path.splitext(fname)[1] == '.bz2':
+      import bz2
+      f=bz2.BZ2File(fname,"rb")
+    else:      
+      f=open(fname,"rb")
     l=f.readline()
     while '}' not in l:
       if '=' in l:
@@ -43,7 +51,6 @@ class edfimage:
       l=f.readline()
     l=f.read()
     f.close()
-    
     #now read the data into the array
     (self.dim1,self.dim2)=int(self.header['Dim_1']),int(self.header['Dim_2'])
 

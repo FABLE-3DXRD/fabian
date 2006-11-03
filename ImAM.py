@@ -854,6 +854,8 @@ def deconstruct_filename(filename):
     number=int(m.group(2))
   ext=os.path.splitext(filename)
   filetype={'edf': 'edf',
+    'gz': 'edf',
+    'bz2': 'edf',
     'tif': 'tif',
     'tiff': 'tif',
     'img': 'adsc',
