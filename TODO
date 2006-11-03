@@ -9,10 +9,11 @@ Correct numbering of child windows - separate lists for zoom and relief? - DONE
 
 In gotoimage an edf filename was constructed if the filenumber was not found no matter what filetype we had. - DONE   
 
-When creating an AOI and mouse moves outside top left corner the created zoom-window shows the uncropped base image
+When creating an AOI and mouse moves outside top left corner the created zoom-window shows the uncropped base image - DONE
 
 Still some problems with the canvas size resetting after opening a new data set with a larger image y size.
 Also problems since the old headinfo is not removed. Fx it complaints if a new header item is found upon "File - Open".
+edfimage.integrate_area sums the wrong image area - DONE
 
 #TODO
 Put under cvs control - DONE
