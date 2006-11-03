@@ -24,3 +24,5 @@ clean up the filename splitting and joining code - it is a jumbled mess right no
 implement getheader functionality in tifimage.py DONE
 add possibility for reading MarCCD/MarMosaic images - DONE
 add possibility for reading bruker images DONE 
+add possibility for reading bzipped and gzipped edf images - DONE
+

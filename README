@@ -10,6 +10,7 @@ PIL (python imaging library) -  http://www.pythonware.com
 Numeric -  http://numeric.scipy.org
 pyopengl - http://pyopengl.sourceforge.net
 Pmw - Python Mega Widgets -  http://pmw.sourceforge.net
+Matplotlib - http://matplotlib.sourceforge.net
 
 Supposedly,
 python setup.py install
