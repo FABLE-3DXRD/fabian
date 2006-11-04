@@ -151,6 +151,7 @@ class imageWin:
   def MouseEntry(self,event):
     #mouse has entered the window - check for nonexistent children
     children=self.master.winfo_children()
+    print children
     for k in self.aoi.keys():
       w=self.aoi[k]
       if not w['zoomwin'].master in children:
@@ -277,7 +278,7 @@ class imageWin:
       self.endline = [self.transientcorners[2], self.transientcorners[3], self.transientcorners[2]+t*endsec[1], self.transientcorners[3]-t*endsec[0]]
       r=self.canvas.create_line(self.endline,fill=linecolor2)
       self.transientline.append(r)
-      self.aoi[t]={'coords': self.transientcorners, 'aoi':r, 'zoomwin': self.openlineprofile(t), 'wintype':'lineprofile'}
+      self.aoi[t]={'coords': self.transientcorners, 'aoi':r, 'coorwin': self.openlineprofile(t), 'wintype':'lineprofile'}
       #self.openlineprofile(t)
       self.update()
  
@@ -309,7 +310,10 @@ class imageWin:
       # Make lineprofile  relief window
       t=self.transientcorners
       corners=[(self.zoomarea[0]+t[0]/self.zoomfactor), (self.zoomarea[1]+t[1]/self.zoomfactor), (self.zoomarea[0]+t[2]/self.zoomfactor), (self.zoomarea[1]+t[3]/self.zoomfactor)]
+      import matplotlib
+      matplotlib.use('TkAgg')
       import pylab
+
 
       print corners
       import pixel_trace
@@ -326,11 +330,9 @@ class imageWin:
       pylab.plot(t, pixval, 'b-')
       pylab.title('lineprofile')
       pylab.show()
-      #reli=Toplevel(self.master)
-      #reli.title(tag)
-      #newReli=ReliefPlot(reli,data=self.reliefmap,extrema=self.reliefextrema)
-      #return newReli
-      return 
+      for obj in self.transientline:
+        self.canvas.delete(obj)#the last element of the list is the one to be redrawn.
+        self.transientline=[]
   
   def get_img_stats(self, image):
     #this is a hack _while thinking of a better solution
@@ -393,6 +395,7 @@ class imageWin:
   def setbindings(self):
     try:
       self.tool = self.ToolType.get()
+      print self.tool
     except:
       pass
     #update children
@@ -408,6 +411,10 @@ class imageWin:
       self.canvas.bind('<Button-1>', self.Mouse3Press)
       self.canvas.bind('<Button1-Motion>', self.Mouse3PressMotion)
       self.canvas.bind('<Button1-ButtonRelease>', self.Mouse3Release)
+    if tool=='LineProfile':
+      self.canvas.bind('<Button-1>', self.AltMouse3Press)
+      self.canvas.bind('<Button1-Motion>', self.AltMouse3PressMotion)
+      self.canvas.bind('<Button1-ButtonRelease>', self.AltMouse3Release)
     if  tool=='Relief':
       self.canvas.bind('<Button-1>', self.Mouse3Press)
       self.canvas.bind('<Button1-Motion>', self.Mouse3PressMotion)
@@ -581,6 +588,7 @@ class appWin(imageWin):
     ToolBtn.pack(side=LEFT, padx="2m")
     ToolBtn.menu =Menu(ToolBtn)
     ToolBtn.menu.add_radiobutton(label='Zoom',command=self.setbindings,variable=self.ToolType,value='Zoom')
+    ToolBtn.menu.add_radiobutton(label='Line profile',command=self.setbindings,variable=self.ToolType,value='LineProfile')
     ToolBtn.menu.add_radiobutton(label='Relief',command=self.setbindings,variable=self.ToolType,value='Relief')
     ToolBtn['menu']=ToolBtn.menu
     CmdBtn3 = Menubutton(frameMenubar, text='Help',underline=0)
