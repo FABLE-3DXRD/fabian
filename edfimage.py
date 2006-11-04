@@ -56,17 +56,17 @@ class edfimage:
 
     if 'Low' in self.header['ByteOrder']:
       try:
-	self.data=Numeric.reshape(Numeric.fromstring(l,Numeric.UInt16),[self.dim2, self.dim1])
+	self.data=Numeric.reshape(Numeric.fromstring(l,Numeric.uint16),[self.dim2, self.dim1])
       except ValueError:
 	raise IOError, 'Size spec in edf-header does not match size of image data field'
-      self.bytecode=Numeric.UInt16
+      self.bytecode=Numeric.uint16
       if verbose: print 'using low byte first (x386-order)'
     else:
       try:
-	self.data=Numeric.reshape(Numeric.fromstring(l,Numeric.UInt16),[self.dim2, self.dim1]).byteswapped()
+	self.data=Numeric.reshape(Numeric.fromstring(l,Numeric.uint16),[self.dim2, self.dim1]).byteswapped()
       except ValueError:
 	raise IOError, 'Size spec in edf-header does not match size of image data field'
-      self.bytecode=Numeric.UInt16
+      self.bytecode=Numeric.uint16
       if verbose: print 'using high byte first (network order)'
     self.resetvals()
     return self
@@ -107,7 +107,7 @@ class edfimage:
 
   def getmean(self):
     if self.m==None:
-      self.m=Numeric.sum(Numeric.ravel(self.data.astype(Numeric.Float)))/(self.dim1*self.dim2)
+      self.m=Numeric.sum(Numeric.ravel(self.data.astype(Numeric.float)))/(self.dim1*self.dim2)
     return float(self.m)
     
   def getstddev(self):
@@ -116,7 +116,7 @@ class edfimage:
       print "recalc mean"
     if self.stddev==None:
       N=self.dim1*self.dim2-1
-      S=Numeric.sum(Numeric.ravel((self.data.astype(Numeric.Float)-self.m)/N*(self.data.astype(Numeric.Float)-self.m)) )
+      S=Numeric.sum(Numeric.ravel((self.data.astype(Numeric.float)-self.m)/N*(self.data.astype(Numeric.float)-self.m)) )
       self.stddev=S/(self.dim1*self.dim2-1)
     return float(self.stddev)
 
@@ -176,9 +176,9 @@ class edfimage:
     f.write(out)
     f.write('}\n')
     if self.header["ByteOrder"]=="LowByteFirst":
-      f.write(self.data.astype(Numeric.UInt16).tostring())
+      f.write(self.data.astype(Numeric.uint16).tostring())
     else:
-      f.write(self.data.byteswapped().astype(Numeric.UInt16).tostring())
+      f.write(self.data.byteswapped().astype(Numeric.uint16).tostring())
     f.close()
 
 if __name__=='__main__':
