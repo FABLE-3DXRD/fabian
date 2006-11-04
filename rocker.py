@@ -20,8 +20,10 @@ class rocker:
     self.series.jump(startnumber)
     self.start=startnumber
     self.end=endnumber
+    print self.end
     self.coord=coord
     self.data=numpy.zeros((endnumber-startnumber+1))
+    print self.data
 
   def newstart(self,start):
     #jump to a new starting number
@@ -34,14 +36,17 @@ class rocker:
     
   def run(self):
     series=self.series
+    print range(len(self.data))
     for i in range(len(self.data)):
       self.data[i]=series.current(toPIL=False).integrate_area(self.coord)
-      try:
-	series.next()
-	#if theres an error opening the file just skip over it
-      except (ValueError,IOError), msg:
-	print msg, '- aborted!'
-	break
+      print i
+      if i < len(self.data)-1:
+        try:
+          series.next()
+	  #if theres an error opening the file just skip over it
+        except (ValueError,IOError), msg:
+          print msg, '- aborted!'
+          break
 	
   def getdata(self):
     #return the array containing the rocking curve
@@ -49,9 +54,10 @@ class rocker:
 
 if __name__=='__main__':
   import sys,os,time
+  from string import atoi
   b=time.clock()
-  c=(0,0,100,100)
-  R=rocker(filename_sample=sys.argv[1],coord=c,startnumber=1,endnumber=4)
+  c=(atoi(sys.argv[4]),atoi(sys.argv[5]),atoi(sys.argv[6]),atoi(sys.argv[7]))
+  R=rocker(filename_sample=sys.argv[1],coord=c,startnumber=atoi(sys.argv[2]),endnumber=atoi(sys.argv[3]))
   R.run()
   print R.getdata()
   e=time.clock()
