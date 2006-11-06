@@ -8,7 +8,7 @@ Authors: Henning O. Sorensen & Erik Knudsen
          DK-4000 Roskilde
          email:henning.sorensen@risoe.dk
 """
-import numpy
+import Numeric
 import os,sys
 import image_file_series
 
@@ -22,7 +22,7 @@ class rocker:
     self.end=endnumber
     print self.end
     self.coord=coord
-    self.data=numpy.zeros((endnumber-startnumber+1))
+    self.data=Numeric.zeros((endnumber-startnumber+1))
     print self.data
 
   def newstart(self,start):
