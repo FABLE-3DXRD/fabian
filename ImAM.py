@@ -195,6 +195,9 @@ class imageWin:
   def drawAoi(self,transient=1,fix=0):
     if self.transientaoi:
       self.canvas.delete(self.transientaoi)#the last element of the list is the one to be redrawn. 
+      #if upper left corner == lower right do not open a zoom or similar
+      if self.transientcorners[0]==self.transientcorners[2] or self.transientcorners[1]==self.transientcorners[3]:
+	return
     if transient==1:
       r=self.canvas.create_rectangle(self.transientcorners,outline='RoyalBlue')
       self.transientaoi=r
