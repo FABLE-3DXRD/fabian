@@ -1,8 +1,8 @@
-ImAM
+fabian
 version 0.1
 Henning Osholm Sørensen & Erik Knudsen
 
-The ImAM is designed for the purpose of viewing image files series. In particular
+fabian is designed for the purpose of viewing image files series. In particular
 such image files obtained when doing experiments at the ESRF.
 
 To use this you need (besides a python interpreter) the python extensions:

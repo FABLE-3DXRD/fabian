@@ -5,7 +5,7 @@ import sys
 if 'win' == sys.platform[:3]:
   import py2exe
 
-setup(name='ImAM',
+setup(name='fabian',
   version='0.1',
   description='Image viewer for file series of diffraction images',
   license='GPL',
@@ -13,5 +13,5 @@ setup(name='ImAM',
   maintainer_email='henning.sorensen@risoe.dk',
   url='http://fable.sourceforge.net',
   py_modules=['edfimage','tifimage','adscimage','brukerimage','bruker100image','marccdimage','pixel_trace'],
-  scripts=["ImAM.py"])
+  scripts=["fabian.py"])
 
