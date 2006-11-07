@@ -19,13 +19,6 @@ from tkFileDialog import *
 import tkFont
 import re,os,sys,time
 
-class ImAMImage(Image.Image):
-  def __init__(self):
-    Image.Image.__init__(self)
-    self.minval=0
-    self.maxval=0
-    self.meanval=0
-    self.stddev=0
     
 class imageWin:
   def __init__(self,master,fileprefix=None,filenumber=0,title=None,zoomfactor=1,mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None,tool=None):
@@ -712,7 +705,7 @@ class appWin(imageWin):
     except IOError:
       raise
     self.zoomarea=[0,0,self.xsize,self.ysize]
-    self.master.title("ImAM - %s" %(filename))
+    self.master.title("fabian - %s" %(filename))
 
       
   def about(self):
@@ -819,12 +812,12 @@ class Error:
 class About:
     def __init__(self):
         self.master = Tk()
-        self.master.title('About ImAM')
+        self.master.title('About fabian')
         frame = Frame(self.master, width=500, height=400, bd=1)
         frame.pack()
 
         frameAbout = Frame(frame, bd=0)
-        message = "\nImAM (Image Analysis Module) was brought to you by \n\n\
+        message = "\nfabian was brought to you by \n\n\
 Henning O. Sorensen & Erik Knudsen\n\
 Center for Fundamental Research: Metal Structures in Four Dimensions\n\
 Risoe National Laboratory\n\
