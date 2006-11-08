@@ -141,6 +141,13 @@ class imageWin:
     self.transientcorners[2:]=[x,y]
     self.drawAoi(transient=2)
 
+  def keyRMouse3Release(self, event):
+    x=self.canvas.canvasx(event.x)
+    y=self.canvas.canvasy(event.y)
+    x,y=self.val_canvas_coord((x,y))
+    self.transientcorners[2:]=[x,y]
+    self.drawAoi(transient=3)
+
   def MouseEntry(self,event):
     #mouse has entered the window - check for nonexistent children
     children=self.master.winfo_children()
@@ -203,6 +210,11 @@ class imageWin:
       r=self.canvas.create_rectangle(self.transientcorners,outline='LimeGreen',tag=t)
       self.aoi[t]={'coords': self.transientcorners, 'aoi':r, 'zoomwin': self.openrelief(t), 'wintype':'relief'}
       #self.openrelief(t)
+    elif transient==3:
+      #tag the rectangle for later reference
+      t = 'rock'
+      r=self.canvas.create_rectangle(self.transientcorners,outline='LightBlue',tag=t)
+      self.aoi[t]={'coords': self.transientcorners, 'aoi':r, 'zoomwin': self.openrocker(t), 'wintype':'rocker'}
     else:
       if 'zoom' in self.master.wm_title():
         t= self.master.wm_title() +'.%d' % len(self.aoi)
@@ -302,6 +314,27 @@ class imageWin:
       newReli=ReliefPlot(reli,data=self.reliefmap,extrema=self.reliefextrema)
       return newReli
 
+  def openrocker(self,tag):
+      # Make 3D relief window
+      t=self.transientcorners
+      corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
+      filename = self.filename.get()
+      center = deconstruct_filename(filename)[0]
+      delta = 1
+      import rocker
+      print corners
+      ff = rocker.rocker(filename_sample=filename, coord=corners, startnumber=(center-delta), endnumber=(center+delta))
+      ff.run()
+      print ff.getdata()
+      print ff.imagenumber
+      import matplotlib
+      matplotlib.use('TkAgg')
+      import pylab
+      pylab.xticks(ff.imagenumber)
+      pylab.plot(ff.imagenumber, ff.getdata(), 'b-')
+      pylab.title('Rocking curve')
+      pylab.show()
+      
   def openlineprofile(self,tag):
       # Make lineprofile  relief window
       t=self.transientcorners
@@ -415,6 +448,10 @@ class imageWin:
       self.canvas.bind('<Button-1>', self.Mouse3Press)
       self.canvas.bind('<Button1-Motion>', self.Mouse3PressMotion)
       self.canvas.bind('<Button1-ButtonRelease>', self.CtrlMouse3Release)
+    if tool=='Rocker':
+      self.canvas.bind('<Button-1>', self.Mouse3Press)
+      self.canvas.bind('<Button1-Motion>', self.Mouse3PressMotion)
+      self.canvas.bind('<Button1-ButtonRelease>', self.keyRMouse3Release)
 
 
   def quit(self,event=None):
@@ -586,6 +623,7 @@ class appWin(imageWin):
     ToolBtn.menu.add_radiobutton(label='Zoom',command=self.setbindings,variable=self.ToolType,value='Zoom')
     ToolBtn.menu.add_radiobutton(label='Line profile',command=self.setbindings,variable=self.ToolType,value='LineProfile')
     ToolBtn.menu.add_radiobutton(label='Relief',command=self.setbindings,variable=self.ToolType,value='Relief')
+    ToolBtn.menu.add_radiobutton(label='Rocking curve',command=self.setbindings,variable=self.ToolType,value='Rocker')
     ToolBtn['menu']=ToolBtn.menu
     CmdBtn3 = Menubutton(frameMenubar, text='Help',underline=0)
     CmdBtn3.pack(side=LEFT, padx="2m")
