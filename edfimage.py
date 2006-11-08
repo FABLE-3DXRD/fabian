@@ -16,12 +16,13 @@ from PIL import Image
 import os
 
 class edfimage:
-  data=None
-  header={}
-  dim1=dim2=0
-  m=maxval=stddev=minval=None
-  header_keys=[]
-  bytecode=None
+  def __init__(self):
+    self.data=None
+    self.header={"ByteOrder":"LowByteFirst"}
+    self.dim1=self.dim2=0
+    self.m=self.maxval=self.stddev=self.minval=None
+    self.header_keys=self.header.keys()
+    self.bytecode=None
   
   def toPIL16(self,filename=None):
     if filename:
@@ -169,6 +170,12 @@ class edfimage:
     f.write('{\n')
     i=4
     for k in self.header_keys:
+      out = (("%s = %s;\n") % (k,self.header[k]))
+      i = i + len(out)
+      f.write(out)
+    #if additional items in the header just write them out in the order they happen to be in
+    for k,v in self.header.iteritems():
+      if k in self.header_keys: continue
       out = (("%s = %s;\n") % (k,self.header[k]))
       i = i + len(out)
       f.write(out)
