@@ -18,8 +18,27 @@ from PIL import Image, ImageTk, ImageFile, ImageStat
 from tkFileDialog import *
 import tkFont
 import re,os,sys,time
+from sets import Set as set
 
-    
+class GoRock:
+  def __init__(self,filename=None, corners=[0,0,0,0],startnumber=0, endnumber=0):
+      import rocker
+      print filename
+      print corners
+      print startnumber
+      print endnumber
+      ff = rocker.rocker(filename_sample=filename, coord=corners, startnumber=startnumber, endnumber=endnumber)
+      ff.run()
+
+      import matplotlib
+      matplotlib.use('TkAgg')
+      import pylab
+      pylab.clf()
+      pylab.xticks(ff.imagenumber)
+      pylab.plot(ff.imagenumber, ff.getdata(), 'b-')
+      pylab.title('Rocking curve')
+      pylab.show()
+  
 class imageWin:
   def __init__(self,master,fileprefix=None,filenumber=0,title=None,zoomfactor=1,mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None,tool=None):
     #initialize var
@@ -317,23 +336,59 @@ class imageWin:
   def openrocker(self,tag):
       # Make 3D relief window
       t=self.transientcorners
-      corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
+      self.corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
       filename = self.filename.get()
-      center = deconstruct_filename(filename)[0]
-      delta = 1
-      import rocker
-      print corners
-      ff = rocker.rocker(filename_sample=filename, coord=corners, startnumber=(center-delta), endnumber=(center+delta))
-      ff.run()
-      print ff.getdata()
-      print ff.imagenumber
-      import matplotlib
-      matplotlib.use('TkAgg')
-      import pylab
-      pylab.xticks(ff.imagenumber)
-      pylab.plot(ff.imagenumber, ff.getdata(), 'b-')
-      pylab.title('Rocking curve')
-      pylab.show()
+      self.center = deconstruct_filename(filename)[0]
+      defdelta = 1
+
+      rockerpar=Toplevel(self.master)
+      frame = Frame(rockerpar, bd=0, bg="white") #, width=600, height=600) 
+      frame.pack()
+      self.seriestype = StringVar()
+      self.seriestype.set('delta')
+      self.delta = IntVar()
+      self.startframe = IntVar()
+      self.endframe = IntVar()
+      self.delta.set(defdelta)
+      self.startframe.set(self.center-defdelta)
+      self.endframe.set(self.center+defdelta)
+      radio1 = Frame(frame)
+      Radiobutton(radio1,text='Rocking curve +/- ', variable=self.seriestype, value='delta',anchor=W).pack(side=LEFT,fill=BOTH)
+      e=Entry(radio1, textvariable=self.delta, bg='white', width=6)
+      e.bind('<FocusIn>',self.setradio1)
+      e.pack(side=LEFT)
+      Label(radio1, text="frames").pack(side=LEFT)
+      radio1.pack(fill=BOTH)
+      radio2 = Frame(frame)
+      Radiobutton(frame,text='Rocking curve from frame', variable=self.seriestype, value='startend',anchor=W).pack(side=LEFT,fill=BOTH)
+      e=Entry(radio2, textvariable=self.startframe, bg='white', width=6)
+      e.bind('<FocusIn>',self.setradio2)
+      e.pack(side=LEFT)
+      Label(radio2, text="to").pack(side=LEFT)
+      e=Entry(radio2, textvariable=self.endframe, bg='white', width=6)
+      e.bind('<FocusIn>',self.setradio2)
+      e.pack(side=LEFT)
+      radio2.pack()
+      Button(rockerpar, text='Go rock', command=self.myrock).pack(side=BOTTOM)
+      return rockerpar
+      
+  def setradio1(self,event=None):
+      self.seriestype.set('delta')
+
+  def setradio2(self,event=None):
+      self.seriestype.set('startend')
+
+  def myrock(self):
+    if self.seriestype.get() == 'startend':
+      startframe = self.startframe.get()
+      endframe = self.endframe.get()
+    else:
+      startframe = self.center-self.delta.get()
+      endframe = self.center+self.delta.get()
+      self.startframe.set(startframe)
+      self.endframe.set(endframe)
+      
+    GoRock(filename=self.filename.get(),corners=self.corners,startnumber=startframe,endnumber=endframe)
       
   def openlineprofile(self,tag):
       # Make lineprofile  relief window
@@ -402,8 +457,9 @@ class imageWin:
     self.children = self.master.winfo_children()
     for k in self.aoi.keys():
       w=self.aoi[k]
-      w['zoomwin'].update(scaled_min,scaled_max,newimage=newimage)
-      w['zoomwin'].setbindings()
+      if 'zoomwin' in w:
+        w['zoomwin'].update(scaled_min,scaled_max,newimage=newimage)
+        w['zoomwin'].setbindings()
     return True
   
   def reset_scale(self):
