@@ -20,48 +20,28 @@ import tkFont
 import re,os,sys,time
 from sets import Set as set
 
-class GoRock:
-  def __init__(self,filename=None, corners=[0,0,0,0],startnumber=0, endnumber=0):
-
-
-
-      import rocker
-      print filename
-      print corners
-      print startnumber
-      print endnumber
-      ff = rocker.rocker(filename_sample=filename, coord=corners, startnumber=startnumber, endnumber=endnumber)
-      ff.run()
-
-      import matplotlib
-      matplotlib.use('TkAgg')
-      import pylab
-      pylab.clf()
-      pylab.xticks(ff.imagenumber)
-      pylab.plot(ff.imagenumber, ff.getdata(), 'b-')
-      pylab.title('Rocking curve')
-      pylab.show()
 
 class imagePlot:
-  def __init__(self,master,x=None,y=None):
+  def __init__(self,master,title='Plot',x=None,y=None):
       import matplotlib
       matplotlib.use('TkAgg')
       from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
       from matplotlib.figure import Figure
 
       self.master = master
+      self.master.title(title)
       frame = Frame(self.master)
       self.f = Figure(figsize=(8,5), dpi=100)
       self.a = self.f.add_subplot(111)
       canvas = FigureCanvasTkAgg(self.f, master=self.master)
       canvas.show()
-      self.tkc=canvas.get_tk_widget()
-      self.tkc.pack(side=TOP, fill=BOTH, expand=1)
+      canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+      #self.f.xticks(x)
       self.a.plot(x, y, 'b-')
       frame.pack()
       
 class imageWin:
-  def __init__(self,master,fileprefix=None,filenumber=0,title=None,zoomfactor=1,mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None,tool=None):
+  def __init__(self,master,filename=None,filenumber=0,title=None,zoomfactor=1,mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None,tool=None):
     #initialize var
     self.master=master
     #these keep track of the AOIs
@@ -78,6 +58,7 @@ class imageWin:
     master.bind('<FocusIn>',self.MouseEntry)
     
     if title: self.master.title(title)
+    if filename: self.filename = filename
     
     self.zoomfactor=zoomfactor
     if coords[0]>coords[2]:
@@ -302,10 +283,10 @@ class imageWin:
       r=self.canvas.create_line(self.endline,fill='RoyalBlue')
       self.transientline.append(r)
     else:
-      if 'zoom' in self.master.wm_title():
-        t= self.master.wm_title() +'.%d' % len(self.aoi)
-      else:
-        t='zoom %d'% len(self.aoi)
+      #if 'zoom' in self.master.wm_title():
+      #  t= self.master.wm_title() +'.%d' % len(self.aoi)
+      #else:
+      #  t='zoom %d'% len(self.aoi)
       #tag the rectangle for later reference
       linecolor2 = 'red'
       r=self.canvas.create_line(self.transientcorners,fill=linecolor2)
@@ -330,7 +311,7 @@ class imageWin:
       r=self.canvas.create_line(self.endline,fill=linecolor2)
       self.transientline.append(r)
       self.aoi[t]={'coords': self.transientcorners, 'aoi':self.transientline, 'zoomwin': self.openlineprofile(t), 'wintype':'lineprofile'}
-      #self.openlineprofile(t)
+      self.transientline=None
       #self.update()
  
   def openzoom(self,tag):
@@ -338,10 +319,10 @@ class imageWin:
     t=self.transientcorners
     corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
     if self.tool:
-      newwin=imageWin(w,title=tag,fileprefix=None,zoomfactor=self.zoomfactor*4,coords=corners,image=self.im,tool=self.tool)
+      newwin=imageWin(w,title=tag,filename=self.filename,zoomfactor=self.zoomfactor*4,coords=corners,image=self.im,tool=self.tool)
       newwin.tool=self.tool
     else:
-      newwin=imageWin(w,title=tag,fileprefix=None,zoomfactor=self.zoomfactor*4,coords=corners,image=self.im,tool=None)
+      newwin=imageWin(w,title=tag,filename=self.filename,zoomfactor=self.zoomfactor*4,coords=corners,image=self.im,tool=None)
     return newwin
 
   def openrelief(self,tag):
@@ -361,11 +342,10 @@ class imageWin:
       # Make 3D relief window
       t=self.transientcorners
       self.corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
-      filename = self.filename.get()
-      self.center = deconstruct_filename(filename)[0]
+      self.center = deconstruct_filename(self.filename.get())[0]
       defdelta = 1
-
       rockerpar=Toplevel(self.master)
+      rockerpar.title('Rocking curve setup')
       frame = Frame(rockerpar, bd=0, bg="white") #, width=600, height=600) 
       frame.pack()
       self.seriestype = StringVar()
@@ -393,16 +373,10 @@ class imageWin:
       e.bind('<FocusIn>',self.setradio2)
       e.pack(side=LEFT)
       radio2.pack()
-      Button(rockerpar, text='Go rock', command=self.myrock).pack(side=BOTTOM)
+      Button(rockerpar, text='Go rock', command=self.GoRock).pack(side=BOTTOM)
       return rockerpar
       
-  def setradio1(self,event=None):
-      self.seriestype.set('delta')
-
-  def setradio2(self,event=None):
-      self.seriestype.set('startend')
-
-  def myrock(self):
+  def GoRock(self):
     if self.seriestype.get() == 'startend':
       startframe = self.startframe.get()
       endframe = self.endframe.get()
@@ -411,9 +385,15 @@ class imageWin:
       endframe = self.center+self.delta.get()
       self.startframe.set(startframe)
       self.endframe.set(endframe)
-      
-    GoRock(filename=self.filename.get(),corners=self.corners,startnumber=startframe,endnumber=endframe)
-      
+
+    import rocker
+    rockdata = rocker.rocker(filename_sample=self.filename.get(), coord=self.corners, startnumber=startframe, endnumber=endframe)
+    rockdata.run()
+    w=Toplevel(self.master)
+    linewin = imagePlot(w,title='Rocking curve',x=rockdata.imagenumber,y=rockdata.getdata())
+    #GoRock(filename=self.filename.get(),corners=self.corners,startnumber=startframe,endnumber=endframe)
+    return linewin
+  
   def openlineprofile(self,tag):
       # Make lineprofile  relief window
       import pixel_trace
@@ -428,9 +408,15 @@ class imageWin:
         path = path + pixels[i][2]
         t.append(i)
         pixval.append(self.im.getpixel((pixels[i][0],pixels[i][1])))
-      linewin = imagePlot(w,x=t,y=pixval)
+      linewin = imagePlot(w,title='Line profile',x=t,y=pixval)
       return linewin
     
+  def setradio1(self,event=None):
+      self.seriestype.set('delta')
+
+  def setradio2(self,event=None):
+      self.seriestype.set('startend')
+
   def get_img_stats(self, image):
     #this is a hack _while thinking of a better solution
     imin,imax=image.getextrema()
@@ -438,7 +424,7 @@ class imageWin:
     imean=sum(l)/len(l)
     return (imin,imax,imean) 
    
-  def update(self,scaled_min=0,scaled_max=0,newimage=None):
+  def update(self,scaled_min=0,scaled_max=0,newimage=None,filename=None):
     if self.scale==0:
       self.reset_scale()
     #scale this instance itself and all its children
@@ -527,7 +513,7 @@ class imageWin:
     self.master.destroy()
 
 class appWin(imageWin):
-  def __init__(self,master,fileprefix=None,filenumber=0,filename=None,filetype=None,zoomfactor=1,mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None):
+  def __init__(self,master,filenumber=0,filename=None,filetype=None,zoomfactor=1,mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None):
     #initialize var
     self.master=master
     #these keep track of the AOIs
@@ -588,7 +574,6 @@ class appWin(imageWin):
     self.make_scaling_ctls(self.page1)
     
     self.make_image_canvas(self.page1)
-    #imageWin.__init__(self,master,page1,fileprefix=fileprefix,filenumber=filenumber,zoomfactor=self.zoomfactor,coords=(0,0,self.xsize,self.ysize),image=self.im)
     self.make_command_menu(frame)
     
     self.make_header_info()
@@ -705,7 +690,6 @@ class appWin(imageWin):
 
   def OpenFile(self,filename=True):
     self.filename.set(askopenfilename(filetypes=[("EDF files", "*.edf"),("Tif files", "*.tif"),("MarCCD/Mosaic files", "*.mccd"),("ADSC files", "*.img"),("Bruker files", "*.*"),("All Files", "*")]))
-    #(self.fileprefix,newfilenumber,self.filetype)=split_filename(self.filename.get())
     (newfilenumber,filetype)=deconstruct_filename(self.filename.get())
     self.filetype=filetype
     self.displaynumber.set(newfilenumber)
@@ -742,7 +726,7 @@ class appWin(imageWin):
         e.Er(msg)
         return False
     #image loaded ok
-    self.update(newimage=self.im)
+    self.update(newimage=self.im,filename=newfilename)
     self.update_header_page()
     self.update_header_label()
     self.filename.set(newfilename)
@@ -753,7 +737,6 @@ class appWin(imageWin):
     #update filename, prefix and number
     newfilenumber=int(self.displaynumber.get())+1
     newfilename=construct_filename(self.filename.get(),newfilenumber)
-    #self.filename.set("%s%0.4d.%s"%((self.fileprefix,newfilenumber,self.filetype)))
     try:
       self.openimage(newfilename)#try to open that file
     except IOError:
@@ -762,7 +745,7 @@ class appWin(imageWin):
       e.Er(msg)
       return False
     #image loaded ok
-    self.update(newimage=self.im)
+    self.update(newimage=self.im,filename=newfilename)
     self.update_header_page()
     self.update_header_label()
     self.filename.set(newfilename)
@@ -785,7 +768,7 @@ class appWin(imageWin):
         e.Er(msg)
         return False
     #image loaded ok
-    self.update(newimage=self.im)
+    self.update(newimage=self.im,filename=newfilename)
     self.update_header_page()
     self.update_header_label()
     self.filename.set(newfilename)
