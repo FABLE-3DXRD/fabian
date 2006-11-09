@@ -22,6 +22,9 @@ from sets import Set as set
 
 class GoRock:
   def __init__(self,filename=None, corners=[0,0,0,0],startnumber=0, endnumber=0):
+
+
+
       import rocker
       print filename
       print corners
@@ -38,7 +41,25 @@ class GoRock:
       pylab.plot(ff.imagenumber, ff.getdata(), 'b-')
       pylab.title('Rocking curve')
       pylab.show()
-  
+
+class imagePlot:
+  def __init__(self,master,x=None,y=None):
+      import matplotlib
+      matplotlib.use('TkAgg')
+      from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+      from matplotlib.figure import Figure
+
+      self.master = master
+      frame = Frame(self.master)
+      self.f = Figure(figsize=(8,5), dpi=100)
+      self.a = self.f.add_subplot(111)
+      canvas = FigureCanvasTkAgg(self.f, master=self.master)
+      canvas.show()
+      self.tkc=canvas.get_tk_widget()
+      self.tkc.pack(side=TOP, fill=BOTH, expand=1)
+      self.a.plot(x, y, 'b-')
+      frame.pack()
+      
 class imageWin:
   def __init__(self,master,fileprefix=None,filenumber=0,title=None,zoomfactor=1,mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None,tool=None):
     #initialize var
@@ -170,11 +191,14 @@ class imageWin:
   def MouseEntry(self,event):
     #mouse has entered the window - check for nonexistent children
     children=self.master.winfo_children()
-    print children
+    print 'children', children
     for k in self.aoi.keys():
       w=self.aoi[k]
+      print 'w',w
+      print 'w.master', w['zoomwin'].master
       if not w['zoomwin'].master in children:
-        self.canvas.delete(w['aoi'])
+        for l in w['aoi']:
+          self.canvas.delete(l)
         self.aoi.pop(k)
 
  # NEW bindings for LineProfile
@@ -227,13 +251,13 @@ class imageWin:
         t='relief of main'
       #tag the rectangle for later reference
       r=self.canvas.create_rectangle(self.transientcorners,outline='LimeGreen',tag=t)
-      self.aoi[t]={'coords': self.transientcorners, 'aoi':r, 'zoomwin': self.openrelief(t), 'wintype':'relief'}
+      self.aoi[t]={'coords': self.transientcorners, 'aoi':[r], 'zoomwin': self.openrelief(t), 'wintype':'relief'}
       #self.openrelief(t)
     elif transient==3:
       #tag the rectangle for later reference
       t = 'rock'
       r=self.canvas.create_rectangle(self.transientcorners,outline='LightBlue',tag=t)
-      self.aoi[t]={'coords': self.transientcorners, 'aoi':r, 'zoomwin': self.openrocker(t), 'wintype':'rocker'}
+      self.aoi[t]={'coords': self.transientcorners, 'aoi':[r], 'zoomwin': self.openrocker(t), 'wintype':'rocker'}
     else:
       if 'zoom' in self.master.wm_title():
         t= self.master.wm_title() +'.%d' % len(self.aoi)
@@ -241,7 +265,7 @@ class imageWin:
         t='zoom %d'% len(self.aoi)
       #tag the rectangle for later reference
       r=self.canvas.create_rectangle(self.transientcorners,outline='red',tag=t)
-      self.aoi[t]={'coords': self.transientcorners, 'aoi':r, 'zoomwin': self.openzoom(t), 'wintype':'zoom'}
+      self.aoi[t]={'coords': self.transientcorners, 'aoi':[r], 'zoomwin': self.openzoom(t), 'wintype':'zoom'}
       self.update()
 
   def drawLine(self,transient=1,fix=0):
@@ -305,9 +329,9 @@ class imageWin:
       self.endline = [self.transientcorners[2], self.transientcorners[3], self.transientcorners[2]+t*endsec[1], self.transientcorners[3]-t*endsec[0]]
       r=self.canvas.create_line(self.endline,fill=linecolor2)
       self.transientline.append(r)
-      self.aoi[t]={'coords': self.transientcorners, 'aoi':r, 'coorwin': self.openlineprofile(t), 'wintype':'lineprofile'}
+      self.aoi[t]={'coords': self.transientcorners, 'aoi':self.transientline, 'zoomwin': self.openlineprofile(t), 'wintype':'lineprofile'}
       #self.openlineprofile(t)
-      self.update()
+      #self.update()
  
   def openzoom(self,tag):
     w=Toplevel(self.master)
@@ -392,32 +416,21 @@ class imageWin:
       
   def openlineprofile(self,tag):
       # Make lineprofile  relief window
+      import pixel_trace
+      w=Toplevel(self.master)
       t=self.transientcorners
       corners=[(self.zoomarea[0]+t[0]/self.zoomfactor), (self.zoomarea[1]+t[1]/self.zoomfactor), (self.zoomarea[0]+t[2]/self.zoomfactor), (self.zoomarea[1]+t[3]/self.zoomfactor)]
-      import matplotlib
-      matplotlib.use('TkAgg')
-      import pylab
-
-
-      print corners
-      import pixel_trace
-
       pixels = pixel_trace.pixel_trace(corners)
       t = []
       pixval = []
       path = 0
-      pylab.clf()
       for i in range(len(pixels)):
         path = path + pixels[i][2]
         t.append(i)
         pixval.append(self.im.getpixel((pixels[i][0],pixels[i][1])))
-      pylab.plot(t, pixval, 'b-')
-      pylab.title('lineprofile')
-      pylab.show()
-      for obj in self.transientline:
-        self.canvas.delete(obj)#the last element of the list is the one to be redrawn.
-        self.transientline=[]
-  
+      linewin = imagePlot(w,x=t,y=pixval)
+      return linewin
+    
   def get_img_stats(self, image):
     #this is a hack _while thinking of a better solution
     imin,imax=image.getextrema()
