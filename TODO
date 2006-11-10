@@ -15,20 +15,21 @@ Also problems since the old headinfo is not removed. Fx it complaints if a new h
 
 edfimage.integrate_area sums the wrong image area - DONE
 
+AOI for rocking curve disappers too soon. Before rocker win has been closed. - DONE
+
+Cleaning up the canvas for line sections upon closing line profile plot does not happen correctly if more than one is opened before closing a plot. - DONE
+
 Still some problems with the canvas size resetting after opening a new data set with a larger image y size.
 
-Cleaning up the canvas for line sections upon closing line profile plot does not happen correctly if more than one is opened before closing a plot.
-
-AOI for rocking curve disappers too soon. Before rocker win has been closed.
 
 #TODO
 Put under cvs control - DONE
-implement getheader functionality in tifimage.py DONE
+implement getheader functionality in tifimage.py - DONE
 add possibility for reading MarCCD/MarMosaic images - DONE
-add possibility for reading bruker images DONE 
+add possibility for reading bruker images - DONE 
 add possibility for reading bzipped and gzipped edf images - DONE
+Add some kind of AOI-integration over file series - add function to edfimage.py that sums over rectangle? - DONE
+Add update of line plots when changing frame - DONE
 clean up the filename splitting and joining code - it is a jumbled mess right now
 Write setup script and compile executable for windows
-Add some kind of AOI-integration over file series - add function to edfimage.py that sums over rectangle?
 List of AOIs - possibly with load/save functionality
-Add update of line plots when changing frame
