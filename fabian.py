@@ -20,25 +20,11 @@ import tkFont
 import re,os,sys,time
 from sets import Set as set
 
+import matplotlib
+matplotlib.use('TkAgg')
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
 
-class imagePlot:
-  def __init__(self,master,title='Plot',x=None,y=None):
-      import matplotlib
-      matplotlib.use('TkAgg')
-      from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-      from matplotlib.figure import Figure
-
-      self.master = master
-      self.master.title(title)
-      frame = Frame(self.master)
-      self.f = Figure(figsize=(8,5), dpi=100)
-      self.a = self.f.add_subplot(111)
-      canvas = FigureCanvasTkAgg(self.f, master=self.master)
-      canvas.show()
-      canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-      #self.f.xticks(x)
-      self.a.plot(x, y, 'b-')
-      frame.pack()
       
 class imageWin:
   def __init__(self,master,filename=None,filenumber=0,title=None,zoomfactor=1,mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None,tool=None):
@@ -46,7 +32,9 @@ class imageWin:
     self.master=master
     #these keep track of the AOIs
     self.aoi={}
-    self.no_win = 0
+    self.loi={}
+    self.zoom_win = 0
+    self.line_win = 0
     self.scale=0
     self.offset=0
     self.transientaoi=None
@@ -181,6 +169,14 @@ class imageWin:
         for l in w['aoi']:
           self.canvas.delete(l)
         self.aoi.pop(k)
+    for k in self.loi.keys():
+      w=self.loi[k]
+      print 'w',w
+      print 'w.master', w['zoomwin'].master
+      if not w['zoomwin'].master in children:
+        for l in w['loi']:
+          self.canvas.delete(l)
+        self.loi.pop(k)
 
  # NEW bindings for LineProfile
   def AltMouse3Press(self, event):
@@ -241,15 +237,18 @@ class imageWin:
       self.aoi[t]={'coords': self.transientcorners, 'aoi':[r], 'zoomwin': self.openrocker(t), 'wintype':'rocker'}
     else:
       if 'zoom' in self.master.wm_title():
-        t= self.master.wm_title() +'.%d' % len(self.aoi)
+        t= self.master.wm_title() +'.%d' %  self.zoom_win
+        self.zoom_win = self.zoom_win + 1
       else:
-        t='zoom %d'% len(self.aoi)
+        t='zoom %d' % self.zoom_win
+        self.zoom_win = self.zoom_win + 1
       #tag the rectangle for later reference
       r=self.canvas.create_rectangle(self.transientcorners,outline='red',tag=t)
       self.aoi[t]={'coords': self.transientcorners, 'aoi':[r], 'zoomwin': self.openzoom(t), 'wintype':'zoom'}
       self.update()
 
   def drawLine(self,transient=1,fix=0):
+    t_end = 4
     if self.transientline:
       for obj in self.transientline:
         self.canvas.delete(obj)#the last element of the list is the one to be redrawn.
@@ -265,52 +264,52 @@ class imageWin:
         endsec = [0, 0]
       else:
         endsec = endsec/math.sqrt(sum(endsec*endsec))
-      t = 4
       # first end 1 
-      self.endline = [self.transientcorners[0], self.transientcorners[1], self.transientcorners[0]-t*endsec[1], self.transientcorners[1]+t*endsec[0]]
+      self.endline = [self.transientcorners[0], self.transientcorners[1], self.transientcorners[0]-t_end*endsec[1], self.transientcorners[1]+t_end*endsec[0]]
       r=self.canvas.create_line(self.endline,fill='RoyalBlue')
       self.transientline.append(r)
       # first end 2 
-      self.endline = [self.transientcorners[0], self.transientcorners[1], self.transientcorners[0]+t*endsec[1], self.transientcorners[1]-t*endsec[0]]
+      self.endline = [self.transientcorners[0], self.transientcorners[1], self.transientcorners[0]+t_end*endsec[1], self.transientcorners[1]-t_end*endsec[0]]
       r=self.canvas.create_line(self.endline,fill='RoyalBlue')
       self.transientline.append(r)
       # second end 1 
-      self.endline = [self.transientcorners[2], self.transientcorners[3], self.transientcorners[2]-t*endsec[1], self.transientcorners[3]+t*endsec[0]]
+      self.endline = [self.transientcorners[2], self.transientcorners[3], self.transientcorners[2]-t_end*endsec[1], self.transientcorners[3]+t_end*endsec[0]]
       r=self.canvas.create_line(self.endline,fill='RoyalBlue')
       self.transientline.append(r)
       # second end 2
-      self.endline = [self.transientcorners[2], self.transientcorners[3], self.transientcorners[2]+t*endsec[1], self.transientcorners[3]-t*endsec[0]]
+      self.endline = [self.transientcorners[2], self.transientcorners[3], self.transientcorners[2]+t_end*endsec[1], self.transientcorners[3]-t_end*endsec[0]]
       r=self.canvas.create_line(self.endline,fill='RoyalBlue')
       self.transientline.append(r)
     else:
-      #if 'zoom' in self.master.wm_title():
-      #  t= self.master.wm_title() +'.%d' % len(self.aoi)
-      #else:
-      #  t='zoom %d'% len(self.aoi)
+      if 'zoom' in self.master.wm_title():
+        t= self.master.wm_title() +'.%d' %  self.line_win
+        self.line_win = self.line_win + 1
+      else:
+        t='Line %d of main' % self.line_win
+        self.line_win = self.line_win + 1
       #tag the rectangle for later reference
       linecolor2 = 'red'
       r=self.canvas.create_line(self.transientcorners,fill=linecolor2)
       self.transientline.append(r)
       endsec = Numeric.array([self.transientcorners[2]-self.transientcorners[0], self.transientcorners[3]-self.transientcorners[1]])
       endsec = endsec/math.sqrt(sum(endsec*endsec))
-      t = 4
       # first end 1 
-      self.endline = [self.transientcorners[0], self.transientcorners[1], self.transientcorners[0]-t*endsec[1], self.transientcorners[1]+t*endsec[0]]
+      self.endline = [self.transientcorners[0], self.transientcorners[1], self.transientcorners[0]-t_end*endsec[1], self.transientcorners[1]+t_end*endsec[0]]
       r=self.canvas.create_line(self.endline,fill=linecolor2)
       self.transientline.append(r)
       # first end 2 
-      self.endline = [self.transientcorners[0], self.transientcorners[1], self.transientcorners[0]+t*endsec[1], self.transientcorners[1]-t*endsec[0]]
+      self.endline = [self.transientcorners[0], self.transientcorners[1], self.transientcorners[0]+t_end*endsec[1], self.transientcorners[1]-t_end*endsec[0]]
       r=self.canvas.create_line(self.endline,fill=linecolor2)
       self.transientline.append(r)
       # second end 1 
-      self.endline = [self.transientcorners[2], self.transientcorners[3], self.transientcorners[2]-t*endsec[1], self.transientcorners[3]+t*endsec[0]]
+      self.endline = [self.transientcorners[2], self.transientcorners[3], self.transientcorners[2]-t_end*endsec[1], self.transientcorners[3]+t_end*endsec[0]]
       r=self.canvas.create_line(self.endline,fill=linecolor2)
       self.transientline.append(r)
       # second end 2
-      self.endline = [self.transientcorners[2], self.transientcorners[3], self.transientcorners[2]+t*endsec[1], self.transientcorners[3]-t*endsec[0]]
+      self.endline = [self.transientcorners[2], self.transientcorners[3], self.transientcorners[2]+t_end*endsec[1], self.transientcorners[3]-t_end*endsec[0]]
       r=self.canvas.create_line(self.endline,fill=linecolor2)
       self.transientline.append(r)
-      self.aoi[t]={'coords': self.transientcorners, 'aoi':self.transientline, 'zoomwin': self.openlineprofile(t), 'wintype':'lineprofile'}
+      self.loi[t]={'coords': self.transientcorners, 'loi':self.transientline, 'zoomwin': self.openlineprofile(t), 'wintype':'lineprofile'}
       self.transientline=None
       #self.update()
  
@@ -325,6 +324,23 @@ class imageWin:
       newwin=imageWin(w,title=tag,filename=self.filename,zoomfactor=self.zoomfactor*4,coords=corners,image=self.im,tool=None)
     return newwin
 
+  def openlineprofile(self,tag):
+      # Make lineprofile  relief window
+      import pixel_trace
+      w=Toplevel(self.master)
+      t=self.transientcorners
+      corners=[(self.zoomarea[0]+t[0]/self.zoomfactor), (self.zoomarea[1]+t[1]/self.zoomfactor), (self.zoomarea[0]+t[2]/self.zoomfactor), (self.zoomarea[1]+t[3]/self.zoomfactor)]
+      pixels = pixel_trace.pixel_trace(corners)
+      t = []
+      pixval = []
+      path = 0
+      for i in range(len(pixels)):
+        path = path + pixels[i][2]
+        t.append(i)
+        pixval.append(self.im.getpixel((pixels[i][0],pixels[i][1])))
+      linewin = imagePlot(w,title=tag,x=t,y=pixval)
+      return linewin
+    
   def openrelief(self,tag):
       # Make 3D relief window
       t=self.transientcorners
@@ -374,7 +390,7 @@ class imageWin:
       e.pack(side=LEFT)
       radio2.pack()
       Button(rockerpar, text='Go rock', command=self.GoRock).pack(side=BOTTOM)
-      return rockerpar
+      return frame
       
   def GoRock(self):
     if self.seriestype.get() == 'startend':
@@ -394,27 +410,10 @@ class imageWin:
     #GoRock(filename=self.filename.get(),corners=self.corners,startnumber=startframe,endnumber=endframe)
     return linewin
   
-  def openlineprofile(self,tag):
-      # Make lineprofile  relief window
-      import pixel_trace
-      w=Toplevel(self.master)
-      t=self.transientcorners
-      corners=[(self.zoomarea[0]+t[0]/self.zoomfactor), (self.zoomarea[1]+t[1]/self.zoomfactor), (self.zoomarea[0]+t[2]/self.zoomfactor), (self.zoomarea[1]+t[3]/self.zoomfactor)]
-      pixels = pixel_trace.pixel_trace(corners)
-      t = []
-      pixval = []
-      path = 0
-      for i in range(len(pixels)):
-        path = path + pixels[i][2]
-        t.append(i)
-        pixval.append(self.im.getpixel((pixels[i][0],pixels[i][1])))
-      linewin = imagePlot(w,title='Line profile',x=t,y=pixval)
-      return linewin
-    
-  def setradio1(self,event=None):
+  def setradio1(self,event=None): # Sets the radiobuttom to make fileseries from -x to +x images from current
       self.seriestype.set('delta')
 
-  def setradio2(self,event=None):
+  def setradio2(self,event=None):  # Sets the radiobuttom to make fileseries from No.X to No Y.
       self.seriestype.set('startend')
 
   def get_img_stats(self, image):
@@ -458,6 +457,11 @@ class imageWin:
       w=self.aoi[k]
       if 'zoomwin' in w:
         w['zoomwin'].update(scaled_min,scaled_max,newimage=newimage)
+        w['zoomwin'].setbindings()
+    for k in self.loi.keys():
+      w=self.loi[k]
+      if 'zoomwin' in w:
+        w['zoomwin'].update(coord=w['coords'],zoomarea=self.zoomarea,zoomfactor=self.zoomfactor,newimage=newimage)
         w['zoomwin'].setbindings()
     return True
   
@@ -508,7 +512,6 @@ class imageWin:
       self.canvas.bind('<Button1-Motion>', self.Mouse3PressMotion)
       self.canvas.bind('<Button1-ButtonRelease>', self.keyRMouse3Release)
 
-
   def quit(self,event=None):
     self.master.destroy()
 
@@ -518,7 +521,9 @@ class appWin(imageWin):
     self.master=master
     #these keep track of the AOIs
     self.aoi={}
-    self.no_win = 0
+    self.loi={}
+    self.zoom_win = 0
+    self.line_win = 0
     self.scale=0
     self.offset=0
     self.transientaoi=None
@@ -803,6 +808,43 @@ class appWin(imageWin):
     
 #  def quit(self):
 #    self.master.destroy()
+
+class imagePlot:
+  def __init__(self,master,title='Plot',x=None,y=None):
+
+      self.master = master
+      self.master.title(title)
+      self.frame = Frame(self.master)
+      self.frame.pack()
+      self.f = Figure(figsize=(8,5), dpi=100)
+      self.a = self.f.add_subplot(111)
+      self.plotcanvas = FigureCanvasTkAgg(self.f, master=self.master)
+      self.plotcanvas.show()
+      self.plotcanvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+      #self.f.xticks(x)
+      self.a.plot(x, y, 'b-')
+
+  def setbindings(self):
+    pass
+
+  def update(self,coord=[0,0,0,0],zoomarea=[0,0,0,0],zoomfactor=1, newimage=None):
+      import pixel_trace
+      t=coord
+      corners=[(zoomarea[0]+t[0]/zoomfactor), (zoomarea[1]+t[1]/zoomfactor), (zoomarea[0]+t[2]/zoomfactor), (zoomarea[1]+t[3]/zoomfactor)]
+      pixels = pixel_trace.pixel_trace(corners)
+      t = []
+      pixval = []
+      path = 0
+      for i in range(len(pixels)):
+        path = path + pixels[i][2]
+        t.append(i)
+        pixval.append(newimage.getpixel((pixels[i][0],pixels[i][1])))
+      print t,pixval
+      print self.a
+      self.a.clear()
+      self.a.plot(t, pixval, 'b-')
+      self.plotcanvas.show()
+
 
 class ReliefPlot:
     def __init__(self,master,data=None,extrema=None):
