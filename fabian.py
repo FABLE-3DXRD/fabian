@@ -82,6 +82,8 @@ class imageWin:
     self.canvas.pack(side=TOP,fill=BOTH, expand='yes')
     frameImage.pack(side=TOP,expand=1, pady=10, padx=5)
     #bind events
+    self.canvas.bind('<Button-2>', self.Mouse2Press)
+
     self.canvas.bind('<Button-3>', self.Mouse3Press)
     self.canvas.bind('<Button3-Motion>', self.Mouse3PressMotion)
     self.canvas.bind('<Button3-ButtonRelease>', self.Mouse3Release)
@@ -121,9 +123,14 @@ class imageWin:
       I = "%5.0f"% self.im.getpixel((x/self.zoomfactor +self.zoomarea[0],y/self.zoomfactor +self.zoomarea[1]))
       self.ShowInt.config(text=I)
  
+  def Mouse2Press(self, event):
+    self.canvas.delete()
+    y=self.canvas.canvasx(event.y)
+    print y
+    
   def Mouse3Press(self, event):
     x=self.canvas.canvasx(event.x)
-    y=self.canvas.canvasx(event.y)
+    y=self.canvas.canvasy(event.y)
     x,y=self.val_canvas_coord((x,y))
     self.transientcorners=[x,y,x,y]
     self.drawAoi()
