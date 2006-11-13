@@ -21,6 +21,7 @@ Cleaning up the canvas for line sections upon closing line profile plot does not
 
 Still some problems with the canvas size resetting after opening a new data set with a larger image y size.
 
+The rocking curve procedure destroys update of the image number entry.  
 
 #TODO
 Put under cvs control - DONE
