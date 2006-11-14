@@ -1,4 +1,13 @@
 #!/usr/bin/env python -w 
+"""
+
+Authors: Henning O. Sorensen & Erik Knudsen
+         Center for Fundamental Research: Metal Structures in Four Dimensions
+         Risoe National Laboratory
+         Frederiksborgvej 399
+         DK-4000 Roskilde
+         email:henning.sorensen@risoe.dk
+"""
 
 import string
 import edfimage, tifimage, adscimage, brukerimage, marccdimage,bruker100image
