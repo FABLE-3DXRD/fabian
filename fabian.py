@@ -448,21 +448,24 @@ class imageWin:
     self.offset = - scaled_min * self.scale
     
     if newimage: self.im=newimage
+
     
     imcrop = self.im.crop(self.zoomarea)
     im8c = imcrop.point(lambda i: i * self.scale + self.offset).convert('L')
     self.img = ImageTk.PhotoImage(im8c.resize((self.canvas_xsize,self.canvas_ysize)))
     self.im_min,self.im_max,self.im_mean = self.get_img_stats(imcrop)
-    
+
     self.ShowMin.config(text="Min %i" %(self.im_min))
     self.ShowMax.config(text="Max %i" %(self.im_max))
     self.ShowMean.config(text="Mean %i" %(self.im_mean))
     self.canvas.lower(self.canvas.create_image(0,0,anchor=NW, image=self.img))
+
+
     #update children
     self.children = self.master.winfo_children()
     for k in self.aoi.keys():
       w=self.aoi[k]
-      if 'zoomwin' in w:
+      if w['wintype'] != 'rocker':
         w['zoomwin'].update(scaled_min,scaled_max,newimage=newimage)
         w['zoomwin'].setbindings()
     for k in self.loi.keys():
@@ -709,6 +712,22 @@ class appWin(imageWin):
       return 
     else:
       self.gotoimage()
+      try:
+        #set the image dimensions and zoom out if it is big
+        if self.ysize > 1560:
+          self.zoomfactor = 0.25
+        elif self.ysize > 768:
+          self.zoomfactor = 0.5
+        else:
+          self.zoomfactor = 1
+
+        self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
+        self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
+        self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
+        self.noteb1.setnaturalsize() # update size of notebook page
+      except:
+        pass
+
   
   def rescale(self,event=None):
     self.update()
@@ -761,6 +780,7 @@ class appWin(imageWin):
     self.update_header_page()
     self.update_header_label()
     self.filename.set(newfilename)
+    print "In next image", newfilenumber
     self.displaynumber.set(newfilenumber)
     return True
       

@@ -19,9 +19,9 @@ AOI for rocking curve disappers too soon. Before rocker win has been closed. - D
 
 Cleaning up the canvas for line sections upon closing line profile plot does not happen correctly if more than one is opened before closing a plot. - DONE
 
-Still some problems with the canvas size resetting after opening a new data set with a larger image y size.
+Still some problems with the canvas size resetting after opening a new data set with a larger image y size. - DONE
 
-The rocking curve procedure destroys update of the image number entry.  
+The rocking curve procedure destroys update of the image number entry. - DONE
 
 #TODO
 Put under cvs control - DONE
