@@ -7,4 +7,8 @@ brukerimage.py
 bruker100image.py
 marccdimage.py
 setup.py
+pixel_trace.py
+image_file_series.py
+rocker.py
+median.py
 TODO
