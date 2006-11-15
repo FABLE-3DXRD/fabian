@@ -10,7 +10,7 @@ Authors: Henning O. Sorensen & Erik Knudsen
 """
 
 import string
-import edfimage, tifimage, adscimage, brukerimage, marccdimage,bruker100image
+import edfimage, tifimage, adscimage, brukerimage, marccdimage,bruker100image,pnmimage
 import re,os,sys,time
 
 class image_file_series:
@@ -132,6 +132,9 @@ def deconstruct_filename(filename, pattern=None):
     filetype={'edf': 'edf',
       'gz': 'edf',
       'bz2': 'edf',
+      'pnm' : 'pnm',
+      'pgm' : 'pnm',
+      'pbm' : 'pnm',
       'tif': 'tif',
       'tiff': 'tif',
       'img': 'adsc',
