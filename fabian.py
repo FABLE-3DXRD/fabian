@@ -12,7 +12,7 @@ from Tkinter import *
 import Pmw
 import Numeric
 import math
-import edfimage, tifimage, adscimage, brukerimage, marccdimage,bruker100image
+import edfimage, tifimage, adscimage, brukerimage, marccdimage,bruker100image,pnmimage
 from string import *
 from PIL import Image, ImageTk, ImageFile, ImageStat
 from tkFileDialog import *
@@ -25,13 +25,15 @@ matplotlib.use('TkAgg')
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
+colour={'transientaoi':'RoyalBlue', 'Zoom':'red', 'Relief':'LimeGreen', 'Rocker':'LightBlue', 'transientline':'red', 'LineProfile':'RoyalBlue'}
+
       
 class imageWin:
   def __init__(self,master,filename=None,filenumber=0,title=None,zoomfactor=1,mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None,tool=None):
     #initialize var
     self.master=master
     #these keep track of the AOIs
-    self.aoi={}
+    self.aoi=[]
     self.loi={}
     self.zoom_win = 0
     self.line_win = 0
@@ -42,9 +44,17 @@ class imageWin:
     self.maxval=StringVar()
     self.minval=StringVar()
     self.tool =tool
+    #initialize drawing function to draw the correct object 
+    #draw2 points to a drawing function
+    if 'Line' in tool:
+      self.draw2=self.drawLine2
+    else:
+      self.draw2=self.drawAoi2
     master.bind('q',self.quit)
     master.bind('<FocusIn>',self.MouseEntry)
-    
+    master.bind('z',self.rezoom)
+    master.bind('x',self.rezoom)
+   
     if title: self.master.title(title)
     if filename: self.filename = filename
     
@@ -82,21 +92,32 @@ class imageWin:
     self.canvas.pack(side=TOP,fill=BOTH, expand='yes')
     frameImage.pack(side=TOP,expand=1, pady=10, padx=5)
     #bind events
+    self.canvas.bind('<Button-1>', self.Mouse1Press)
+    self.canvas.bind('<Button1-Motion>', self.Mouse1PressMotion)
+    self.canvas.bind('<Button1-ButtonRelease>', self.Mouse1Release)
+    self.canvas.bind('<Motion>', self.MouseMotion)
     self.canvas.bind('<Button-2>', self.Mouse2Press)
-
+    #bind button 3 - the force the zoom tool
     self.canvas.bind('<Button-3>', self.Mouse3Press)
     self.canvas.bind('<Button3-Motion>', self.Mouse3PressMotion)
     self.canvas.bind('<Button3-ButtonRelease>', self.Mouse3Release)
-    self.canvas.bind('<Motion>', self.MouseMotion)
-    #New bindings for Relief plot
-    self.canvas.bind('<Control-Button-3>', self.Mouse3Press)
-    self.canvas.bind('<Control-Button3-Motion>', self.Mouse3PressMotion)
-    self.canvas.bind('<Control-Button3-ButtonRelease>', self.CtrlMouse3Release)
-    #New bindings for LineProfile
-    self.canvas.bind('<Shift-Button-3>', self.AltMouse3Press)
-    self.canvas.bind('<Shift-Button3-Motion>', self.AltMouse3PressMotion)
-    self.canvas.bind('<Shift-Button3-ButtonRelease>', self.AltMouse3Release)
   
+  def rezoom(self,e):
+    if e.keysym=='z':
+      print "i am rezoom()",e.keysym
+      newzoomfactor=self.zoomfactor*2
+    elif e.keysym=='x':
+      print "i am rezoom()",e.keysym
+      newzoomfactor=self.zoomfactor/2.
+    self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*newzoomfactor)
+    self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*newzoomfactor)
+    self.canvas.config(width=self.canvas_xsize, height=self.canvas_ysize)
+    #just figured out that one could do this
+    self.canvas.scale('all',0,0,newzoomfactor/self.zoomfactor,newzoomfactor/self.zoomfactor)
+    self.zoomfactor=newzoomfactor
+    self.ShowZoom.config(text="%3d %%" %(newzoomfactor*100))
+    self.update()
+ 
   def make_status_bar(self,container):
     frameInfo = Frame(container, bd=0, bg="white")
     self.ShowMin = Label(frameInfo, text="Min -1",  bg ='white',bd=1, relief=SUNKEN, anchor=W)
@@ -133,80 +154,51 @@ class imageWin:
     y=self.canvas.canvasy(event.y)
     x,y=self.val_canvas_coord((x,y))
     self.transientcorners=[x,y,x,y]
-    self.drawAoi()
-
   def Mouse3PressMotion(self, event):
     x=self.canvas.canvasx(event.x)
     y=self.canvas.canvasy(event.y)
-    #check for boundary overruns
     x,y=self.val_canvas_coord((x,y))
     self.transientcorners[2:]=[x,y]
-    self.drawAoi()
-
+    self.drawAoi2()
   def Mouse3Release(self, event):
     x=self.canvas.canvasx(event.x)
     y=self.canvas.canvasy(event.y)
     x,y=self.val_canvas_coord((x,y))
     self.transientcorners[2:]=[x,y]
-    self.drawAoi(transient=0)
-
-  def CtrlMouse3Release(self, event):
+    #save whichever tool was active
+    tmp=self.draw2
+    self.draw2=self.drawAoi2
+    self.use_tool(tool='Zoom')
+    self.draw2=tmp
+    
+  def Mouse1Press(self, event):
+    x=self.canvas.canvasx(event.x)
+    y=self.canvas.canvasy(event.y)
+    x,y=self.val_canvas_coord((x,y))
+    self.transientcorners=[x,y,x,y]
+  def Mouse1PressMotion(self, event):
     x=self.canvas.canvasx(event.x)
     y=self.canvas.canvasy(event.y)
     x,y=self.val_canvas_coord((x,y))
     self.transientcorners[2:]=[x,y]
-    self.drawAoi(transient=2)
-
-  def keyRMouse3Release(self, event):
+    self.draw2()
+  def Mouse1Release(self, event):
     x=self.canvas.canvasx(event.x)
     y=self.canvas.canvasy(event.y)
     x,y=self.val_canvas_coord((x,y))
     self.transientcorners[2:]=[x,y]
-    self.drawAoi(transient=3)
-
+    self.use_tool()
+    #self.draw(tool=self.tool)
+  
   def MouseEntry(self,event):
     #mouse has entered the window - check for nonexistent children
     children=self.master.winfo_children()
-    print 'children', children
-    for k in self.aoi.keys():
-      w=self.aoi[k]
-      print 'w',w
-      print 'w.master', w['zoomwin'].master
+    for w in self.aoi:
       if not w['zoomwin'].master in children:
-        for l in w['aoi']:
+	for l in w['aoi']:
           self.canvas.delete(l)
-        self.aoi.pop(k)
-    for k in self.loi.keys():
-      w=self.loi[k]
-      print 'w',w
-      print 'w.master', w['zoomwin'].master
-      if not w['zoomwin'].master in children:
-        for l in w['loi']:
-          self.canvas.delete(l)
-        self.loi.pop(k)
-
- # NEW bindings for LineProfile
-  def AltMouse3Press(self, event):
-    x=self.canvas.canvasx(event.x)
-    y=self.canvas.canvasx(event.y)
-    x,y=self.val_canvas_coord((x,y))
-    self.transientcorners=[x,y,x,y]
-    self.drawLine()
-
-  def AltMouse3PressMotion(self, event):
-    x=self.canvas.canvasx(event.x)
-    y=self.canvas.canvasy(event.y)
-    x,y=self.val_canvas_coord((x,y))
-    self.transientcorners[2:]=[x,y]
-    self.drawLine()
-
-  def AltMouse3Release(self, event):
-    x=self.canvas.canvasx(event.x)
-    y=self.canvas.canvasy(event.y)
-    x,y=self.val_canvas_coord((x,y))
-    self.transientcorners[2:]=[x,y]
-    self.drawLine(transient=0)
-
+	self.aoi.remove(w)
+  
   def val_canvas_coord(self,c):
     c_new=[c[0],c[1]]
     if c[0]<0:
@@ -219,106 +211,55 @@ class imageWin:
       c_new[1]=self.canvas_ysize
     return c_new
     
-  def drawAoi(self,transient=1,fix=0):
-    if self.transientaoi:
-      self.canvas.delete(self.transientaoi)#the last element of the list is the one to be redrawn. 
-      #if upper left corner == lower right do not open a zoom or similar
-      if self.transientcorners[0]==self.transientcorners[2] or self.transientcorners[1]==self.transientcorners[3]:
-	return
-    if transient==1:
-      r=self.canvas.create_rectangle(self.transientcorners,outline='RoyalBlue')
-      self.transientaoi=r
-    elif transient==2:
-      if 'zoom' in self.master.wm_title():
-        t= 'relief of ' + self.master.wm_title()
-      else:
-        t='relief of main'
-      #tag the rectangle for later reference
-      r=self.canvas.create_rectangle(self.transientcorners,outline='LimeGreen',tag=t)
-      self.aoi[t]={'coords': self.transientcorners, 'aoi':[r], 'zoomwin': self.openrelief(t), 'wintype':'relief'}
-      #self.openrelief(t)
-    elif transient==3:
-      #tag the rectangle for later reference
-      t = 'rock'
-      r=self.canvas.create_rectangle(self.transientcorners,outline='LightBlue',tag=t)
-      self.aoi[t]={'coords': self.transientcorners, 'aoi':[r], 'zoomwin': self.openrocker(t), 'wintype':'rocker'}
-    else:
-      if 'zoom' in self.master.wm_title():
-        t= self.master.wm_title() +'.%d' %  self.zoom_win
-        self.zoom_win = self.zoom_win + 1
-      else:
-        t='zoom %d' % self.zoom_win
-        self.zoom_win = self.zoom_win + 1
-      #tag the rectangle for later reference
-      r=self.canvas.create_rectangle(self.transientcorners,outline='red',tag=t)
-      self.aoi[t]={'coords': self.transientcorners, 'aoi':[r], 'zoomwin': self.openzoom(t), 'wintype':'zoom'}
-      self.update()
-
-  def drawLine(self,transient=1,fix=0):
-    t_end = 4
-    if self.transientline:
-      for obj in self.transientline:
-        self.canvas.delete(obj)#the last element of the list is the one to be redrawn.
-      self.transientline=[]
-    else:
-      self.transientline=[]
-    if transient==1:
-      r=self.canvas.create_line(self.transientcorners,fill='RoyalBlue')
-      self.transientline.append(r)
-      endsec = Numeric.array([self.transientcorners[2]-self.transientcorners[0], self.transientcorners[3]-self.transientcorners[1]])
-      normendsec = math.sqrt(sum(endsec*endsec))
-      if endsec == 0:
-        endsec = [0, 0]
-      else:
-        endsec = endsec/math.sqrt(sum(endsec*endsec))
-      # first end 1 
-      self.endline = [self.transientcorners[0], self.transientcorners[1], self.transientcorners[0]-t_end*endsec[1], self.transientcorners[1]+t_end*endsec[0]]
-      r=self.canvas.create_line(self.endline,fill='RoyalBlue')
-      self.transientline.append(r)
-      # first end 2 
-      self.endline = [self.transientcorners[0], self.transientcorners[1], self.transientcorners[0]+t_end*endsec[1], self.transientcorners[1]-t_end*endsec[0]]
-      r=self.canvas.create_line(self.endline,fill='RoyalBlue')
-      self.transientline.append(r)
-      # second end 1 
-      self.endline = [self.transientcorners[2], self.transientcorners[3], self.transientcorners[2]-t_end*endsec[1], self.transientcorners[3]+t_end*endsec[0]]
-      r=self.canvas.create_line(self.endline,fill='RoyalBlue')
-      self.transientline.append(r)
-      # second end 2
-      self.endline = [self.transientcorners[2], self.transientcorners[3], self.transientcorners[2]+t_end*endsec[1], self.transientcorners[3]-t_end*endsec[0]]
-      r=self.canvas.create_line(self.endline,fill='RoyalBlue')
-      self.transientline.append(r)
-    else:
+  def use_tool(self,tool=None):
+    if not tool:
+      tool=self.tool
+    if 'Relief' in tool:
+	if 'zoom' in self.master.wm_title():
+          t= 'relief of ' + self.master.wm_title()
+        else:
+          t='relief of main'
+	opensubwin=self.openrelief
+    elif 'Zoom' in tool:
+        if 'zoom' in self.master.wm_title():
+          t= self.master.wm_title() +'.%d' %  self.zoom_win
+        else:
+          t='zoom %d' % self.zoom_win
+	opensubwin=self.openzoom
+	self.zoom_win=self.zoom_win+1
+    elif 'Rock' in tool:
+	t = 'rock'
+	opensubwin=self.openrocker
+    elif 'Line' in tool:
       if 'zoom' in self.master.wm_title():
         t= self.master.wm_title() +'.%d' %  self.line_win
         self.line_win = self.line_win + 1
       else:
         t='Line %d of main' % self.line_win
         self.line_win = self.line_win + 1
-      #tag the rectangle for later reference
-      linecolor2 = 'red'
-      r=self.canvas.create_line(self.transientcorners,fill=linecolor2)
-      self.transientline.append(r)
-      endsec = Numeric.array([self.transientcorners[2]-self.transientcorners[0], self.transientcorners[3]-self.transientcorners[1]])
-      endsec = endsec/math.sqrt(sum(endsec*endsec))
-      # first end 1 
-      self.endline = [self.transientcorners[0], self.transientcorners[1], self.transientcorners[0]-t_end*endsec[1], self.transientcorners[1]+t_end*endsec[0]]
-      r=self.canvas.create_line(self.endline,fill=linecolor2)
-      self.transientline.append(r)
-      # first end 2 
-      self.endline = [self.transientcorners[0], self.transientcorners[1], self.transientcorners[0]+t_end*endsec[1], self.transientcorners[1]-t_end*endsec[0]]
-      r=self.canvas.create_line(self.endline,fill=linecolor2)
-      self.transientline.append(r)
-      # second end 1 
-      self.endline = [self.transientcorners[2], self.transientcorners[3], self.transientcorners[2]-t_end*endsec[1], self.transientcorners[3]+t_end*endsec[0]]
-      r=self.canvas.create_line(self.endline,fill=linecolor2)
-      self.transientline.append(r)
-      # second end 2
-      self.endline = [self.transientcorners[2], self.transientcorners[3], self.transientcorners[2]+t_end*endsec[1], self.transientcorners[3]-t_end*endsec[0]]
-      r=self.canvas.create_line(self.endline,fill=linecolor2)
-      self.transientline.append(r)
-      self.loi[t]={'coords': self.transientcorners, 'loi':self.transientline, 'zoomwin': self.openlineprofile(t), 'wintype':'lineprofile'}
-      self.transientline=None
-      #self.update()
+      opensubwin=self.openlineprofile
+    self.aoi.append({'coords':self.transientcorners,'aoi':[self.draw2(tool=tool)],'zoomwin': opensubwin(t), 'wintype':tool})
+
+  def drawAoi2(self,tool='transientaoi'):
+    self.canvas.delete('transientaoi')
+    return self.canvas.create_rectangle(self.transientcorners,tag=tool,outline=colour[tool])
+
+  def drawLine2(self,tool='transientline'):
+    self.canvas.delete('transientline')
+    t_end=4
+    tc=self.transientcorners
+    #calc the end section coordinates
+    endsec = Numeric.array([tc[2]-tc[0], tc[3]-tc[1]])
+    normendsec = math.sqrt(sum(endsec*endsec))
+    if normendsec == 0:
+      #line has no length - i.e. no line should be drawn and no plot should be opened (no?)
+      return
+    else:
+      endsec = endsec/normendsec*t_end
+      #line is drawn as a polyline in one single object
+      line=(tc[0]-endsec[1],tc[1]+endsec[0],tc[0]+endsec[1],tc[1]-endsec[0],tc[0],tc[1],tc[2],tc[3],tc[2]-endsec[1],tc[3]+endsec[0],tc[2]+endsec[1],tc[3]-endsec[0])
+    return self.canvas.create_line(line,tag=tool,fill=colour[tool])
+
  
   def openzoom(self,tag):
     w=Toplevel(self.master)
@@ -336,6 +277,7 @@ class imageWin:
       import pixel_trace
       w=Toplevel(self.master)
       t=self.transientcorners
+      print t
       corners=[(self.zoomarea[0]+t[0]/self.zoomfactor), (self.zoomarea[1]+t[1]/self.zoomfactor), (self.zoomarea[0]+t[2]/self.zoomfactor), (self.zoomarea[1]+t[3]/self.zoomfactor)]
       pixels = pixel_trace.pixel_trace(corners)
       t = []
@@ -449,7 +391,6 @@ class imageWin:
     
     if newimage: self.im=newimage
 
-    
     imcrop = self.im.crop(self.zoomarea)
     im8c = imcrop.point(lambda i: i * self.scale + self.offset).convert('L')
     self.img = ImageTk.PhotoImage(im8c.resize((self.canvas_xsize,self.canvas_ysize)))
@@ -459,20 +400,10 @@ class imageWin:
     self.ShowMax.config(text="Max %i" %(self.im_max))
     self.ShowMean.config(text="Mean %i" %(self.im_mean))
     self.canvas.lower(self.canvas.create_image(0,0,anchor=NW, image=self.img))
-
-
     #update children
-    self.children = self.master.winfo_children()
-    for k in self.aoi.keys():
-      w=self.aoi[k]
-      if w['wintype'] != 'rocker':
+    for w in self.aoi:
+      if w['wintype'] in ('Zoom'):
         w['zoomwin'].update(scaled_min,scaled_max,newimage=newimage)
-        w['zoomwin'].setbindings()
-    for k in self.loi.keys():
-      w=self.loi[k]
-      if 'zoomwin' in w:
-        w['zoomwin'].update(coord=w['coords'],zoomarea=self.zoomarea,zoomfactor=self.zoomfactor,newimage=newimage)
-        w['zoomwin'].setbindings()
     return True
   
   def reset_scale(self):
@@ -487,22 +418,24 @@ class imageWin:
     while cc < 0.98*sum(hist) and i < 255:
       i=i+1
       cc = cc + hist[i]
-    scaled_max = ((self.im_max - self.im_min)/255 *i)+self.im_min
+    scaled_max = max(1,((self.im_max - self.im_min)/255 *i)+self.im_min)
     self.maxval.set("%.0f"%scaled_max)
 
   def setbindings(self):
     try:
       self.tool = self.ToolType.get()
-      print self.tool
+      print 'setbindings',self.tool
     except:
       pass
+    if 'Line' in self.tool:
+      self.draw2=self.drawLine2
+    else:
+      self.draw2=self.drawAoi2
     #update children
-    self.updatebindings(tool=self.tool)
-    self.children = self.master.winfo_children()
-    for k in self.aoi.keys():
-      w=self.aoi[k]
-      w['zoomwin'].tool=self.tool
-      w['zoomwin'].setbindings()
+    for w in self.aoi:
+      if w['wintype']=='Zoom':
+	w['zoomwin'].tool=self.tool
+	w['zoomwin'].setbindings()
 
   def updatebindings(self,tool=None):
     if tool=='Zoom':
@@ -530,7 +463,7 @@ class appWin(imageWin):
     #initialize var
     self.master=master
     #these keep track of the AOIs
-    self.aoi={}
+    self.aoi=[]
     self.loi={}
     self.zoom_win = 0
     self.line_win = 0
@@ -545,10 +478,13 @@ class appWin(imageWin):
     self.filetype = filetype
     self.ToolType = StringVar()
     self.tool = 'Zoom' # Set default event of mouse bottom 1 to Zoom  
+    self.draw2=self.drawAoi2
     self.ToolType.set(self.tool)
     master.bind('q',self.quit)
     master.bind('<FocusIn>',self.MouseEntry)
-
+    master.bind('z',self.rezoom)
+    master.bind('x',self.rezoom)
+    
     if filename:
       self.filename.set(filename)
       (newfilenumber,filetype)=deconstruct_filename(filename)
@@ -578,6 +514,7 @@ class appWin(imageWin):
     frame.pack(fill=X)
 
     #add menubar
+    self.make_command_menu(frame)
 
     #Add Notebook tabs
     self.noteb1 = Pmw.NoteBook(frame)
@@ -589,7 +526,6 @@ class appWin(imageWin):
     self.make_scaling_ctls(self.page1)
     
     self.make_image_canvas(self.page1)
-    self.make_command_menu(frame)
     
     self.make_header_info()
     self.make_status_bar(self.page1)
@@ -727,7 +663,6 @@ class appWin(imageWin):
         self.noteb1.setnaturalsize() # update size of notebook page
       except:
         pass
-
   
   def rescale(self,event=None):
     self.update()
@@ -818,7 +753,6 @@ class appWin(imageWin):
       filetype=os.path.splitext(filename)[1][1:]
     
     img=eval( filetype+'image.'+filetype+'image()')
-    print img
     try:
       self.im=img.read(filename).toPIL16()
       (self.im.minval,self.im.maxval,self.im.meanval)=(img.getmin(),img.getmax(),img.getmean())
@@ -1019,6 +953,9 @@ def deconstruct_filename(filename):
   filetype={'edf': 'edf',
     'gz': 'edf',
     'bz2': 'edf',
+    'pnm' : 'pnm',
+    'pgm' : 'pnm',
+    'pbm' : 'pnm',
     'tif': 'tif',
     'tiff': 'tif',
     'img': 'adsc',
