@@ -78,7 +78,7 @@ class pnmimage(edfimage.edfimage):
   def P5dec(self,buf,bytecode):
     l=buf.read()
     try:
-      data=Numeric.reshape(Numeric.fromstring(l,bytecode),[self.dim2, self.dim1])
+      data=Numeric.reshape(Numeric.fromstring(l,bytecode),[self.dim2, self.dim1]).byteswapped()
     except ValueError:
       raise IOError, 'Size spec in pnm-header does not match size of image data field'
     return data
