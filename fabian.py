@@ -404,6 +404,8 @@ class imageWin:
     for w in self.aoi:
       if w['wintype'] in ('Zoom'):
         w['zoomwin'].update(scaled_min,scaled_max,newimage=newimage)
+      if w['wintype'] in ('LineProfile'):
+        w['zoomwin'].update(coord=w['coords'],zoomarea=self.zoomarea,zoomfactor=self.zoomfactor,newimage=newimage)
     return True
   
   def reset_scale(self):
@@ -800,8 +802,6 @@ class imagePlot:
         path = path + pixels[i][2]
         t.append(i)
         pixval.append(newimage.getpixel((pixels[i][0],pixels[i][1])))
-      print t,pixval
-      print self.a
       self.a.clear()
       self.a.plot(t, pixval, 'b-')
       self.plotcanvas.show()
