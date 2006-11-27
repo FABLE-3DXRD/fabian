@@ -6,6 +6,7 @@ adscimage.py
 brukerimage.py
 bruker100image.py
 marccdimage.py
+pnmimage.py
 setup.py
 pixel_trace.py
 image_file_series.py
