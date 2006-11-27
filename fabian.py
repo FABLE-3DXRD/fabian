@@ -29,20 +29,24 @@ colour={'transientaoi':'RoyalBlue', 'Zoom':'red', 'Relief':'LimeGreen', 'Rocker'
 
       
 class imageWin:
-  def __init__(self,master,filename=None,filenumber=0,title=None,zoomfactor=1,mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None,tool=None):
+  def __init__(self,master,filename=None,filenumber=0,title=None,zoomfactor=1,scaled_min=None,scaled_max=None,scale=None, mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None,tool=None):
     #initialize var
     self.master=master
     #these keep track of the AOIs
     self.aoi=[]
-    self.loi={}
     self.zoom_win = 0
     self.line_win = 0
-    self.scale=0
     self.offset=0
     self.transientaoi=None
     self.transientline=None
     self.maxval=StringVar()
     self.minval=StringVar()
+    if scaled_min: self.minval.set(scaled_min)
+    if scaled_max: self.maxval.set(scaled_max)
+    if scale:
+      self.scale = scale
+    else:
+      self.scale = 0
     self.tool =tool
     #initialize drawing function to draw the correct object 
     #draw2 points to a drawing function
@@ -104,10 +108,10 @@ class imageWin:
   
   def rezoom(self,e):
     if e.keysym=='z':
-      print "i am rezoom()",e.keysym
+      #print "i am rezoom()",e.keysym
       newzoomfactor=self.zoomfactor*2
     elif e.keysym=='x':
-      print "i am rezoom()",e.keysym
+      #print "i am rezoom()",e.keysym
       newzoomfactor=self.zoomfactor/2.
     self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*newzoomfactor)
     self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*newzoomfactor)
@@ -147,7 +151,6 @@ class imageWin:
   def Mouse2Press(self, event):
     self.canvas.delete()
     y=self.canvas.canvasx(event.y)
-    print y
     
   def Mouse3Press(self, event):
     x=self.canvas.canvasx(event.x)
@@ -238,6 +241,7 @@ class imageWin:
         t='Line %d of main' % self.line_win
         self.line_win = self.line_win + 1
       opensubwin=self.openlineprofile
+    print  opensubwin
     self.aoi.append({'coords':self.transientcorners,'aoi':[self.draw2(tool=tool)],'zoomwin': opensubwin(t), 'wintype':tool})
 
   def drawAoi2(self,tool='transientaoi'):
@@ -262,11 +266,13 @@ class imageWin:
 
  
   def openzoom(self,tag):
-    w=Toplevel(self.master)
     t=self.transientcorners
+    print t
     corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
+    if corners[0]-corners[2] == 0 or corners[1]-corners[3] == 0: return False
+    w=Toplevel(self.master)
     if self.tool:
-      newwin=imageWin(w,title=tag,filename=self.filename,zoomfactor=self.zoomfactor*4,coords=corners,image=self.im,tool=self.tool)
+      newwin=imageWin(w,title=tag,filename=self.filename,zoomfactor=self.zoomfactor*4,scaled_min=self.minval.get(),scaled_max=self.maxval.get(),scale=self.scale,coords=corners,image=self.im,tool=self.tool)
       newwin.tool=self.tool
     else:
       newwin=imageWin(w,title=tag,filename=self.filename,zoomfactor=self.zoomfactor*4,coords=corners,image=self.im,tool=None)
@@ -277,7 +283,6 @@ class imageWin:
       import pixel_trace
       w=Toplevel(self.master)
       t=self.transientcorners
-      print t
       corners=[(self.zoomarea[0]+t[0]/self.zoomfactor), (self.zoomarea[1]+t[1]/self.zoomfactor), (self.zoomarea[0]+t[2]/self.zoomfactor), (self.zoomarea[1]+t[3]/self.zoomfactor)]
       pixels = pixel_trace.pixel_trace(corners)
       t = []
@@ -356,7 +361,6 @@ class imageWin:
     rockdata.run()
     w=Toplevel(self.master)
     linewin = imagePlot(w,title='Rocking curve',x=rockdata.imagenumber,y=rockdata.getdata())
-    #GoRock(filename=self.filename.get(),corners=self.corners,startnumber=startframe,endnumber=endframe)
     return linewin
   
   def setradio1(self,event=None): # Sets the radiobuttom to make fileseries from -x to +x images from current
@@ -385,13 +389,13 @@ class imageWin:
     else:
       self.minval.set(scaled_min)
       self.maxval.set(scaled_max)
-    #self.maxval.set(scaled_max)
     self.scale = 255.0 / (scaled_max - scaled_min)
     self.offset = - scaled_min * self.scale
     
     if newimage: self.im=newimage
-
+    print self.zoomarea
     imcrop = self.im.crop(self.zoomarea)
+    print imcrop.getbbox()
     im8c = imcrop.point(lambda i: i * self.scale + self.offset).convert('L')
     self.img = ImageTk.PhotoImage(im8c.resize((self.canvas_xsize,self.canvas_ysize)))
     self.im_min,self.im_max,self.im_mean = self.get_img_stats(imcrop)
@@ -426,7 +430,6 @@ class imageWin:
   def setbindings(self):
     try:
       self.tool = self.ToolType.get()
-      print 'setbindings',self.tool
     except:
       pass
     if 'Line' in self.tool:
@@ -466,7 +469,6 @@ class appWin(imageWin):
     self.master=master
     #these keep track of the AOIs
     self.aoi=[]
-    self.loi={}
     self.zoom_win = 0
     self.line_win = 0
     self.scale=0
@@ -591,13 +593,13 @@ class appWin(imageWin):
     Label(frameScale,text='Scale: ', bg='white').pack(side=LEFT)
     Label(frameScale,text='min:', bg='white').pack(side=LEFT)
     e=Entry(frameScale, textvariable=self.minval, bg='white', width=6)
-    e.bind('<FocusOut>',self.rescale)
+    #e.bind('<FocusOut>',self.rescale)
     e.bind('<Return>',self.rescale)
     e.bind('<KP_Enter>',self.rescale)
     e.pack(side=LEFT,padx=4)
     Label(frameScale,text='max:', bg='white').pack(side=LEFT)
     e=Entry(frameScale, textvariable=self.maxval, bg='white', width=6)
-    e.bind('<FocusOut>',self.rescale)
+    #e.bind('<FocusOut>',self.rescale)
     e.bind('<Return>',self.rescale)
     e.bind('<KP_Enter>',self.rescale)
     e.pack(side=LEFT,padx=4)
@@ -717,7 +719,6 @@ class appWin(imageWin):
     self.update_header_page()
     self.update_header_label()
     self.filename.set(newfilename)
-    print "In next image", newfilenumber
     self.displaynumber.set(newfilenumber)
     return True
       
