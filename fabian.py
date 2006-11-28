@@ -235,10 +235,6 @@ class imageWin:
   def use_tool(self,tool=None):
     if not tool:
       tool=self.tool
-    if self.transientcorners[:2]==self.transientcorners[2:]:
-      self.canvas.delete('transientaoi')
-      self.canvas.delete('transientline')
-      return
     if 'Relief' in tool:
 	if 'zoom' in self.master.wm_title():
           t= 'relief of ' + self.master.wm_title()
@@ -246,16 +242,22 @@ class imageWin:
           t='relief of main'
 	opensubwin=self.openrelief
     elif 'Zoom' in tool:
+        if self.transientcorners[0]==self.transientcorners[2] or self.transientcorners[1]==self.transientcorners[3]:
+          self.canvas.delete('transientaoi')
+          return
         if 'zoom' in self.master.wm_title():
           t= self.master.wm_title() +'.%d' %  self.zoom_win
         else:
           t='zoom %d' % self.zoom_win
-	opensubwin=self.openzoom
-	self.zoom_win=self.zoom_win+1
+        opensubwin=self.openzoom
+        self.zoom_win=self.zoom_win+1
     elif 'Rock' in tool:
 	t = 'rock'
 	opensubwin=self.openrocker
     elif 'Line' in tool:
+      if self.transientcorners[:2]==self.transientcorners[2:]:
+        self.canvas.delete('transientline')
+        return
       if 'zoom' in self.master.wm_title():
         t= self.master.wm_title() +'.%d' %  self.line_win
         self.line_win = self.line_win + 1
