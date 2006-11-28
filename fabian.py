@@ -235,6 +235,10 @@ class imageWin:
   def use_tool(self,tool=None):
     if not tool:
       tool=self.tool
+    if self.transientcorners[:2]==self.transientcorners[2:]:
+      self.canvas.delete('transientaoi')
+      self.canvas.delete('transientline')
+      return
     if 'Relief' in tool:
 	if 'zoom' in self.master.wm_title():
           t= 'relief of ' + self.master.wm_title()
@@ -391,16 +395,12 @@ class imageWin:
     imin,imax=image.getextrema()
     l=list(image.getdata())
     imean=sum(l)/len(l)
-    return (imin,imax,imean) 
+    return (imin,imax,imean)
    
   def update(self,scaled_min=0,scaled_max=0,newimage=None,filename=None):
     if self.scale==0:
       self.reset_scale()
-    #scale this instance itself and all its children
-    if (scaled_min,scaled_max,newimage)==(atof(self.minval.get()),atof(self.maxval.get()),None):
-      #no need to rescale or redraw
-      return True
-    elif (scaled_min==scaled_max==0):
+    if (scaled_min==scaled_max==0):
       scaled_min = atof(self.minval.get())
       scaled_max = atof(self.maxval.get())
     else:
@@ -498,6 +498,8 @@ class appWin(imageWin):
     self.transientline=None
     self.maxval=StringVar()
     self.minval=StringVar()
+    self.scaled_min=0
+    self.scaled_max=0
     self.displaynumber=StringVar()
     self.filename=StringVar()
     self.filetype = filetype
@@ -724,10 +726,22 @@ class appWin(imageWin):
         self.noteb1.setnaturalsize() # update size of notebook page
       except:
         pass
-  
+ 
   def rescale(self,event=None):
     self.update()
     return True
+
+  def update(self,newimage=None,filename=None):
+    #this function is supposed to intercept any unnecessary calls to update
+    #there is no possibility of forcing a scaling through the call - this will always pick it from the GUI
+    s_min=atof(self.minval.get())
+    s_max=atof(self.maxval.get())
+    if (self.scaled_min,self.scaled_max,newimage)==(s_min,s_max,None):
+      #no need to rescale or redraw
+      return
+    imageWin.update(self,scaled_min=s_min,scaled_max=s_max,newimage=newimage,filename=filename)
+    #store scaling vals for later reference
+    self.scaled_min,self.scaled_max=s_min,s_max
 
   def get_img_stats(self, image):
     #this is a hack _while thinking of a better solution

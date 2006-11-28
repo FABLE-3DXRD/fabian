@@ -23,6 +23,10 @@ Still some problems with the canvas size resetting after opening a new data set 
 
 The rocking curve procedure destroys update of the image number entry. - DONE
 
+zero-height/width AOIs are left on the canvas and reports an uncaught error - i.e. cannot zoom in on nothing
+
+update function does rescaling of root image even though it is not necessary - DONE
+
 #TODO
 Put under cvs control - DONE
 implement getheader functionality in tifimage.py - DONE
@@ -34,3 +38,4 @@ Add update of line plots when changing frame - DONE
 clean up the filename splitting and joining code - it is a jumbled mess right now
 Write setup script and compile executable for windows
 List of AOIs - possibly with load/save functionality
+also update Relief windows
