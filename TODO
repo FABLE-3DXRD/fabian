@@ -23,9 +23,11 @@ Still some problems with the canvas size resetting after opening a new data set 
 
 The rocking curve procedure destroys update of the image number entry. - DONE
 
-zero-height/width AOIs are left on the canvas and reports an uncaught error - i.e. cannot zoom in on nothing
+zero-height/width AOIs are left on the canvas and reports an uncaught error - i.e. cannot zoom in on nothing - DONE
 
 update function does rescaling of root image even though it is not necessary - DONE
+
+Only half on the AOIs from closed zoom windows are removed upon each appWin focus. 
 
 #TODO
 Put under cvs control - DONE
@@ -35,7 +37,9 @@ add possibility for reading bruker images - DONE
 add possibility for reading bzipped and gzipped edf images - DONE
 Add some kind of AOI-integration over file series - add function to edfimage.py that sums over rectangle? - DONE
 Add update of line plots when changing frame - DONE
-clean up the filename splitting and joining code - it is a jumbled mess right now
+clean up the filename splitting and joining code - it is a jumbled mess right now - DONE
 Write setup script and compile executable for windows
 List of AOIs - possibly with load/save functionality
 also update Relief windows
+Read and show peaks found with peaksearch from ImageD11
+
