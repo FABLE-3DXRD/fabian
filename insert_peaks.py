@@ -1,0 +1,57 @@
+#! /usr/bin/env python
+"""
+
+Authors: Henning O. Sorensen & Erik Knudsen
+         Center for Fundamental Research: Metal Structures in Four Dimensions
+         Risoe National Laboratory
+         Frederiksborgvej 399
+         DK-4000 Roskilde
+         email:henning.sorensen@risoe.dk
+"""
+from image_file_series import construct_filename, deconstruct_filename
+ 
+class readpeaksearch:
+    """
+    The useful class - called by the gui to process peaksearch output
+    into spots
+    """
+    def __init__(self):
+        self.lines=None
+        self.peaks = []
+ 
+    def readpeaks(self,peaksfilename,imagefile):
+        """
+        read in peaks found with peaksearch (ImageD11)
+        """
+        self.lines = open(peaksfilename,"r").readlines()
+        self.images={}
+        i=-1
+        for line in self.lines:
+            i+=1
+            if line[0:6]=="# File":
+                name = line.split()[-1]
+                self.images[name]=i
+
+        numb, filetype = deconstruct_filename(imagefile)
+        start = self.images[imagefile]
+        print imagefile
+        try:
+            end = self.images[construct_filename(imagefile,numb+1)]
+        except:
+            end = len(self.lines) 
+            
+        i = start +1
+        line=self.lines[i]
+        for line in self.lines[start:end]:
+            if line[0]!='#' and len(line)>10:
+                [npixels, yt, ypos, zpos] =  line.split()[0:4]
+                self.peaks.append([npixels, ypos, zpos])
+
+        
+if __name__=="__main__":
+    import sys
+    peaksearchfile = sys.argv[1]
+    imagefile = sys.argv[2]
+    peaklist = readpeaksearch()
+    peaklist.readpeaks(peaksearchfile,imagefile)
+    print peaklist.peaks
