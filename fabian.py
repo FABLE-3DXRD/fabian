@@ -236,6 +236,9 @@ class imageWin:
     if not tool:
       tool=self.tool
     if 'Relief' in tool:
+        if self.transientcorners[0]==self.transientcorners[2] or self.transientcorners[1]==self.transientcorners[3]:
+          self.canvas.delete('transientaoi')
+          return
 	if 'zoom' in self.master.wm_title():
           t= 'relief of ' + self.master.wm_title()
         else:
@@ -324,12 +327,9 @@ class imageWin:
       t=self.transientcorners
       corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
       
-      self.reliefmap = list(self.im.crop(corners).getdata())
-      self.reliefextrema = [min(self.reliefmap),max(self.reliefmap)]
-      self.reliefmap = Numeric.reshape( self.reliefmap,[corners[3]-corners[1], corners[2]-corners[0]])
       reli=Toplevel(self.master)
       reli.title(tag)
-      newReli=ReliefPlot(reli,data=self.reliefmap,extrema=self.reliefextrema)
+      newReli=ReliefPlot(reli,newimage=self.im,corners=corners)
       return newReli
 
   def openrocker(self,tag):
@@ -412,9 +412,7 @@ class imageWin:
     self.offset = - scaled_min * self.scale
     
     if newimage: self.im=newimage
-    print self.zoomarea
     imcrop = self.im.crop(self.zoomarea)
-    print imcrop.getbbox()
     im8c = imcrop.point(lambda i: i * self.scale + self.offset).convert('L')
     self.img = ImageTk.PhotoImage(im8c.resize((self.canvas_xsize,self.canvas_ysize)))
     self.im_min,self.im_max,self.im_mean = self.get_img_stats(imcrop)
@@ -433,6 +431,8 @@ class imageWin:
         w['zoomwin'].update(scaled_min,scaled_max,newimage=newimage)
       if w['wintype'] in ('LineProfile'):
         w['zoomwin'].update(coord=w['coords'],zoomarea=self.zoomarea,zoomfactor=self.zoomfactor,newimage=newimage)
+      if w['wintype'] in ('Relief'):
+        w['zoomwin'].update(newimage=self.im)
     return True
   
   def reset_scale(self):
@@ -848,7 +848,6 @@ class appWin(imageWin):
 
 class imagePlot:
   def __init__(self,master,title='Plot',x=None,y=None):
-
       self.master = master
       self.master.title(title)
       self.frame = Frame(self.master)
@@ -882,18 +881,20 @@ class imagePlot:
 
 
 class ReliefPlot:
-    def __init__(self,master,data=None,extrema=None):
+    def __init__(self,master,newimage=None,corners=[0,0,0,0]):
         import OpenGL.GL as GL
         import OpenGL.Tk as oTk
         self.master = master
         self.f=oTk.Frame(self.master)
         self.f.pack(side=oTk.BOTTOM,expand=oTk.NO,fill=oTk.X)
         self.dataoff=0
-        if data!=None:
-            self.map=data.copy()
-        else:
-            self.map=Numeric.array([0,0,0])
+        self.corners = corners
+        data = list(newimage.crop(self.corners).getdata())
+        extrema = [min(data),max(data)]
+        data = Numeric.reshape( data,[self.corners[3]-self.corners[1], self.corners[2]-self.corners[0]])
+        self.map=data.copy()
         self.pointsize=4.
+
         self.map = Numeric.transpose(self.map)
         self.sizex = self.map.shape[0]
         self.sizey = self.map.shape[1]
@@ -924,10 +925,23 @@ class ReliefPlot:
     def quit(self):
         self.master.destroy()
     
-    def update(self,whatever,whoever,newimage=None):
-        pass
-    
-    def redraw(self,o):
+    def update(self,newimage=None):
+        print newimage.size
+        data = list(newimage.crop(self.corners).getdata())
+        extrema = [min(data),max(data)]
+        data = Numeric.reshape( data,[self.corners[3]-self.corners[1], self.corners[2]-self.corners[0]])
+        self.map = data.copy()
+        self.map = Numeric.transpose(self.map)
+        self.zscale = self.size/(extrema[1]-extrema[0])
+        self.map = self.map*self.zscale
+        if self.sizex > self.sizey:
+          self.scale = 0.75/self.sizex
+        else:
+          self.scale = 0.75/self.sizey
+        self.zcenter = -(extrema[1]+extrema[0])*self.zscale/2.0
+        self.reliefWin.tkRedraw() # Redraw canvas
+        
+    def redraw(self,reliefWin):
          import OpenGL.GL as GL
          GL.glClearColor(0., 0., 0., 0)
          GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)

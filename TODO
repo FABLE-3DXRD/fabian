@@ -38,8 +38,8 @@ add possibility for reading bzipped and gzipped edf images - DONE
 Add some kind of AOI-integration over file series - add function to edfimage.py that sums over rectangle? - DONE
 Add update of line plots when changing frame - DONE
 clean up the filename splitting and joining code - it is a jumbled mess right now - DONE
+also update Relief windows - DONE
 Write setup script and compile executable for windows
 List of AOIs - possibly with load/save functionality
-also update Relief windows
 Read and show peaks found with peaksearch from ImageD11
 
