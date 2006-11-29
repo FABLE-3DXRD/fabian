@@ -11,6 +11,4 @@ setup.py
 pixel_trace.py
 image_file_series.py
 rocker.py
-median.py
-insert_peaks.py
 TODO
