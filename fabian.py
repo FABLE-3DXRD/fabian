@@ -87,23 +87,6 @@ class imageWin:
     #change this to draw/redraw set of functions at some point?
     self.update()
 
-#  def show_peaks(self):
-#    import insert_peaks
-#    print self.zoomarea
-#    object = insert_peaks.readpeaksearch()
-#    self.peaks = object.readpeaks('peaks.out',self.filename.get())
-#    i = 0
-#    for peaks in object.peaks:
-#      if int(peaks[0])>20:
-#        print peaks
-#        i+=1
-#        circ_center=[(float(peaks[2])*self.zoomfactor-self.zoomarea[0]), ((2048-float(peaks[1]))*self.zoomfactor-self.zoomarea[1])]
-#        rad = 4
-#        corners=(circ_center[0]-4,circ_center[1]-4,circ_center[0]+4,circ_center[1]+4)
-#        self.canvas.create_oval(corners,tag='peaks',outline='red')
-#    print 'Peaks ', i  
-
-
 
   def make_image_canvas(self,container):
     #make imagecanvas
@@ -422,7 +405,6 @@ class imageWin:
     self.ShowMax.config(text="Max %i" %(self.im_max))
     self.ShowMean.config(text="Mean %i" %(self.im_mean))
     self.canvas.lower(self.canvas.create_image(0,0,anchor=NW, image=self.img))
-    #self.show_peaks()
 
     #update children
     for w in self.aoi:
@@ -508,8 +490,6 @@ class appWin(imageWin):
     self.tool = 'Zoom' # Set default event of mouse bottom 1 to Zoom  
     self.draw2=self.drawAoi2
     self.ToolType.set(self.tool)
-    self.ShowPeaks = BooleanVar()
-    self.ShowPeaks.set(False)
     master.bind('q',self.quit)
     master.bind('<FocusIn>',self.MouseEntry)
     master.bind('z',self.rezoom)
@@ -568,28 +548,6 @@ class appWin(imageWin):
     self.update()
     self.setbindings()
 
-  def show_peaks(self):
-    #print 'ReadPeaks' ,self.ReadPeaks.get()
-    if self.ShowPeaks.get() == True:
-      self.read_peaks()
-      print self.peaks
-    return
-      
-  def read_peaks(self):
-    import insert_peaks
-    print self.filename.get()
-    peaks = insert_peaks.readpeaksearch()
-    peaks.readpeaks('peaks.out',self.filename.get())
-    self.peaks = peaks.peaks
-    print range(len(self.peaks))
-    # convert coordinates to "fabian" coordinates
-    for i in range(len(self.peaks)):
-      mx = float(self.peaks[i][2])
-      my = self.ysize-float(self.peaks[i][1])
-      self.peaks[i][0] = int(self.peaks[i][0])
-      self.peaks[i][1] = mx
-      self.peaks[i][2] = my
-      
     
 
   def make_header_page(self):
@@ -680,14 +638,6 @@ class appWin(imageWin):
     ToolBtn.menu.add_radiobutton(label='Relief',command=self.setbindings,variable=self.ToolType,value='Relief')
     ToolBtn.menu.add_radiobutton(label='Rocking curve',command=self.setbindings,variable=self.ToolType,value='Rocker')
     ToolBtn['menu']=ToolBtn.menu
-
-    CrystBtn = Menubutton(frameMenubar, text='CrystTools',underline=0)
-    CrystBtn.pack(side=LEFT, padx="2m")
-    CrystBtn.menu =Menu(CrystBtn)
-    CrystBtn.menu.add_checkbutton(label='Show peaks..',command=self.show_peaks,onvalue=True,offvalue=False,variable=self.ShowPeaks)
-    CrystBtn['menu']=CrystBtn.menu
-
-
     CmdBtn3 = Menubutton(frameMenubar, text='Help',underline=0)
     CmdBtn3.pack(side=LEFT, padx="2m")
     CmdBtn3.menu =Menu(CmdBtn3)
@@ -991,7 +941,7 @@ class About:
         frame.pack()
 
         frameAbout = Frame(frame, bd=0)
-        message = "\nfabian was brought to you by \n\n\
+        message = "\nfabian (release 0.1) was brought to you by \n\n\
 Henning O. Sorensen & Erik Knudsen\n\
 Center for Fundamental Research: Metal Structures in Four Dimensions\n\
 Risoe National Laboratory\n\
