@@ -138,7 +138,7 @@ class imageWin:
     self.canvas.scale('all',0,0,newzoomfactor/self.zoomfactor,newzoomfactor/self.zoomfactor)
     self.zoomfactor=newzoomfactor
     self.ShowZoom.config(text="%3d %%" %(newzoomfactor*100))
-    self.update()
+    self.update(newimage=self.im)
  
   def make_status_bar(self,container):
     frameInfo = Frame(container, bd=0, bg="white")
@@ -214,11 +214,14 @@ class imageWin:
   def MouseEntry(self,event):
     #mouse has entered the window - check for nonexistent children
     children=self.master.winfo_children()
+    removechild = []
     for w in self.aoi:
       if not w['zoomwin'].master in children:
 	for l in w['aoi']:
           self.canvas.delete(l)
-	self.aoi.remove(w)
+        removechild.append(w)
+    for w in removechild:
+      self.aoi.remove(w)
   
   def val_canvas_coord(self,c):
     c_new=[c[0],c[1]]
@@ -268,7 +271,6 @@ class imageWin:
         t='Line %d of main' % self.line_win
         self.line_win = self.line_win + 1
       opensubwin=self.openlineprofile
-    print  opensubwin
     self.aoi.append({'coords':self.transientcorners,'aoi':[self.draw2(tool=tool)],'zoomwin': opensubwin(t), 'wintype':tool})
 
   def drawAoi2(self,tool='transientaoi'):
@@ -294,7 +296,6 @@ class imageWin:
  
   def openzoom(self,tag):
     t=self.transientcorners
-    print t
     corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
     if corners[0]-corners[2] == 0 or corners[1]-corners[3] == 0: return False
     w=Toplevel(self.master)
@@ -310,7 +311,7 @@ class imageWin:
       import pixel_trace
       w=Toplevel(self.master)
       t=self.transientcorners
-      corners=[(self.zoomarea[0]+t[0]/self.zoomfactor), (self.zoomarea[1]+t[1]/self.zoomfactor), (self.zoomarea[0]+t[2]/self.zoomfactor), (self.zoomarea[1]+t[3]/self.zoomfactor)]
+      corners=[(self.zoomarea[0]+t[0]/self.zoomfactor), (self.zoomarea[1]+t[1]/self.zoomfactor), (self.zoomarea[0]+t[2]/self.zoomfactor-1), (self.zoomarea[1]+t[3]/self.zoomfactor)-1]
       pixels = pixel_trace.pixel_trace(corners)
       t = []
       pixval = []
@@ -421,9 +422,7 @@ class imageWin:
     self.ShowMax.config(text="Max %i" %(self.im_max))
     self.ShowMean.config(text="Mean %i" %(self.im_mean))
     self.canvas.lower(self.canvas.create_image(0,0,anchor=NW, image=self.img))
-    print 'before'
     #self.show_peaks()
-    print 'after'
 
     #update children
     for w in self.aoi:
@@ -534,13 +533,9 @@ class appWin(imageWin):
 
     self.zoomarea = [0,0,self.xsize,self.ysize]
     #set the image dimensions and zoom out if it is big
-    if self.ysize > 1560:
-      self.zoomfactor = 0.25
-    elif self.ysize > 768:
-      self.zoomfactor = 0.5
-    else:
-      self.zoomfactor = 1
-    
+    screen_width = master.winfo_screenwidth()
+    screen_height = master.winfo_screenheight()
+    self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10, round(screen_height/(2.*self.ysize)*10)/10)
     frame = Frame(master, bd=0, bg="white") #, width=600, height=600) 
     frame.pack(fill=X)
 
@@ -574,7 +569,6 @@ class appWin(imageWin):
     self.setbindings()
 
   def show_peaks(self):
-    print 'RgggeadPeaks' ,self.ShowPeaks.get()
     #print 'ReadPeaks' ,self.ReadPeaks.get()
     if self.ShowPeaks.get() == True:
       self.read_peaks()
@@ -590,7 +584,6 @@ class appWin(imageWin):
     print range(len(self.peaks))
     # convert coordinates to "fabian" coordinates
     for i in range(len(self.peaks)):
-      print i
       mx = float(self.peaks[i][2])
       my = self.ysize-float(self.peaks[i][1])
       self.peaks[i][0] = int(self.peaks[i][0])
@@ -742,6 +735,7 @@ class appWin(imageWin):
       #no need to rescale or redraw
       return
     imageWin.update(self,scaled_min=s_min,scaled_max=s_max,newimage=newimage,filename=filename)
+    self.noteb1.setnaturalsize()
     #store scaling vals for later reference
     self.scaled_min,self.scaled_max=s_min,s_max
 
@@ -926,7 +920,6 @@ class ReliefPlot:
         self.master.destroy()
     
     def update(self,newimage=None):
-        print newimage.size
         data = list(newimage.crop(self.corners).getdata())
         extrema = [min(data),max(data)]
         data = Numeric.reshape( data,[self.corners[3]-self.corners[1], self.corners[2]-self.corners[0]])
@@ -1075,8 +1068,6 @@ if __name__=='__main__':
     
     t2=time.clock()
     print "time:",t2-t1
-    sw = root.winfo_screenwidth()
-    sh = root.winfo_screenheight()
     root.mainloop()
   start()
 ######## THE END ##############

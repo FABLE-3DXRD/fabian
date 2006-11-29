@@ -27,7 +27,7 @@ zero-height/width AOIs are left on the canvas and reports an uncaught error - i.
 
 update function does rescaling of root image even though it is not necessary - DONE
 
-Only half on the AOIs from closed zoom windows are removed upon each appWin focus. 
+Only half on the AOIs from closed zoom windows are removed upon each appWin focus. - DONE
 
 #TODO
 Put under cvs control - DONE
