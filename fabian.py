@@ -54,6 +54,10 @@ class imageWin:
       self.draw2=self.drawLine2
     else:
       self.draw2=self.drawAoi2
+    master.bind('<F1>',self.updatebindings)
+    master.bind('<F2>',self.updatebindings)
+    master.bind('<F3>',self.updatebindings)
+    master.bind('<F4>',self.updatebindings)
     master.bind('q',self.quit)
     master.bind('<FocusIn>',self.MouseEntry)
     master.bind('z',self.rezoom)
@@ -90,9 +94,9 @@ class imageWin:
 
   def make_image_canvas(self,container):
     #make imagecanvas
-    frameImage = Frame(container, bd=0, bg="white")
     self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
     self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
+    frameImage = Frame(container, bd=0, bg="white")
     self.canvas = Canvas(frameImage, width=self.canvas_xsize, height=self.canvas_ysize)
     self.canvas.pack(side=TOP,fill=BOTH, expand='yes')
     frameImage.pack(side=TOP,expand=1, pady=10, padx=5)
@@ -436,7 +440,7 @@ class imageWin:
       self.tool = self.ToolType.get()
     except:
       pass
-    if 'Line' in self.tool:
+    if 'LineProfile' in self.tool:
       self.draw2=self.drawLine2
     else:
       self.draw2=self.drawAoi2
@@ -447,22 +451,31 @@ class imageWin:
 	w['zoomwin'].setbindings()
 
   def updatebindings(self,tool=None):
-    if tool=='Zoom':
-      self.canvas.bind('<Button-1>', self.Mouse3Press)
-      self.canvas.bind('<Button1-Motion>', self.Mouse3PressMotion)
-      self.canvas.bind('<Button1-ButtonRelease>', self.Mouse3Release)
-    if tool=='LineProfile':
-      self.canvas.bind('<Button-1>', self.AltMouse3Press)
-      self.canvas.bind('<Button1-Motion>', self.AltMouse3PressMotion)
-      self.canvas.bind('<Button1-ButtonRelease>', self.AltMouse3Release)
-    if  tool=='Relief':
-      self.canvas.bind('<Button-1>', self.Mouse3Press)
-      self.canvas.bind('<Button1-Motion>', self.Mouse3PressMotion)
-      self.canvas.bind('<Button1-ButtonRelease>', self.CtrlMouse3Release)
-    if tool=='Rocker':
-      self.canvas.bind('<Button-1>', self.Mouse3Press)
-      self.canvas.bind('<Button1-Motion>', self.Mouse3PressMotion)
-      self.canvas.bind('<Button1-ButtonRelease>', self.keyRMouse3Release)
+    print event.keysym
+    if event.keysym=='F1':
+      try:
+        self.ToolType.set('Zoom')
+      except:
+        self.tool = 'Zoom'
+      self.setbindings()
+    if event.keysym=='F2':
+      try:
+        self.ToolType.set('LineProfile')
+      except:
+        self.tool='LineProfile'
+      self.setbindings()
+    if event.keysym=='F3':
+      try:
+        self.ToolType.set('Relief')
+      except:
+        self.tool='Relief'
+      self.setbindings()
+    if event.keysym=='F4':
+      try:
+        self.ToolType.set('Rocker')
+      except:
+        self.tool='Rocker'
+      self.setbindings()
 
   def quit(self,event=None):
     self.master.destroy()
@@ -490,7 +503,13 @@ class appWin(imageWin):
     self.tool = 'Zoom' # Set default event of mouse bottom 1 to Zoom  
     self.draw2=self.drawAoi2
     self.ToolType.set(self.tool)
+    master.bind('<F1>',self.updatebindings)
+    master.bind('<F2>',self.updatebindings)
+    master.bind('<F3>',self.updatebindings)
+    master.bind('<F4>',self.updatebindings)
+    master.bind('o',self.OpenFile)
     master.bind('q',self.quit)
+    master.bind('a',self.about)
     master.bind('<FocusIn>',self.MouseEntry)
     master.bind('z',self.rezoom)
     master.bind('x',self.rezoom)
@@ -516,7 +535,8 @@ class appWin(imageWin):
     screen_width = master.winfo_screenwidth()
     screen_height = master.winfo_screenheight()
     self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10, round(screen_height/(2.*self.ysize)*10)/10)
-    frame = Frame(master, bd=0, bg="white") #, width=600, height=600) 
+#    self.zoomfac
+    frame = Frame(master, bd=0, bg="white")
     frame.pack(fill=X)
 
     #add menubar
@@ -528,10 +548,17 @@ class appWin(imageWin):
     self.page1 = self.noteb1.add('Image')
     self.page2 = self.noteb1.add('Info')
     
+
     #call __init__ in the parent class
     self.make_scaling_ctls(self.page1)
-    
-    self.make_image_canvas(self.page1)
+    self.can = Frame(self.page1, bd=0, bg="white")
+    self.can.pack(fill=X)
+
+    self.scrollscanvas = Pmw.ScrolledCanvas(self.can, labelpos=N, usehullsize =1, hull_width=600, hull_height=600)
+    self.scrollscanvas.pack(fill=BOTH, expand=YES)
+    self.scroll = self.scrollscanvas.interior()
+
+    self.make_image_canvas(self.scroll)
     
     self.make_header_info()
     self.make_status_bar(self.page1)
@@ -623,32 +650,34 @@ class appWin(imageWin):
      
   def make_command_menu(self,master):
     frameMenubar = Frame(master,relief=RAISED, borderwidth=2)
-    CmdBtn = Menubutton(frameMenubar, text='File',underline=0)
-    CmdBtn.pack(side=LEFT, padx="2m")
-    CmdBtn.menu =Menu(CmdBtn)
-    CmdBtn.menu.add_command(label='Open',command=self.OpenFile)
-    #CmdBtn.menu.add_command(label='Close')
-    CmdBtn.menu.add_command(label='Exit',command=self.quit)
-    CmdBtn['menu']=CmdBtn.menu
-    ToolBtn = Menubutton(frameMenubar, text='Tools',underline=0)
-    ToolBtn.pack(side=LEFT, padx="2m")
-    ToolBtn.menu =Menu(ToolBtn)
-    ToolBtn.menu.add_radiobutton(label='Zoom',command=self.setbindings,variable=self.ToolType,value='Zoom')
-    ToolBtn.menu.add_radiobutton(label='Line profile',command=self.setbindings,variable=self.ToolType,value='LineProfile')
-    ToolBtn.menu.add_radiobutton(label='Relief',command=self.setbindings,variable=self.ToolType,value='Relief')
-    ToolBtn.menu.add_radiobutton(label='Rocking curve',command=self.setbindings,variable=self.ToolType,value='Rocker')
-    ToolBtn['menu']=ToolBtn.menu
-    CmdBtn3 = Menubutton(frameMenubar, text='Help',underline=0)
-    CmdBtn3.pack(side=LEFT, padx="2m")
-    CmdBtn3.menu =Menu(CmdBtn3)
-    CmdBtn3.menu.add_command(label='About',command=self.about)
-    CmdBtn3['menu']=CmdBtn3.menu
-    #return CmdBtn, CmdBtn2
+    FileMenu = Menubutton(frameMenubar, text='File',underline=0)
+    FileMenu.pack(side=LEFT, padx="2m")
+    FileMenu.menu =Menu(FileMenu)
+    FileMenu.menu.add_command(label='Open', underline=0, command=self.OpenFile)
+    FileMenu.menu.add_command(label='Quit', underline=0, command=self.quit)
+    FileMenu['menu']=FileMenu.menu
+
+    ToolMenu = Menubutton(frameMenubar, text='Tools',underline=0)
+    ToolMenu.pack(side=LEFT, padx="2m")
+    ToolMenu.menu =Menu(ToolMenu)
+    ToolMenu.menu.add_radiobutton(label='Zoom%15s%2s' %('','F1') ,command=self.setbindings,variable=self.ToolType,value='Zoom')
+    ToolMenu.menu.add_radiobutton(label='Line profile%7s%2s' %('','F2') ,command=self.setbindings,variable=self.ToolType,value='LineProfile')
+    ToolMenu.menu.add_radiobutton(label='Relief plot%8s%2s' %('','F3') ,command=self.setbindings,variable=self.ToolType,value='Relief')
+    ToolMenu.menu.add_radiobutton(label='Rocking curve%2s%2s' %('','F4'),command=self.setbindings,variable=self.ToolType,value='Rocker')
+    ToolMenu['menu']=ToolMenu.menu
+
+    HelpMenu = Menubutton(frameMenubar, text='Help',underline=0)
+    HelpMenu.pack(side=LEFT, padx="2m")
+    HelpMenu.menu =Menu(HelpMenu)
+    HelpMenu.menu.add_command(label='About', underline=0, command=self.about)
+    HelpMenu['menu']=HelpMenu.menu
     frameMenubar.pack(fill=X,side=TOP)
-    frameMenubar.tk_menuBar((CmdBtn, ToolBtn, CmdBtn3))
+    frameMenubar.tk_menuBar((FileMenu, ToolMenu, HelpMenu))
 
   def OpenFile(self,filename=True):
-    self.filename.set(askopenfilename(filetypes=[("EDF files", "*.edf"),("Tif files", "*.tif"),("MarCCD/Mosaic files", "*.mccd"),("ADSC files", "*.img"),("Bruker files", "*.*"),("All Files", "*")]))
+    fname = askopenfilename(filetypes=[("EDF files", "*.edf"),("Tif files", "*.tif"),("MarCCD/Mosaic files", "*.mccd"),("ADSC files", "*.img"),("Bruker files", "*.*"),("All Files", "*")])
+    if len(fname) == 0: return
+    self.filename.set(fname)
     (newfilenumber,filetype)=deconstruct_filename(self.filename.get())
     self.filetype=filetype
     self.displaynumber.set(newfilenumber)
@@ -658,13 +687,9 @@ class appWin(imageWin):
       self.gotoimage()
       try:
         #set the image dimensions and zoom out if it is big
-        if self.ysize > 1560:
-          self.zoomfactor = 0.25
-        elif self.ysize > 768:
-          self.zoomfactor = 0.5
-        else:
-          self.zoomfactor = 1
-
+        screen_width = master.winfo_screenwidth()
+        screen_height = master.winfo_screenheight()
+        self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10, round(screen_height/(2.*self.ysize)*10)/10)
         self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
         self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
         self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
@@ -784,7 +809,7 @@ class appWin(imageWin):
     self.master.title("fabian - %s" %(filename))
 
       
-  def about(self):
+  def about(self,event=None):
     About()
     
 #  def quit(self):
