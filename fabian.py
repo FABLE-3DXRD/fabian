@@ -62,7 +62,6 @@ class imageWin:
     master.bind('<FocusIn>',self.MouseEntry)
     master.bind('z',self.rezoom)
     master.bind('x',self.rezoom)
-    print master.winfo_geometry()
    
     if title: self.master.title(title)
     if filename: self.filename = filename
@@ -130,18 +129,13 @@ class imageWin:
 
   def rezoom(self,e):
     if e.keysym=='z':
-      #print "i am rezoom()",e.keysym
       newzoomfactor=self.zoomfactor*2
     elif e.keysym=='x':
-      #print "i am rezoom()",e.keysym
       newzoomfactor=self.zoomfactor/2.
     self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*newzoomfactor)
     self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*newzoomfactor)
     self.canvas.config(width=self.canvas_xsize, height=self.canvas_ysize)
-    #just figured out that one could do this
     self.canvas.scale('all',0,0,newzoomfactor/self.zoomfactor,newzoomfactor/self.zoomfactor)
-
-    #self.frameImage.resizescrollregion()
     self.zoomfactor=newzoomfactor
     self.ShowZoom.config(text="%3d %%" %(newzoomfactor*100))
     self.update(newimage=self.im)
@@ -428,8 +422,6 @@ class imageWin:
     self.ShowMax.config(text="Max %i" %(self.im_max))
     self.ShowMean.config(text="Mean %i" %(self.im_mean))
     self.canvas.lower(self.canvas.create_image(0,0,anchor=NW, image=self.img))
-    #self.canvas.create_image(0,0,anchor=NW, image=self.img)
-    #self.frameImage.resizescrollregion()
 
     #update children
     for w in self.aoi:
@@ -556,7 +548,6 @@ class appWin(imageWin):
     screen_width = master.winfo_screenwidth()
     screen_height = master.winfo_screenheight()
     self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10, round(screen_height/(2.*self.ysize)*10)/10)
-#    self.zoomfac
     frame = Frame(master, bd=0, bg="white")
     frame.pack(fill=X)
 
@@ -572,12 +563,6 @@ class appWin(imageWin):
 
     #call __init__ in the parent class
     self.make_scaling_ctls(self.page1)
-#     self.can = Frame(self.page1, bd=0, bg="white")
-#     self.can.pack(fill=X)
-
-#     self.scrollscanvas = Pmw.ScrolledCanvas(self.can, labelpos=N, usehullsize =1, hull_width=600, hull_height=600)
-#     self.scrollscanvas.pack(fill=BOTH, expand=YES)
-#     self.scroll = self.scrollscanvas.interior()
 
     self.make_image_canvas(self.page1)
     
