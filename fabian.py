@@ -62,6 +62,7 @@ class imageWin:
     master.bind('<FocusIn>',self.MouseEntry)
     master.bind('z',self.rezoom)
     master.bind('x',self.rezoom)
+    print master.winfo_geometry()
    
     if title: self.master.title(title)
     if filename: self.filename = filename
@@ -78,7 +79,7 @@ class imageWin:
     self.xsize=abs(coords[2]-coords[0])
     self.ysize=abs(coords[3]-coords[1])
     
-    frame = Frame(master, bd=0, bg="white") #, width=600, height=600) 
+    frame = Frame(master, bd=0, bg="white")
     frame.pack()
 
     #display the images
@@ -96,10 +97,10 @@ class imageWin:
     #make imagecanvas
     self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
     self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
-    frameImage = Frame(container, bd=0, bg="white")
-    self.canvas = Canvas(frameImage, width=self.canvas_xsize, height=self.canvas_ysize)
-    self.canvas.pack(side=TOP,fill=BOTH, expand='yes')
-    frameImage.pack(side=TOP,expand=1, pady=10, padx=5)
+    self.frameImage = Pmw.ScrolledFrame(container, hull_width=self.canvas_xsize, hull_height=self.canvas_ysize, usehullsize=1,hscrollmode='none',vscrollmode='none')
+    self.canvas = Canvas(self.frameImage.interior(), width=self.canvas_xsize, height=self.canvas_ysize)
+    self.canvas.pack(side=TOP,anchor='center', expand=1, fill=X)
+    self.frameImage.pack(side=TOP,expand=1, pady=10, padx=5)
     #bind events
     self.canvas.bind('<Button-1>', self.Mouse1Press)
     self.canvas.bind('<Button1-Motion>', self.Mouse1PressMotion)
@@ -110,7 +111,23 @@ class imageWin:
     self.canvas.bind('<Button-3>', self.Mouse3Press)
     self.canvas.bind('<Button3-Motion>', self.Mouse3PressMotion)
     self.canvas.bind('<Button3-ButtonRelease>', self.Mouse3Release)
-  
+
+  def centerImg(self):
+    left, right = self.frameImage.xview()
+    top, bottom = self.frameImage.yview()
+    sizex = right - left
+    sizey = bottom - top
+    if sizey < 0.99:
+      self.frameImage.configure(vscrollmode='dynamic')
+    else:
+      self.frameImage.configure(vscrollmode='none')
+    if sizex < 0.99:
+      self.frameImage.configure(hscrollmode='dynamic')
+    else:
+      self.frameImage.configure(hscrollmode='none')
+    self.frameImage.xview('moveto',  0.5 - sizex / 2.)
+    self.frameImage.yview('moveto',  0.5 - sizey / 2.)
+
   def rezoom(self,e):
     if e.keysym=='z':
       #print "i am rezoom()",e.keysym
@@ -123,12 +140,16 @@ class imageWin:
     self.canvas.config(width=self.canvas_xsize, height=self.canvas_ysize)
     #just figured out that one could do this
     self.canvas.scale('all',0,0,newzoomfactor/self.zoomfactor,newzoomfactor/self.zoomfactor)
+
+    #self.frameImage.resizescrollregion()
     self.zoomfactor=newzoomfactor
     self.ShowZoom.config(text="%3d %%" %(newzoomfactor*100))
     self.update(newimage=self.im)
- 
+    self.centerImg()
+
   def make_status_bar(self,container):
     frameInfo = Frame(container, bd=0, bg="white")
+    frameInfo.pack(side=BOTTOM,fill=X)
     self.ShowMin = Label(frameInfo, text="Min -1",  bg ='white',bd=1, relief=SUNKEN, anchor=W)
     self.ShowMin.pack(side=LEFT)
     self.ShowMax = Label(frameInfo, text="Max -1" , bg ='white',bd=1, relief=SUNKEN, anchor=W)
@@ -141,8 +162,6 @@ class imageWin:
     self.ShowCoor.pack(side=RIGHT, padx = 2)
     self.ShowZoom = Label(frameInfo, text="%3d %%" %(self.zoomfactor*100), width =6, bg ='white',bd=1, relief=RIDGE, anchor=W)
     self.ShowZoom.pack(side=RIGHT, padx = 2)
-    frameInfo.pack(side=LEFT, pady=10, padx=5)
-    frameInfo.pack(side=TOP,fill=X)
 
   def MouseMotion(self,event):
     x=self.canvas.canvasx(event.x)
@@ -409,6 +428,8 @@ class imageWin:
     self.ShowMax.config(text="Max %i" %(self.im_max))
     self.ShowMean.config(text="Mean %i" %(self.im_mean))
     self.canvas.lower(self.canvas.create_image(0,0,anchor=NW, image=self.img))
+    #self.canvas.create_image(0,0,anchor=NW, image=self.img)
+    #self.frameImage.resizescrollregion()
 
     #update children
     for w in self.aoi:
@@ -450,8 +471,7 @@ class imageWin:
 	w['zoomwin'].tool=self.tool
 	w['zoomwin'].setbindings()
 
-  def updatebindings(self,tool=None):
-    print event.keysym
+  def updatebindings(self,event=None,tool=None):
     if event.keysym=='F1':
       try:
         self.ToolType.set('Zoom')
@@ -513,6 +533,7 @@ class appWin(imageWin):
     master.bind('<FocusIn>',self.MouseEntry)
     master.bind('z',self.rezoom)
     master.bind('x',self.rezoom)
+
     
     if filename:
       self.filename.set(filename)
@@ -551,14 +572,14 @@ class appWin(imageWin):
 
     #call __init__ in the parent class
     self.make_scaling_ctls(self.page1)
-    self.can = Frame(self.page1, bd=0, bg="white")
-    self.can.pack(fill=X)
+#     self.can = Frame(self.page1, bd=0, bg="white")
+#     self.can.pack(fill=X)
 
-    self.scrollscanvas = Pmw.ScrolledCanvas(self.can, labelpos=N, usehullsize =1, hull_width=600, hull_height=600)
-    self.scrollscanvas.pack(fill=BOTH, expand=YES)
-    self.scroll = self.scrollscanvas.interior()
+#     self.scrollscanvas = Pmw.ScrolledCanvas(self.can, labelpos=N, usehullsize =1, hull_width=600, hull_height=600)
+#     self.scrollscanvas.pack(fill=BOTH, expand=YES)
+#     self.scroll = self.scrollscanvas.interior()
 
-    self.make_image_canvas(self.scroll)
+    self.make_image_canvas(self.page1)
     
     self.make_header_info()
     self.make_status_bar(self.page1)
