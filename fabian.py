@@ -13,6 +13,7 @@ import Pmw
 import Numeric
 import math
 import edfimage, tifimage, adscimage, brukerimage, marccdimage,bruker100image,pnmimage
+import insert_peaks
 from string import *
 from PIL import Image, ImageTk, ImageFile, ImageStat
 from tkFileDialog import *
@@ -29,7 +30,7 @@ colour={'transientaoi':'RoyalBlue', 'Zoom':'red', 'Relief':'LimeGreen', 'Rocker'
 
       
 class imageWin:
-  def __init__(self,master,filename=None,filenumber=0,title=None,zoomfactor=1,scaled_min=None,scaled_max=None,scale=None, mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None,tool=None):
+  def __init__(self,master,filename=None,filenumber=0,title=None,zoomfactor=1,scaled_min=None,scaled_max=None,scale=None, mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None,tool=None,showpeaks=None):
     #initialize var
     self.master=master
     #these keep track of the AOIs
@@ -41,6 +42,9 @@ class imageWin:
     self.transientline=None
     self.maxval=StringVar()
     self.minval=StringVar()
+    self.showpeaks = showpeaks
+    print 'ZOOM', showpeaks
+    self.peaks={}
     if scaled_min: self.minval.set(scaled_min)
     if scaled_max: self.maxval.set(scaled_max)
     if scale:
@@ -90,6 +94,8 @@ class imageWin:
     #run update to set scalings and actually display the images
     #change this to draw/redraw set of functions at some point?
     self.update()
+    if self.showpeaks == True: self.show_peaks()
+    
 
   def make_image_canvas(self,container):
     #make imagecanvas
@@ -141,7 +147,7 @@ class imageWin:
     self.centerImg()
  
   def make_status_bar(self,container):
-    frameInfo = Frame(container, bd=0, bg="white")
+    frameInfo = Frame(container, bd=0)
     frameInfo.pack(side=BOTTOM,fill=X)
     self.ShowMin = Label(frameInfo, text="Min -1",  bg ='white',bd=1, relief=SUNKEN, anchor=W)
     self.ShowMin.pack(side=LEFT)
@@ -155,6 +161,54 @@ class imageWin:
     self.ShowCoor.pack(side=RIGHT, padx = 2)
     self.ShowZoom = Label(frameInfo, text="%3d %%" %(self.zoomfactor*100), width =6, bg ='white',bd=1, relief=RIDGE, anchor=W)
     self.ShowZoom.pack(side=RIGHT, padx = 2)
+
+  def show_peaks(self,event=None):
+    if event.keysym == 'p' : self.ShowPeaks.set(True)
+    try:
+      self.showpeaks = self.ShowPeaks.get()
+    except:
+      pass
+    if self.showpeaks == False:
+      self.clear_peaks()
+      return
+    elif self.peaks == {}:
+      print self.peaks
+      print 'No peaks read yet - do so!'
+      self.read_peaks()
+    print 'have peak dictio'
+    print self.filename.get()
+    for peaks in self.peaks[self.filename.get()]:
+      if int(peaks[0])>4:
+        circ_center=[(peaks[1]*self.zoomfactor-self.zoomarea[0]), (peaks[2]*self.zoomfactor-self.zoomarea[1])]
+        rad = 4
+        corners=(circ_center[0]-rad,circ_center[1]-rad,circ_center[0]+rad,circ_center[1]+rad)
+        self.canvas.create_oval(corners,tag='peaks',outline='red')
+    return
+
+      
+  def read_peaks(self):
+    print 'IN READ'
+    peaks = insert_peaks.readpeaksearch()
+    peaks.readallpeaks('peaks.out')
+    self.peaks = peaks.images
+    # convert coordinates to "fabian" coordinates
+    for k in self.peaks.keys():
+      for i in range(len(self.peaks[k])):
+        mx = float(self.peaks[k][i][2])
+        my = self.ysize-float(self.peaks[k][i][1])
+        self.peaks[k][i][0] = int(self.peaks[k][i][0])
+        self.peaks[k][i][1] = mx
+        self.peaks[k][i][2] = my
+
+  def clear_peaks(self,event=None):
+    self.showpeaks = False
+    self.ShowPeaks.set(self.showpeaks)
+    self.canvas.delete('peaks')
+
+  def update_peaks(self,event=None):
+    self.canvas.delete('peaks')
+    self.show_peaks()
+
 
   def MouseMotion(self,event):
     x=self.canvas.canvasx(event.x)
@@ -299,7 +353,7 @@ class imageWin:
     if corners[0]-corners[2] == 0 or corners[1]-corners[3] == 0: return False
     w=Toplevel(self.master)
     if self.tool:
-      newwin=imageWin(w,title=tag,filename=self.filename,zoomfactor=self.zoomfactor*4,scaled_min=self.minval.get(),scaled_max=self.maxval.get(),scale=self.scale,coords=corners,image=self.im,tool=self.tool)
+      newwin=imageWin(w,title=tag,filename=self.filename,zoomfactor=self.zoomfactor*4,scaled_min=self.minval.get(),scaled_max=self.maxval.get(),scale=self.scale,coords=corners,image=self.im,tool=self.tool,showpeaks=self.showpeaks)
       newwin.tool=self.tool
     else:
       newwin=imageWin(w,title=tag,filename=self.filename,zoomfactor=self.zoomfactor*4,coords=corners,image=self.im,tool=None)
@@ -421,7 +475,12 @@ class imageWin:
     self.ShowMax.config(text="Max %i" %(self.im_max))
     self.ShowMean.config(text="Mean %i" %(self.im_mean))
     self.canvas.lower(self.canvas.create_image(0,0,anchor=NW, image=self.img))
-    #self.show_peaks()
+    try:
+      if self.showpeaks == True:
+        self.update_peaks()
+    except:
+      pass
+        
 
     #update children
     for w in self.aoi:
@@ -516,7 +575,9 @@ class appWin(imageWin):
     self.draw2=self.drawAoi2
     self.ToolType.set(self.tool)
     self.ShowPeaks = BooleanVar()
+    self.showpeaks = False
     self.ShowPeaks.set(False)
+    self.peaks = {}
     master.bind('<F1>',self.updatebindings)
     master.bind('<F2>',self.updatebindings)
     master.bind('<F3>',self.updatebindings)
@@ -528,6 +589,7 @@ class appWin(imageWin):
     master.bind('z',self.rezoom)
     master.bind('x',self.rezoom)
     master.bind('c',self.clear_peaks)
+    master.bind('p',self.show_peaks)
     if filename:
       self.filename.set(filename)
       (newfilenumber,filetype)=deconstruct_filename(filename)
@@ -581,58 +643,7 @@ class appWin(imageWin):
     self.update()
     self.setbindings()
 
-  def show_peaks(self):
-    print 'ReadPeaks' ,self.ShowPeaks.get()
-    if self.ShowPeaks.get() == True:
-      self.read_peaks()
-    else:
-      self.clear_peaks()
-      return
-    i=0
-    for peaks in self.peaks:
-      if int(peaks[0])>4:
-        i+=1
-        circ_center=[(peaks[1]*self.zoomfactor-self.zoomarea[0]), (peaks[2]*self.zoomfactor-self.zoomarea[1])]
-        rad = 2
-        corners=(circ_center[0]-rad,circ_center[1]-rad,circ_center[0]+rad,circ_center[1]+rad)
-        self.canvas.create_oval(corners,tag='peaks',outline='red')
-    return
       
-  def read_peaks(self):
-    import insert_peaks
-    print self.filename.get()
-    peaks = insert_peaks.readpeaksearch()
-    peaks.readpeaks('peaks.out',self.filename.get())
-    self.peaks = peaks.peaks
-    # convert coordinates to "fabian" coordinates
-    for i in range(len(self.peaks)):
-      mx = float(self.peaks[i][2])
-      my = self.ysize-float(self.peaks[i][1])
-      self.peaks[i][0] = int(self.peaks[i][0])
-      self.peaks[i][1] = mx
-      self.peaks[i][2] = my
-
-  def clear_peaks(self,event=None):
-    self.canvas.delete('peaks')
-
-      
-#  def show_peaks(self):
-#    import insert_peaks
-#    print self.zoomarea
-#    object = insert_peaks.readpeaksearch()
-#    self.peaks = object.readpeaks('peaks.out',self.filename.get())
-#    i = 0
-#    for peaks in object.peaks:
-#      if int(peaks[0])>20:
-#        print peaks
-#        i+=1
-#        circ_center=[(float(peaks[2])*self.zoomfactor-self.zoomarea[0]), ((2048-float(peaks[1]))*self.zoomfactor-self.zoomarea[1])]
-#        rad = 4
-#        corners=(circ_center[0]-4,circ_center[1]-4,circ_center[0]+4,circ_center[1]+4)
-#        self.canvas.create_oval(corners,tag='peaks',outline='red')
-#    print 'Peaks ', i  
-
-
 
 
   def make_header_page(self):
@@ -677,9 +688,9 @@ class appWin(imageWin):
 
         
   def make_scaling_ctls(self,master):
-    frameScale = Frame(master, bd=0, bg="white")
+    frameScale = Frame(master, bd=0)
     # Image scale controls  
-    Label(frameScale,text='Scale: ', bg='white').pack(side=LEFT)
+    Label(frameScale,text='Scale: ').pack(side=LEFT)
     Label(frameScale,text='min:', bg='white').pack(side=LEFT)
     e=Entry(frameScale, textvariable=self.minval, bg='white', width=6)
     #e.bind('<FocusOut>',self.rescale)
@@ -802,11 +813,11 @@ class appWin(imageWin):
         e.Er(msg)
         return False
     #image loaded ok
+    self.filename.set(newfilename)
+    self.displaynumber.set(newfilenumber)
     self.update(newimage=self.im,filename=newfilename)
     self.update_header_page()
     self.update_header_label()
-    self.filename.set(newfilename)
-    self.displaynumber.set(newfilenumber)
     return True
 
   def nextimage(self):
@@ -821,11 +832,11 @@ class appWin(imageWin):
       e.Er(msg)
       return False
     #image loaded ok
+    self.filename.set(newfilename)
+    self.displaynumber.set(newfilenumber)
     self.update(newimage=self.im,filename=newfilename)
     self.update_header_page()
     self.update_header_label()
-    self.filename.set(newfilename)
-    self.displaynumber.set(newfilenumber)
     return True
       
   def previousimage(self):
@@ -844,11 +855,11 @@ class appWin(imageWin):
         e.Er(msg)
         return False
     #image loaded ok
+    self.filename.set(newfilename)
+    self.displaynumber.set(newfilenumber)
     self.update(newimage=self.im,filename=newfilename)
     self.update_header_page()
     self.update_header_label()
-    self.filename.set(newfilename)
-    self.displaynumber.set(newfilenumber)
     return True
   
   def openimage(self,filename=None):
