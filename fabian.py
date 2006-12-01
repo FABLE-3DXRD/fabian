@@ -54,6 +54,10 @@ class imageWin:
       self.draw2=self.drawLine2
     else:
       self.draw2=self.drawAoi2
+    master.bind('<F1>',self.updatebindings)
+    master.bind('<F2>',self.updatebindings)
+    master.bind('<F3>',self.updatebindings)
+    master.bind('<F4>',self.updatebindings)
     master.bind('q',self.quit)
     master.bind('<FocusIn>',self.MouseEntry)
     master.bind('z',self.rezoom)
@@ -74,7 +78,7 @@ class imageWin:
     self.xsize=abs(coords[2]-coords[0])
     self.ysize=abs(coords[3]-coords[1])
     
-    frame = Frame(master, bd=0, bg="white") #, width=600, height=600) 
+    frame = Frame(master, bd=0, bg="white")
     frame.pack()
 
     #display the images
@@ -87,32 +91,14 @@ class imageWin:
     #change this to draw/redraw set of functions at some point?
     self.update()
 
-#  def show_peaks(self):
-#    import insert_peaks
-#    print self.zoomarea
-#    object = insert_peaks.readpeaksearch()
-#    self.peaks = object.readpeaks('peaks.out',self.filename.get())
-#    i = 0
-#    for peaks in object.peaks:
-#      if int(peaks[0])>20:
-#        print peaks
-#        i+=1
-#        circ_center=[(float(peaks[2])*self.zoomfactor-self.zoomarea[0]), ((2048-float(peaks[1]))*self.zoomfactor-self.zoomarea[1])]
-#        rad = 4
-#        corners=(circ_center[0]-4,circ_center[1]-4,circ_center[0]+4,circ_center[1]+4)
-#        self.canvas.create_oval(corners,tag='peaks',outline='red')
-#    print 'Peaks ', i  
-
-
-
   def make_image_canvas(self,container):
     #make imagecanvas
-    frameImage = Frame(container, bd=0, bg="white")
     self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
     self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
-    self.canvas = Canvas(frameImage, width=self.canvas_xsize, height=self.canvas_ysize)
-    self.canvas.pack(side=TOP,fill=BOTH, expand='yes')
-    frameImage.pack(side=TOP,expand=1, pady=10, padx=5)
+    self.frameImage = Pmw.ScrolledFrame(container, hull_width=self.canvas_xsize, hull_height=self.canvas_ysize, usehullsize=1,hscrollmode='none',vscrollmode='none')
+    self.canvas = Canvas(self.frameImage.interior(), width=self.canvas_xsize, height=self.canvas_ysize)
+    self.canvas.pack(side=TOP,anchor='center', expand=1, fill=X)
+    self.frameImage.pack(side=TOP,expand=1, pady=10, padx=5)
     #bind events
     self.canvas.bind('<Button-1>', self.Mouse1Press)
     self.canvas.bind('<Button1-Motion>', self.Mouse1PressMotion)
@@ -123,25 +109,40 @@ class imageWin:
     self.canvas.bind('<Button-3>', self.Mouse3Press)
     self.canvas.bind('<Button3-Motion>', self.Mouse3PressMotion)
     self.canvas.bind('<Button3-ButtonRelease>', self.Mouse3Release)
-  
+
+  def centerImg(self):
+    left, right = self.frameImage.xview()
+    top, bottom = self.frameImage.yview()
+    sizex = right - left
+    sizey = bottom - top
+    if sizey < 0.99:
+      self.frameImage.configure(vscrollmode='dynamic')
+    else:
+      self.frameImage.configure(vscrollmode='none')
+    if sizex < 0.99:
+      self.frameImage.configure(hscrollmode='dynamic')
+    else:
+      self.frameImage.configure(hscrollmode='none')
+    self.frameImage.xview('moveto',  0.5 - sizex / 2.)
+    self.frameImage.yview('moveto',  0.5 - sizey / 2.)
+
   def rezoom(self,e):
     if e.keysym=='z':
-      #print "i am rezoom()",e.keysym
       newzoomfactor=self.zoomfactor*2
     elif e.keysym=='x':
-      #print "i am rezoom()",e.keysym
       newzoomfactor=self.zoomfactor/2.
     self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*newzoomfactor)
     self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*newzoomfactor)
     self.canvas.config(width=self.canvas_xsize, height=self.canvas_ysize)
-    #just figured out that one could do this
     self.canvas.scale('all',0,0,newzoomfactor/self.zoomfactor,newzoomfactor/self.zoomfactor)
     self.zoomfactor=newzoomfactor
     self.ShowZoom.config(text="%3d %%" %(newzoomfactor*100))
     self.update(newimage=self.im)
+    self.centerImg()
  
   def make_status_bar(self,container):
     frameInfo = Frame(container, bd=0, bg="white")
+    frameInfo.pack(side=BOTTOM,fill=X)
     self.ShowMin = Label(frameInfo, text="Min -1",  bg ='white',bd=1, relief=SUNKEN, anchor=W)
     self.ShowMin.pack(side=LEFT)
     self.ShowMax = Label(frameInfo, text="Max -1" , bg ='white',bd=1, relief=SUNKEN, anchor=W)
@@ -154,8 +155,6 @@ class imageWin:
     self.ShowCoor.pack(side=RIGHT, padx = 2)
     self.ShowZoom = Label(frameInfo, text="%3d %%" %(self.zoomfactor*100), width =6, bg ='white',bd=1, relief=RIDGE, anchor=W)
     self.ShowZoom.pack(side=RIGHT, padx = 2)
-    frameInfo.pack(side=LEFT, pady=10, padx=5)
-    frameInfo.pack(side=TOP,fill=X)
 
   def MouseMotion(self,event):
     x=self.canvas.canvasx(event.x)
@@ -454,7 +453,7 @@ class imageWin:
       self.tool = self.ToolType.get()
     except:
       pass
-    if 'Line' in self.tool:
+    if 'LineProfile' in self.tool:
       self.draw2=self.drawLine2
     else:
       self.draw2=self.drawAoi2
@@ -464,23 +463,31 @@ class imageWin:
 	w['zoomwin'].tool=self.tool
 	w['zoomwin'].setbindings()
 
-  def updatebindings(self,tool=None):
-    if tool=='Zoom':
-      self.canvas.bind('<Button-1>', self.Mouse3Press)
-      self.canvas.bind('<Button1-Motion>', self.Mouse3PressMotion)
-      self.canvas.bind('<Button1-ButtonRelease>', self.Mouse3Release)
-    if tool=='LineProfile':
-      self.canvas.bind('<Button-1>', self.AltMouse3Press)
-      self.canvas.bind('<Button1-Motion>', self.AltMouse3PressMotion)
-      self.canvas.bind('<Button1-ButtonRelease>', self.AltMouse3Release)
-    if  tool=='Relief':
-      self.canvas.bind('<Button-1>', self.Mouse3Press)
-      self.canvas.bind('<Button1-Motion>', self.Mouse3PressMotion)
-      self.canvas.bind('<Button1-ButtonRelease>', self.CtrlMouse3Release)
-    if tool=='Rocker':
-      self.canvas.bind('<Button-1>', self.Mouse3Press)
-      self.canvas.bind('<Button1-Motion>', self.Mouse3PressMotion)
-      self.canvas.bind('<Button1-ButtonRelease>', self.keyRMouse3Release)
+  def updatebindings(self,event=None,tool=None):
+    if event.keysym=='F1':
+      try:
+        self.ToolType.set('Zoom')
+      except:
+        self.tool = 'Zoom'
+      self.setbindings()
+    if event.keysym=='F2':
+      try:
+        self.ToolType.set('LineProfile')
+      except:
+        self.tool='LineProfile'
+      self.setbindings()
+    if event.keysym=='F3':
+      try:
+        self.ToolType.set('Relief')
+      except:
+        self.tool='Relief'
+      self.setbindings()
+    if event.keysym=='F4':
+      try:
+        self.ToolType.set('Rocker')
+      except:
+        self.tool='Rocker'
+      self.setbindings()
 
   def quit(self,event=None):
     self.master.destroy()
@@ -510,11 +517,17 @@ class appWin(imageWin):
     self.ToolType.set(self.tool)
     self.ShowPeaks = BooleanVar()
     self.ShowPeaks.set(False)
+    master.bind('<F1>',self.updatebindings)
+    master.bind('<F2>',self.updatebindings)
+    master.bind('<F3>',self.updatebindings)
+    master.bind('<F4>',self.updatebindings)
+    master.bind('o',self.OpenFile)
     master.bind('q',self.quit)
+    master.bind('a',self.about)
     master.bind('<FocusIn>',self.MouseEntry)
     master.bind('z',self.rezoom)
     master.bind('x',self.rezoom)
-    
+    master.bind('c',self.clear_peaks)
     if filename:
       self.filename.set(filename)
       (newfilenumber,filetype)=deconstruct_filename(filename)
@@ -536,7 +549,7 @@ class appWin(imageWin):
     screen_width = master.winfo_screenwidth()
     screen_height = master.winfo_screenheight()
     self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10, round(screen_height/(2.*self.ysize)*10)/10)
-    frame = Frame(master, bd=0, bg="white") #, width=600, height=600) 
+    frame = Frame(master, bd=0, bg="white")
     frame.pack(fill=X)
 
     #add menubar
@@ -569,10 +582,20 @@ class appWin(imageWin):
     self.setbindings()
 
   def show_peaks(self):
-    #print 'ReadPeaks' ,self.ReadPeaks.get()
+    print 'ReadPeaks' ,self.ShowPeaks.get()
     if self.ShowPeaks.get() == True:
       self.read_peaks()
-      print self.peaks
+    else:
+      self.clear_peaks()
+      return
+    i=0
+    for peaks in self.peaks:
+      if int(peaks[0])>4:
+        i+=1
+        circ_center=[(peaks[1]*self.zoomfactor-self.zoomarea[0]), (peaks[2]*self.zoomfactor-self.zoomarea[1])]
+        rad = 2
+        corners=(circ_center[0]-rad,circ_center[1]-rad,circ_center[0]+rad,circ_center[1]+rad)
+        self.canvas.create_oval(corners,tag='peaks',outline='red')
     return
       
   def read_peaks(self):
@@ -581,7 +604,6 @@ class appWin(imageWin):
     peaks = insert_peaks.readpeaksearch()
     peaks.readpeaks('peaks.out',self.filename.get())
     self.peaks = peaks.peaks
-    print range(len(self.peaks))
     # convert coordinates to "fabian" coordinates
     for i in range(len(self.peaks)):
       mx = float(self.peaks[i][2])
@@ -589,8 +611,29 @@ class appWin(imageWin):
       self.peaks[i][0] = int(self.peaks[i][0])
       self.peaks[i][1] = mx
       self.peaks[i][2] = my
+
+  def clear_peaks(self,event=None):
+    self.canvas.delete('peaks')
+
       
-    
+#  def show_peaks(self):
+#    import insert_peaks
+#    print self.zoomarea
+#    object = insert_peaks.readpeaksearch()
+#    self.peaks = object.readpeaks('peaks.out',self.filename.get())
+#    i = 0
+#    for peaks in object.peaks:
+#      if int(peaks[0])>20:
+#        print peaks
+#        i+=1
+#        circ_center=[(float(peaks[2])*self.zoomfactor-self.zoomarea[0]), ((2048-float(peaks[1]))*self.zoomfactor-self.zoomarea[1])]
+#        rad = 4
+#        corners=(circ_center[0]-4,circ_center[1]-4,circ_center[0]+4,circ_center[1]+4)
+#        self.canvas.create_oval(corners,tag='peaks',outline='red')
+#    print 'Peaks ', i  
+
+
+
 
   def make_header_page(self):
       self.headcheck=[]
@@ -665,40 +708,40 @@ class appWin(imageWin):
      
   def make_command_menu(self,master):
     frameMenubar = Frame(master,relief=RAISED, borderwidth=2)
-    CmdBtn = Menubutton(frameMenubar, text='File',underline=0)
-    CmdBtn.pack(side=LEFT, padx="2m")
-    CmdBtn.menu =Menu(CmdBtn)
-    CmdBtn.menu.add_command(label='Open',command=self.OpenFile)
-    #CmdBtn.menu.add_command(label='Close')
-    CmdBtn.menu.add_command(label='Exit',command=self.quit)
-    CmdBtn['menu']=CmdBtn.menu
-    ToolBtn = Menubutton(frameMenubar, text='Tools',underline=0)
-    ToolBtn.pack(side=LEFT, padx="2m")
-    ToolBtn.menu =Menu(ToolBtn)
-    ToolBtn.menu.add_radiobutton(label='Zoom',command=self.setbindings,variable=self.ToolType,value='Zoom')
-    ToolBtn.menu.add_radiobutton(label='Line profile',command=self.setbindings,variable=self.ToolType,value='LineProfile')
-    ToolBtn.menu.add_radiobutton(label='Relief',command=self.setbindings,variable=self.ToolType,value='Relief')
-    ToolBtn.menu.add_radiobutton(label='Rocking curve',command=self.setbindings,variable=self.ToolType,value='Rocker')
-    ToolBtn['menu']=ToolBtn.menu
+    FileMenu = Menubutton(frameMenubar, text='File',underline=0)
+    FileMenu.pack(side=LEFT, padx="2m")
+    FileMenu.menu =Menu(FileMenu)
+    FileMenu.menu.add_command(label='Open', underline=0, command=self.OpenFile)
+    FileMenu.menu.add_command(label='Quit', underline=0, command=self.quit)
+    FileMenu['menu']=FileMenu.menu
 
-    CrystBtn = Menubutton(frameMenubar, text='CrystTools',underline=0)
-    CrystBtn.pack(side=LEFT, padx="2m")
-    CrystBtn.menu =Menu(CrystBtn)
-    CrystBtn.menu.add_checkbutton(label='Show peaks..',command=self.show_peaks,onvalue=True,offvalue=False,variable=self.ShowPeaks)
-    CrystBtn['menu']=CrystBtn.menu
+    ToolMenu = Menubutton(frameMenubar, text='Tools',underline=0)
+    ToolMenu.pack(side=LEFT, padx="2m")
+    ToolMenu.menu =Menu(ToolMenu)
+    ToolMenu.menu.add_radiobutton(label='Zoom%15s%2s' %('','F1') ,command=self.setbindings,variable=self.ToolType,value='Zoom')
+    ToolMenu.menu.add_radiobutton(label='Line profile%7s%2s' %('','F2') ,command=self.setbindings,variable=self.ToolType,value='LineProfile')
+    ToolMenu.menu.add_radiobutton(label='Relief plot%8s%2s' %('','F3') ,command=self.setbindings,variable=self.ToolType,value='Relief')
+    ToolMenu.menu.add_radiobutton(label='Rocking curve%2s%2s' %('','F4'),command=self.setbindings,variable=self.ToolType,value='Rocker')
+    ToolMenu['menu']=ToolMenu.menu
 
+    CrystMenu = Menubutton(frameMenubar, text='CrystTools',underline=0)
+    CrystMenu.pack(side=LEFT, padx="2m")
+    CrystMenu.menu =Menu(CrystMenu)
+    CrystMenu.menu.add_checkbutton(label='Show peaks..',command=self.show_peaks,onvalue=True,offvalue=False,variable=self.ShowPeaks)
+    CrystMenu['menu']=CrystMenu.menu
 
-    CmdBtn3 = Menubutton(frameMenubar, text='Help',underline=0)
-    CmdBtn3.pack(side=LEFT, padx="2m")
-    CmdBtn3.menu =Menu(CmdBtn3)
-    CmdBtn3.menu.add_command(label='About',command=self.about)
-    CmdBtn3['menu']=CmdBtn3.menu
-    #return CmdBtn, CmdBtn2
+    HelpMenu = Menubutton(frameMenubar, text='Help',underline=0)
+    HelpMenu.pack(side=LEFT, padx="2m")
+    HelpMenu.menu =Menu(HelpMenu)
+    HelpMenu.menu.add_command(label='About', underline=0, command=self.about)
+    HelpMenu['menu']=HelpMenu.menu
     frameMenubar.pack(fill=X,side=TOP)
-    frameMenubar.tk_menuBar((CmdBtn, ToolBtn, CmdBtn3))
+    frameMenubar.tk_menuBar((FileMenu, ToolMenu, CrystMenu, HelpMenu))
 
   def OpenFile(self,filename=True):
-    self.filename.set(askopenfilename(filetypes=[("EDF files", "*.edf"),("Tif files", "*.tif"),("MarCCD/Mosaic files", "*.mccd"),("ADSC files", "*.img"),("Bruker files", "*.*"),("All Files", "*")]))
+    fname = askopenfilename(filetypes=[("EDF files", "*.edf"),("Tif files", "*.tif"),("MarCCD/Mosaic files", "*.mccd"),("ADSC files", "*.img"),("Bruker files", "*.*"),("All Files", "*")])
+    if len(fname) == 0: return
+    self.filename.set(fname)
     (newfilenumber,filetype)=deconstruct_filename(self.filename.get())
     self.filetype=filetype
     self.displaynumber.set(newfilenumber)
@@ -708,13 +751,9 @@ class appWin(imageWin):
       self.gotoimage()
       try:
         #set the image dimensions and zoom out if it is big
-        if self.ysize > 1560:
-          self.zoomfactor = 0.25
-        elif self.ysize > 768:
-          self.zoomfactor = 0.5
-        else:
-          self.zoomfactor = 1
-
+        screen_width = master.winfo_screenwidth()
+        screen_height = master.winfo_screenheight()
+        self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10, round(screen_height/(2.*self.ysize)*10)/10)
         self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
         self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
         self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
@@ -834,7 +873,7 @@ class appWin(imageWin):
     self.master.title("fabian - %s" %(filename))
 
       
-  def about(self):
+  def about(self,event=None):
     About()
     
 #  def quit(self):
