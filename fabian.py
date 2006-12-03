@@ -163,7 +163,13 @@ class imageWin:
     self.ShowZoom.pack(side=RIGHT, padx = 2)
 
   def show_peaks(self,event=None):
-    if event.keysym == 'p' : self.ShowPeaks.set(True)
+    # p used to toogle show_peaks check old value and change
+    if event !=None:
+      if event.keysym == 'p':
+        if self.ShowPeaks.get() == False:
+          self.ShowPeaks.set(True)
+        else:
+          self.ShowPeaks.set(False)
     try:
       self.showpeaks = self.ShowPeaks.get()
     except:
@@ -175,8 +181,6 @@ class imageWin:
       print self.peaks
       print 'No peaks read yet - do so!'
       self.read_peaks()
-    print 'have peak dictio'
-    print self.filename.get()
     for peaks in self.peaks[self.filename.get()]:
       if int(peaks[0])>4:
         circ_center=[(peaks[1]*self.zoomfactor-self.zoomarea[0]), (peaks[2]*self.zoomfactor-self.zoomarea[1])]
@@ -206,6 +210,7 @@ class imageWin:
     self.canvas.delete('peaks')
 
   def update_peaks(self,event=None):
+    print 'update peaks'
     self.canvas.delete('peaks')
     self.show_peaks()
 
@@ -476,7 +481,7 @@ class imageWin:
     self.ShowMean.config(text="Mean %i" %(self.im_mean))
     self.canvas.lower(self.canvas.create_image(0,0,anchor=NW, image=self.img))
     try:
-      if self.showpeaks == True:
+      if self.ShowPeaks.get() == True:
         self.update_peaks()
     except:
       pass
@@ -590,6 +595,9 @@ class appWin(imageWin):
     master.bind('x',self.rezoom)
     master.bind('c',self.clear_peaks)
     master.bind('p',self.show_peaks)
+    master.bind('<Up>',self.nextimage)
+    master.bind('<Down>',self.previousimage)
+
     if filename:
       self.filename.set(filename)
       (newfilenumber,filetype)=deconstruct_filename(filename)
@@ -820,7 +828,7 @@ class appWin(imageWin):
     self.update_header_label()
     return True
 
-  def nextimage(self):
+  def nextimage(self,event=None):
     #update filename, prefix and number
     newfilenumber=int(self.displaynumber.get())+1
     newfilename=construct_filename(self.filename.get(),newfilenumber)
@@ -839,7 +847,7 @@ class appWin(imageWin):
     self.update_header_label()
     return True
       
-  def previousimage(self):
+  def previousimage(self,event=None):
     newfilenumber=int(self.displaynumber.get())-1
     try:
       newfilename=construct_filename(self.filename.get(),newfilenumber)
