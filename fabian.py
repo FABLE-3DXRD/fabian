@@ -43,7 +43,6 @@ class imageWin:
     self.maxval=StringVar()
     self.minval=StringVar()
     self.showpeaks = showpeaks
-    print 'ZOOM', showpeaks
     self.peaks={}
     if scaled_min: self.minval.set(scaled_min)
     if scaled_max: self.maxval.set(scaled_max)
@@ -210,7 +209,6 @@ class imageWin:
     self.canvas.delete('peaks')
 
   def update_peaks(self,event=None):
-    print 'update peaks'
     self.canvas.delete('peaks')
     self.show_peaks()
 
@@ -296,8 +294,12 @@ class imageWin:
   def use_tool(self,tool=None):
     if not tool:
       tool=self.tool
+    # Convert canvas coordinates into pixels
+    t=self.transientcorners
+    corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
+
     if 'Relief' in tool:
-        if self.transientcorners[0]==self.transientcorners[2] or self.transientcorners[1]==self.transientcorners[3]:
+        if corners[0]==corners[2] or corners[1]==corners[3]:
           self.canvas.delete('transientaoi')
           return
 	if 'zoom' in self.master.wm_title():
@@ -306,7 +308,7 @@ class imageWin:
           t='relief of main'
 	opensubwin=self.openrelief
     elif 'Zoom' in tool:
-        if self.transientcorners[0]==self.transientcorners[2] or self.transientcorners[1]==self.transientcorners[3]:
+        if corners[0]==corners[2] or corners[1]==corners[3]:
           self.canvas.delete('transientaoi')
           return
         if 'zoom' in self.master.wm_title():
@@ -319,7 +321,7 @@ class imageWin:
 	t = 'rock'
 	opensubwin=self.openrocker
     elif 'Line' in tool:
-      if self.transientcorners[:2]==self.transientcorners[2:]:
+      if corners[:2]==corners[2:]:
         self.canvas.delete('transientline')
         return
       if 'zoom' in self.master.wm_title():
@@ -329,6 +331,7 @@ class imageWin:
         t='Line %d of main' % self.line_win
         self.line_win = self.line_win + 1
       opensubwin=self.openlineprofile
+
     self.aoi.append({'coords':self.transientcorners,'aoi':[self.draw2(tool=tool)],'zoomwin': opensubwin(t), 'wintype':tool})
 
   def drawAoi2(self,tool='transientaoi'):
@@ -355,7 +358,6 @@ class imageWin:
   def openzoom(self,tag):
     t=self.transientcorners
     corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
-    if corners[0]-corners[2] == 0 or corners[1]-corners[3] == 0: return False
     w=Toplevel(self.master)
     if self.tool:
       newwin=imageWin(w,title=tag,filename=self.filename,zoomfactor=self.zoomfactor*4,scaled_min=self.minval.get(),scaled_max=self.maxval.get(),scale=self.scale,coords=corners,image=self.im,tool=self.tool,showpeaks=self.showpeaks)
@@ -366,10 +368,10 @@ class imageWin:
 
   def openlineprofile(self,tag):
       # Make lineprofile  relief window
-      import pixel_trace
-      w=Toplevel(self.master)
       t=self.transientcorners
       corners=[(self.zoomarea[0]+t[0]/self.zoomfactor), (self.zoomarea[1]+t[1]/self.zoomfactor), (self.zoomarea[0]+t[2]/self.zoomfactor-1), (self.zoomarea[1]+t[3]/self.zoomfactor)-1]
+      import pixel_trace
+      w=Toplevel(self.master)
       pixels = pixel_trace.pixel_trace(corners)
       t = []
       pixval = []
@@ -806,6 +808,7 @@ class appWin(imageWin):
     return (imin,imax,imean)
   
   def gotoimage(self,event=None):
+    self.master.config(cursor='watch')
     newfilenumber=int(self.displaynumber.get())
     newfilename=construct_filename(self.filename.get(),newfilenumber)
     try:
@@ -819,6 +822,7 @@ class appWin(imageWin):
         e=Error()
         msg="No such file: %s " %(newfilename)
         e.Er(msg)
+        self.master.config(cursor='left_ptr')
         return False
     #image loaded ok
     self.filename.set(newfilename)
@@ -826,10 +830,12 @@ class appWin(imageWin):
     self.update(newimage=self.im,filename=newfilename)
     self.update_header_page()
     self.update_header_label()
+    self.master.config(cursor='left_ptr')
     return True
 
   def nextimage(self,event=None):
     #update filename, prefix and number
+    self.master.config(cursor='watch')
     newfilenumber=int(self.displaynumber.get())+1
     newfilename=construct_filename(self.filename.get(),newfilenumber)
     try:
@@ -838,6 +844,7 @@ class appWin(imageWin):
       e=Error()
       msg="No such file: %s " %(newfilename)
       e.Er(msg)
+      self.master.config(cursor='left_ptr')
       return False
     #image loaded ok
     self.filename.set(newfilename)
@@ -845,9 +852,11 @@ class appWin(imageWin):
     self.update(newimage=self.im,filename=newfilename)
     self.update_header_page()
     self.update_header_label()
+    self.master.config(cursor='left_ptr')
     return True
       
   def previousimage(self,event=None):
+    self.master.config(cursor='watch')
     newfilenumber=int(self.displaynumber.get())-1
     try:
       newfilename=construct_filename(self.filename.get(),newfilenumber)
@@ -861,6 +870,7 @@ class appWin(imageWin):
         e=Error()
         msg="No such file: %s " %(newfilename)
         e.Er(msg)
+        self.master.config(cursor='left_ptr')
         return False
     #image loaded ok
     self.filename.set(newfilename)
@@ -868,6 +878,7 @@ class appWin(imageWin):
     self.update(newimage=self.im,filename=newfilename)
     self.update_header_page()
     self.update_header_label()
+    self.master.config(cursor='left_ptr')
     return True
   
   def openimage(self,filename=None):
@@ -902,6 +913,7 @@ class imagePlot:
   def __init__(self,master,title='Plot',x=None,y=None):
       self.master = master
       self.master.title(title)
+      self.master.bind('q',self.quit)
       self.frame = Frame(self.master)
       self.frame.pack()
       self.f = Figure(figsize=(8,5), dpi=100)
@@ -914,6 +926,9 @@ class imagePlot:
 
   def setbindings(self):
     pass
+
+  def quit(self,event=None):
+    self.master.destroy()
 
   def update(self,coord=[0,0,0,0],zoomarea=[0,0,0,0],zoomfactor=1, newimage=None):
       import pixel_trace
