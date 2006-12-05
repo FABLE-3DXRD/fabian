@@ -27,13 +27,13 @@ class edfimage:
   def toPIL16(self,filename=None):
     if filename:
       self.read(filename)
-      PILimage=Image.frombuffer("F",(self.dim1,self.dim2),self.data,"raw","F;16",0,-1)
-      return PILimage
-    else:
-      PILimage= Image.frombuffer("F",(self.dim1,self.dim2),self.data,"raw","F;16",0,-1)
-      return PILimage
+    PILimage={
+      'w':Image.frombuffer("F",(self.dim1,self.dim2),self.data,"raw","F;16",0,-1),
+      'f':Image.frombuffer("F",(self.dim1,self.dim2),self.data.astype(Numeric.UInt16),"raw","F;16",0,-1),
+      }[self.bytecode]
+    return PILimage
 	
-  def read(self,fname,verbose=0):
+  def read(self,fname,verbose=0,padding='0'):
     # Check whether edf file has been compressed
     if os.path.splitext(fname)[1] == '.gz':
       import gzip
@@ -41,7 +41,7 @@ class edfimage:
     elif os.path.splitext(fname)[1] == '.bz2':
       import bz2
       f=bz2.BZ2File(fname,"rb")
-    else:      
+    else:
       f=open(fname,"rb")
     l=f.readline()
     while '}' not in l:
@@ -52,22 +52,38 @@ class edfimage:
       l=f.readline()
     l=f.read()
     f.close()
+    #check the datatype of the edffile (fit2d uses FLOAT for instance) default is 16 bit integer
+    if self.header['DataType'] in ('FLOAT','Float'):
+      bytecode=Numeric.Float32
+    else:
+      bytecode=Numeric.UInt16
+    print bytecode
+    bpp={Numeric.UInt16:2,Numeric.Float32:4} [bytecode]
+    print bpp
     #now read the data into the array
     (self.dim1,self.dim2)=int(self.header['Dim_1']),int(self.header['Dim_2'])
-
+    if len(l)!=self.dim1*self.dim2*bpp:
+      missing_bytec=self.dim2*self.dim1*bpp-len(l)
+      if missing_bytec>0:
+	l=l+padding*missing_bytec
+	print 'warning: Size spec in edf-header does not match size of image data field - padding with %d' % missing_bytec,padding,'s'
+      else:
+	l=l[:missing_bytec]
+	print 'warning: Size spec in edf-header does not match size of image data field - %d byte(s) on end not read. Please check for image corruption.' % -missing_bytec
+	
     if 'Low' in self.header['ByteOrder']:
       try:
-	self.data=Numeric.reshape(Numeric.fromstring(l,Numeric.UInt16),[self.dim2, self.dim1])
+	self.data=Numeric.reshape(Numeric.fromstring(l,bytecode),[self.dim2, self.dim1])
       except ValueError:
 	raise IOError, 'Size spec in edf-header does not match size of image data field'
-      self.bytecode=Numeric.UInt16
+      self.bytecode=bytecode
       if verbose: print 'using low byte first (x386-order)'
     else:
       try:
-	self.data=Numeric.reshape(Numeric.fromstring(l,Numeric.UInt16),[self.dim2, self.dim1]).byteswapped()
+	self.data=Numeric.reshape(Numeric.fromstring(l,bytecode),[self.dim2, self.dim1]).byteswapped()
       except ValueError:
 	raise IOError, 'Size spec in edf-header does not match size of image data field'
-      self.bytecode=Numeric.UInt16
+      self.bytecode=bytecode
       if verbose: print 'using high byte first (network order)'
     self.resetvals()
     return self
@@ -117,12 +133,9 @@ class edfimage:
       print "recalc mean"
     if self.stddev==None:
       N=self.dim1*self.dim2-1
-      S=Numeric.sum(Numeric.ravel((self.data.astype(Numeric.float)-self.m)/N*(self.data.astype(Numeric.float)-self.m)) )
+      S=Numeric.sum(Numeric.ravel((self.data.astype(Numeric.Float)-self.m)/N*(self.data.astype(Numeric.Float)-self.m)) )
       self.stddev=S/(self.dim1*self.dim2-1)
     return float(self.stddev)
-
-  def getheader(self):
-    return self.header
 
   def add(self, otherImage):
     if not hasattr(otherImage,'data'):
