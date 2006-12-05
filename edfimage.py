@@ -57,9 +57,7 @@ class edfimage:
       bytecode=Numeric.Float32
     else:
       bytecode=Numeric.UInt16
-    print bytecode
     bpp={Numeric.UInt16:2,Numeric.Float32:4} [bytecode]
-    print bpp
     #now read the data into the array
     (self.dim1,self.dim2)=int(self.header['Dim_1']),int(self.header['Dim_2'])
     if len(l)!=self.dim1*self.dim2*bpp:
