@@ -162,6 +162,9 @@ class imageWin:
     self.ShowZoom.pack(side=RIGHT, padx = 2)
 
   def show_peaks(self,event=None):
+    self.master.config(cursor='watch') # The next two lines is a hack to have the configure done imidiately
+    self.canvas.create_oval((0,0,0,0),tag='hack',outline='red')
+    self.canvas.delete('hack')
     # p used to toogle show_peaks check old value and change
     if event !=None:
       if event.keysym == 'p':
@@ -177,8 +180,8 @@ class imageWin:
       self.clear_peaks()
       return
     elif self.peaks == {}:
-      print self.peaks
-      print 'No peaks read yet - do so!'
+      #print self.peaks
+      #print 'No peaks read yet - do so!'
       self.read_peaks()
     for peaks in self.peaks[self.filename.get()]:
       if int(peaks[0])>4:
@@ -186,11 +189,11 @@ class imageWin:
         rad = 4
         corners=(circ_center[0]-rad,circ_center[1]-rad,circ_center[0]+rad,circ_center[1]+rad)
         self.canvas.create_oval(corners,tag='peaks',outline='red')
+    self.master.config(cursor='left_ptr')
     return
 
       
   def read_peaks(self):
-    print 'IN READ'
     peaks = insert_peaks.readpeaksearch()
     peaks.readallpeaks('peaks.out')
     self.peaks = peaks.images
