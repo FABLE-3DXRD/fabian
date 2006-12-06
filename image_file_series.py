@@ -6,18 +6,19 @@ Authors: Henning O. Sorensen & Erik Knudsen
          Risoe National Laboratory
          Frederiksborgvej 399
          DK-4000 Roskilde
-         email:henning.sorensen@risoe.dk
+         email:erik.knudsen@risoe.dk
 """
 
 import string
 import edfimage, tifimage, adscimage, brukerimage, marccdimage,bruker100image,pnmimage
-import re,os,sys,time
+import re,os,os.path,sys,time
 
 class image_file_series:
   def __init__(self,filename=None):
     self.filename=filename
-    self.number,self.filetype=deconstruct_filename(filename)
+    stem,self.number,self.filetype=deconstruct_filename(filename)
     self.img=None
+    self.noread=False
     #setup a few things to start a file series.
     #self.p=re.compile(r"^(.*?)(-?[0-9]{0,4})(\D*)$")
     #self.m=re.match(self.p,filename)
@@ -45,7 +46,11 @@ class image_file_series:
       filename=self.filename
     self.img=eval( self.filetype+'image.'+self.filetype+'image()')
     try:
-      self.img.read(filename)
+      if self.noread:
+        if not os.path.exists(filename):
+          raise IOError, 'No such file or directory %s' % filename
+      else:
+	self.img.read(filename)
     except IOError:
       raise
    
@@ -57,7 +62,7 @@ class image_file_series:
     else:
       return self.img
       
-  def next(self,toPIL=True):
+  def next(self):
     newnum=self.number+1
     newfilename=construct_filename(self.filename,newnum)
     if newfilename==self.filename:
@@ -72,7 +77,7 @@ class image_file_series:
     self.number=newnum
     return True
 
-  def prev(self,noconvert=False):
+  def prev(self):
     newnum=self.number-1
     newfilename=construct_filename(self.filename,newnum)
     if newfilename==self.filename:
@@ -93,6 +98,7 @@ class image_file_series:
     self.filename=newfilename
     self.number=newnum
     return True
+  
 
   def jump(self,newnum,noconvert=False):
     newfilename=construct_filename(self.filename,newnum)
@@ -100,12 +106,23 @@ class image_file_series:
       self.__openimage(newfilename)#try to open that file
     except IOError:
       msg="No such file: %s " %(newfilename)
-      raise IOError
+      raise IOError,msg
     #image loaded ok
     self.filename=newfilename
     self.number=newnum
     return True
-
+  
+  def loop(self,endnum=999999):
+    #a generator for looping through the images in a series with a for loop
+    num=self.number
+    while num<endnum:
+      yield(self.img)
+      try:
+	self.next()
+      except IOError:
+	break
+      num=num+1
+	
 #stand-alone functions
 def construct_filename(oldfilename,newfilenumber,padding=True,pattern=None):
     #some code to replace the filenumber in oldfilename with newfilenumber
@@ -140,11 +157,16 @@ def deconstruct_filename(filename, pattern=None):
       'img': 'adsc',
       m.group(2): 'bruker',
       'sfrm': 'bruker100'}[ext[1][1:]]
-    return (number,filetype)
+    return (m.group(0),number,filetype)
 
 def extract_filenumber(filename):
+    return deconstruct_filename(filename)[1]
+
+def extract_stem(filename):
     return deconstruct_filename(filename)[0]
 
+def extract_filetype(filename)
+    return deconstruct_filename(filename)[2]
 
 if __name__=='__main__':
   import sys,os,time
