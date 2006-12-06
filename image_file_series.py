@@ -165,7 +165,7 @@ def extract_filenumber(filename):
 def extract_stem(filename):
     return deconstruct_filename(filename)[0]
 
-def extract_filetype(filename)
+def extract_filetype(filename):
     return deconstruct_filename(filename)[2]
 
 if __name__=='__main__':
