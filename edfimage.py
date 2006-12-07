@@ -53,10 +53,13 @@ class edfimage:
     l=f.read()
     f.close()
     #check the datatype of the edffile (fit2d uses FLOAT for instance) default is 16 bit integer
-    if self.header['DataType'] in ('FLOAT','Float'):
-      bytecode=Numeric.Float32
-    else:
-      bytecode=Numeric.UInt16
+    if 'DataType' in self.header_keys:
+      if self.header['DataType'] in ('FLOAT','Float'):
+        bytecode=Numeric.Float32
+      else:
+        bytecode=Numeric.UInt16
+    else: 
+      bytecode=Numeric.UInt16 # Default bytecode if none given
     bpp={Numeric.UInt16:2,Numeric.Float32:4} [bytecode]
     #now read the data into the array
     (self.dim1,self.dim2)=int(self.header['Dim_1']),int(self.header['Dim_2'])
