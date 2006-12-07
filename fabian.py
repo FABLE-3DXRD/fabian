@@ -100,10 +100,11 @@ class imageWin:
     #make imagecanvas
     self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
     self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
-    self.frameImage = Pmw.ScrolledFrame(container, hull_width=self.canvas_xsize, hull_height=self.canvas_ysize, usehullsize=1,hscrollmode='none',vscrollmode='none')
-    self.canvas = Canvas(self.frameImage.interior(), width=self.canvas_xsize, height=self.canvas_ysize)
+#    self.frameImage = Pmw.ScrolledFrame(container, hull_width=self.canvas_xsize+30, hull_height=self.canvas_ysize+30, usehullsize=1,hscrollmode='static',vscrollmode='static')
+    self.frameImage = Frame(container)
+    self.canvas = Canvas(self.frameImage, width=self.canvas_xsize, height=self.canvas_ysize)
     self.canvas.pack(side=TOP,anchor='center', expand=1, fill=X)
-    self.frameImage.pack(side=TOP,expand=1, pady=10, padx=5)
+    self.frameImage.pack(side=TOP,expand=1)
     #bind events
     self.canvas.bind('<Button-1>', self.Mouse1Press)
     self.canvas.bind('<Button1-Motion>', self.Mouse1PressMotion)
@@ -116,20 +117,12 @@ class imageWin:
     self.canvas.bind('<Button3-ButtonRelease>', self.Mouse3Release)
 
   def centerImg(self):
-    left, right = self.frameImage.xview()
-    top, bottom = self.frameImage.yview()
+    left, right = self.frameScroll.xview()
+    top, bottom = self.frameScroll.yview()
     sizex = right - left
     sizey = bottom - top
-    if sizey < 0.99:
-      self.frameImage.configure(vscrollmode='dynamic')
-    else:
-      self.frameImage.configure(vscrollmode='none')
-    if sizex < 0.99:
-      self.frameImage.configure(hscrollmode='dynamic')
-    else:
-      self.frameImage.configure(hscrollmode='none')
-    self.frameImage.xview('moveto',  0.5 - sizex / 2.)
-    self.frameImage.yview('moveto',  0.5 - sizey / 2.)
+    self.frameScroll.xview('moveto',  0.5 - sizex / 2.)
+    self.frameScroll.yview('moveto',  0.5 - sizey / 2.)
 
   def rezoom(self,e):
     if e.keysym=='z':
@@ -143,7 +136,8 @@ class imageWin:
     self.zoomfactor=newzoomfactor
     self.ShowZoom.config(text="%3d %%" %(newzoomfactor*100))
     self.update(newimage=self.im)
-    self.centerImg()
+    if not 'zoom' in self.master.wm_title(): #If zooming in appWin center the image in the Scrolled frame 
+      self.centerImg()
  
   def make_status_bar(self,container):
     frameInfo = Frame(container, bd=0)
@@ -624,6 +618,8 @@ class appWin(imageWin):
     screen_width = master.winfo_screenwidth()
     screen_height = master.winfo_screenheight()
     self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10, round(screen_height/(2.*self.ysize)*10)/10)
+    self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
+    self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
     frame = Frame(master, bd=0, bg="white")
     frame.pack(fill=X)
 
@@ -638,8 +634,9 @@ class appWin(imageWin):
     
     #call __init__ in the parent class
     self.make_scaling_ctls(self.page1)
-    
-    self.make_image_canvas(self.page1)
+    self.frameScroll = Pmw.ScrolledFrame(self.page1, hull_width=self.canvas_xsize+30, hull_height=self.canvas_ysize+30, usehullsize=1,hscrollmode='static',vscrollmode='static')
+    self.frameScroll.pack()
+    self.make_image_canvas(self.frameScroll.interior())
     
     self.make_header_info()
     self.make_status_bar(self.page1)
