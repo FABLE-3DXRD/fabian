@@ -1,21 +1,17 @@
-# pixel_trace is based on td_dda.py - Three-Dimensional Digital Differential Analyser
-# Algorithm for traverse voxels with a ray defined by two coordinate sets
-# and calculated the path lenght of the ray in every traversed voxel. 
-# Finally the intensity along the ray is integrated.
-#
-# (int_along_ray, voxels) = td_tdd(start_point,end_point)
-#
-# start_point = [x1 y1]
-# end_point = [x2 y2]
-#
-# Example:
-# pixel_trace([0.5, 0.5],[2.5, 5.5])
-#
-# This function is largely following the algorithm:
-# "A Fast Traversal Algorithm" by John Amanatides,
-# Proc. Eurographics '87, Amsterdam, The Netherlands, August 1987, pp 1-10.
-#
-# Henning Osholm Sorensen, Risoe National Lab., Nov 1, 2006.
+#! /usr/bin/env python
+"""
+ 
+Authors: Henning O. Sorensen & Erik Knudsen
+         Center for Fundamental Research: Metal Structures in Four Dimensions
+         Risoe National Laboratory
+         Frederiksborgvej 399
+         DK-4000 Roskilde
+         email:henning.sorensen@risoe.dk
+
+ This function is largely following the algorithm:
+ "A Fast Traversal Algorithm" by John Amanatides,
+ Proc. Eurographics '87, Amsterdam, The Netherlands, August 1987, pp 1-10.
+"""
 
 from  Numeric import *
 import copy
