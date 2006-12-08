@@ -62,8 +62,8 @@ class image_file_series:
     else:
       return self.img
       
-  def next(self):
-    newnum=self.number+1
+  def next(self,steps=1):
+    newnum=self.number+steps
     newfilename=construct_filename(self.filename,newnum)
     if newfilename==self.filename:
       raise ValueError,"new filename == old filename"
@@ -77,8 +77,8 @@ class image_file_series:
     self.number=newnum
     return True
 
-  def prev(self):
-    newnum=self.number-1
+  def prev(self,steps=1):
+    newnum=self.number-steps
     newfilename=construct_filename(self.filename,newnum)
     if newfilename==self.filename:
       raise ValueError,"new filename == old filename"
