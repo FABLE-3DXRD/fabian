@@ -29,6 +29,10 @@ update function does rescaling of root image even though it is not necessary - D
 
 Only half on the AOIs from closed zoom windows are removed upon each appWin focus. - DONE
 
+The show peaks does not work in zoom windows. if fabian is not opened in the directory where 
+peaks.out is located it can not find peaks.out. Furthermore a question on which file to use would be appropriate.
+
+
 #TODO
 Put under cvs control - DONE
 implement getheader functionality in tifimage.py - DONE
@@ -41,5 +45,4 @@ clean up the filename splitting and joining code - it is a jumbled mess right no
 also update Relief windows - DONE
 Write setup script and compile executable for windows
 List of AOIs - possibly with load/save functionality
-Read and show peaks found with peaksearch from ImageD11
 
