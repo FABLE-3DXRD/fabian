@@ -160,6 +160,7 @@ class imageWin:
     self.canvas.create_oval((0,0,0,0),tag='hack',outline='red')
     self.canvas.delete('hack')
     # p used to toogle show_peaks check old value and change
+    self.master.config(cursor='watch')
     if event !=None:
       if event.keysym == 'p':
         if self.ShowPeaks.get() == False:
@@ -508,7 +509,7 @@ class imageWin:
     while cc < 0.98*sum(hist) and i < 255:
       i=i+1
       cc = cc + hist[i]
-    scaled_max = max(1,((self.im_max - self.im_min)/255 *i)+self.im_min)
+    scaled_max = max(self.im_min+1,1,((self.im_max - self.im_min)/255 *i)+self.im_min)
     self.maxval.set("%.0f"%scaled_max)
 
   def setbindings(self):
