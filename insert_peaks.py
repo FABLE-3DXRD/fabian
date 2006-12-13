@@ -32,13 +32,13 @@ class readpeaksearch:
                 name = line.split()[-1]
                 self.images[name]=i
 
-        numb, filetype = deconstruct_filename(imagefile)
+        stem, numb, filetype = deconstruct_filename(imagefile)
         start = self.images[imagefile]
         print imagefile
         try:
             end = self.images[construct_filename(imagefile,numb+1)]
         except:
-            end = len(self.lines) 
+            end = len(self.lines)
             
         i = start +1
         line=self.lines[i]
