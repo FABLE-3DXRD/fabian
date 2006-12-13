@@ -157,7 +157,7 @@ def deconstruct_filename(filename, pattern=None):
       'img': 'adsc',
       m.group(2): 'bruker',
       'sfrm': 'bruker100'}[ext[1][1:]]
-    return (m.group(0),number,filetype)
+    return (m.group(1),number,filetype)
 
 def extract_filenumber(filename):
     return deconstruct_filename(filename)[1]
