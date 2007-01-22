@@ -30,6 +30,7 @@ colour={'transientaoi':'RoyalBlue', 'Zoom':'red', 'Relief':'LimeGreen', 'Rocker'
 
       
 class imageWin:
+  globals()["peaks"] = {}
   def __init__(self,master,filename=None,filenumber=0,title=None,zoomfactor=1,scaled_min=None,scaled_max=None,scale=None, mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None,tool=None,showpeaks=None):
     #initialize var
     self.master=master
@@ -43,7 +44,7 @@ class imageWin:
     self.maxval=StringVar()
     self.minval=StringVar()
     self.showpeaks = showpeaks
-    self.peaks={}
+    #self.peaks={}
     if scaled_min: self.minval.set(scaled_min)
     if scaled_max: self.maxval.set(scaled_max)
     if scale:
@@ -173,15 +174,14 @@ class imageWin:
       pass
     if self.showpeaks == False:
       self.clear_peaks()
+      self.master.config(cursor='left_ptr') 
       return
-    elif self.peaks == {}:
-      #print self.peaks
-      #print 'No peaks read yet - do so!'
+    elif peaks == {}:
       self.read_peaks()
-    for peaks in self.peaks[self.filename.get()]:
-      if int(peaks[0])>4:
-        circ_center=[(peaks[1]*self.zoomfactor-self.zoomarea[0]), (peaks[2]*self.zoomfactor-self.zoomarea[1])]
-        rad = 4
+    for ipeaks in peaks[self.filename.get()]:
+      if int(ipeaks[0])>4:
+        circ_center=[(ipeaks[1]-self.zoomarea[0])*self.zoomfactor, (ipeaks[2]-self.zoomarea[1])*self.zoomfactor]
+        rad = 8*self.zoomfactor
         corners=(circ_center[0]-rad,circ_center[1]-rad,circ_center[0]+rad,circ_center[1]+rad)
         self.canvas.create_oval(corners,tag='peaks',outline='red')
     self.master.config(cursor='left_ptr')
@@ -189,17 +189,19 @@ class imageWin:
 
       
   def read_peaks(self):
-    peaks = insert_peaks.readpeaksearch()
-    peaks.readallpeaks('peaks.out')
-    self.peaks = peaks.images
+    rpeaks = insert_peaks.readpeaksearch()
+    peakfilename = askopenfilename(filetypes=[("out files", "*.out"),("All Files", "*")])
+    rpeaks.readallpeaks(peakfilename)
+    peaks = rpeaks.images
     # convert coordinates to "fabian" coordinates
-    for k in self.peaks.keys():
-      for i in range(len(self.peaks[k])):
-        mx = float(self.peaks[k][i][2])
-        my = self.ysize-float(self.peaks[k][i][1])
-        self.peaks[k][i][0] = int(self.peaks[k][i][0])
-        self.peaks[k][i][1] = mx
-        self.peaks[k][i][2] = my
+    for k in peaks.keys():
+      for i in range(len(peaks[k])):
+        mx = float(peaks[k][i][2])
+        my = image_ysize-float(peaks[k][i][1])
+        peaks[k][i][0] = int(peaks[k][i][0])
+        peaks[k][i][1] = mx
+        peaks[k][i][2] = my
+    globals()["peaks"] = peaks
 
   def clear_peaks(self,event=None):
     self.showpeaks = False
@@ -458,7 +460,7 @@ class imageWin:
     imean=sum(l)/len(l)
     return (imin,imax,imean)
    
-  def update(self,scaled_min=0,scaled_max=0,newimage=None,filename=None):
+  def update(self,scaled_min=0,scaled_max=0,newimage=None,filename=None,showpeaks=False):
     if self.scale==0:
       self.reset_scale()
     if (scaled_min==scaled_max==0):
@@ -481,16 +483,18 @@ class imageWin:
     self.ShowMean.config(text="Mean %i" %(self.im_mean))
     self.canvas.lower(self.canvas.create_image(0,0,anchor=NW, image=self.img))
     try:
-      if self.ShowPeaks.get() == True:
-        self.update_peaks()
+      showpeaks = self.ShowPeaks.get()
     except:
       pass
+    if showpeaks == True:
+      self.update_peaks()
         
 
     #update children
     for w in self.aoi:
       if w['wintype'] in ('Zoom'):
-        w['zoomwin'].update(scaled_min,scaled_max,newimage=newimage)
+        print w['wintype']
+        w['zoomwin'].update(scaled_min,scaled_max,newimage=newimage,showpeaks=showpeaks)
       if w['wintype'] in ('LineProfile'):
         w['zoomwin'].update(coord=w['coords'],zoomarea=self.zoomarea,zoomfactor=self.zoomfactor,newimage=newimage)
       if w['wintype'] in ('Relief'):
@@ -902,13 +906,11 @@ class appWin(imageWin):
       raise
     self.zoomarea=[0,0,self.xsize,self.ysize]
     self.master.title("fabian - %s" %(filename))
-
+    globals()["image_xsize"] =self.xsize
+    globals()["image_ysize"] =self.ysize
       
   def about(self,event=None):
     About()
-    
-#  def quit(self):
-#    self.master.destroy()
 
 class imagePlot:
   def __init__(self,master,title='Plot',x=None,y=None):
