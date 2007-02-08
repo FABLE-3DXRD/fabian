@@ -759,6 +759,7 @@ class appWin(imageWin):
     HelpMenu = Menubutton(frameMenubar, text='Help',underline=0)
     HelpMenu.pack(side=LEFT, padx="2m")
     HelpMenu.menu =Menu(HelpMenu)
+    HelpMenu.menu.add_command(label='Help', underline=0, command=self.help)
     HelpMenu.menu.add_command(label='About', underline=0, command=self.about)
     HelpMenu['menu']=HelpMenu.menu
     frameMenubar.pack(fill=X,side=TOP)
@@ -911,6 +912,10 @@ class appWin(imageWin):
       
   def about(self,event=None):
     About()
+
+  def help(self,event=None):
+    import webbrowser
+    webbrowser.open('http://fable.sourceforge.net/index.php/Fabian')
 
 class imagePlot:
   def __init__(self,master,title='Plot',x=None,y=None):
