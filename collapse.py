@@ -9,9 +9,7 @@ Authors: Henning O. Sorensen & Erik Knudsen
          DK-4000 Roskilde
          email:henning.sorensen@risoe.dk, erik.knudsen@risoe.dk
 """
-import numpy 
 import Numeric
-import os,sys
 import image_file_series
 import edfimage
 
@@ -76,7 +74,7 @@ class collapse:
 
 
 if __name__=='__main__':
-  import sys,os,time
+  import sys,time
   from string import atoi
   b=time.clock()
   bgimage = edfimage.edfimage()
