@@ -168,18 +168,18 @@ class imageWin:
           self.ShowPeaks.set(True)
         else:
           self.ShowPeaks.set(False)
-    print self.ShowPeaks.get()
     try:
       self.showpeaks = self.ShowPeaks.get()
     except:
       pass
     if self.showpeaks == False:
       self.clear_peaks()
+      self.master.config(cursor='left_ptr')
+      return
     elif peaks == {}:
-      if self.read_peaks() == False:
+      if self.read_peaks() == False: # If no peak file is given set reset varibles and return
         self.master.config(cursor='left_ptr') 
         self.ShowPeaks.set(False)
-        print self.ShowPeaks.get()
         return
     for ipeaks in peaks[self.filename.get()]:
       if int(ipeaks[0])>4:
@@ -195,7 +195,6 @@ class imageWin:
     rpeaks = insert_peaks.readpeaksearch()
     peakfilename = askopenfilename(filetypes=[("out files", "*.out"),("All Files", "*")])
     if peakfilename == '':
-        print 'PEAKFILENAME1 ',peakfilename
         return False
     rpeaks.readallpeaks(peakfilename)
     peaks = rpeaks.images
