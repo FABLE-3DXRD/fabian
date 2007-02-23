@@ -168,16 +168,19 @@ class imageWin:
           self.ShowPeaks.set(True)
         else:
           self.ShowPeaks.set(False)
+    print self.ShowPeaks.get()
     try:
       self.showpeaks = self.ShowPeaks.get()
     except:
       pass
     if self.showpeaks == False:
       self.clear_peaks()
-      self.master.config(cursor='left_ptr') 
-      return
     elif peaks == {}:
-      self.read_peaks()
+      if self.read_peaks() == False:
+        self.master.config(cursor='left_ptr') 
+        self.ShowPeaks.set(False)
+        print self.ShowPeaks.get()
+        return
     for ipeaks in peaks[self.filename.get()]:
       if int(ipeaks[0])>4:
         circ_center=[(ipeaks[1]-self.zoomarea[0])*self.zoomfactor, (ipeaks[2]-self.zoomarea[1])*self.zoomfactor]
@@ -191,6 +194,9 @@ class imageWin:
   def read_peaks(self):
     rpeaks = insert_peaks.readpeaksearch()
     peakfilename = askopenfilename(filetypes=[("out files", "*.out"),("All Files", "*")])
+    if peakfilename == '':
+        print 'PEAKFILENAME1 ',peakfilename
+        return False
     rpeaks.readallpeaks(peakfilename)
     peaks = rpeaks.images
     # convert coordinates to "fabian" coordinates
@@ -202,6 +208,7 @@ class imageWin:
         peaks[k][i][1] = mx
         peaks[k][i][2] = my
     globals()["peaks"] = peaks
+    return
 
   def clear_peaks(self,event=None):
     self.showpeaks = False
