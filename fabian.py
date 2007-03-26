@@ -586,7 +586,13 @@ class appWin(imageWin):
     self.filename=StringVar()
     self.filetype = filetype
     self.ToolType = StringVar()
-    self.tool = 'Zoom' # Set default event of mouse bottom 1 to Zoom  
+    self.tool = 'Zoom' # Set default event of mouse bottom 1 to Zoom
+    self.histfile = StringVar()
+    self.histlength = 0
+    self.HistMenuItems = []
+
+    globals()["opendir"] = "."
+
     self.draw2=self.drawAoi2
     self.ToolType.set(self.tool)
     self.ShowPeaks = BooleanVar()
@@ -607,6 +613,13 @@ class appWin(imageWin):
     master.bind('p',self.show_peaks)
     master.bind('<Up>',self.nextimage)
     master.bind('<Down>',self.previousimage)
+
+
+    frame = Frame(master, bd=0, bg="white")
+    frame.pack(fill=X)
+
+    #add menubar
+    self.make_command_menu(frame)
 
     if filename:
       self.filename.set(filename)
@@ -631,11 +644,7 @@ class appWin(imageWin):
     self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10, round(screen_height/(2.*self.ysize)*10)/10)
     self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
     self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
-    frame = Frame(master, bd=0, bg="white")
-    frame.pack(fill=X)
 
-    #add menubar
-    self.make_command_menu(frame)
 
     #Add Notebook tabs
     self.noteb1 = Pmw.NoteBook(frame)
@@ -740,6 +749,7 @@ class appWin(imageWin):
      
   def make_command_menu(self,master):
     frameMenubar = Frame(master,relief=RAISED, borderwidth=2)
+    
     FileMenu = Menubutton(frameMenubar, text='File',underline=0)
     FileMenu.pack(side=LEFT, padx="2m")
     FileMenu.menu =Menu(FileMenu)
@@ -762,6 +772,11 @@ class appWin(imageWin):
     CrystMenu.menu.add_checkbutton(label='Show peaks..',command=self.show_peaks,onvalue=True,offvalue=False,variable=self.ShowPeaks)
     CrystMenu['menu']=CrystMenu.menu
 
+    self.HistMenu  = Menubutton(frameMenubar, text='History',underline=0)
+    self.HistMenu.pack(side=LEFT, padx="2m")
+    self.HistMenu.menu =Menu(self.HistMenu)
+    self.HistMenu['menu']=self.HistMenu.menu
+
     HelpMenu = Menubutton(frameMenubar, text='Help',underline=0)
     HelpMenu.pack(side=LEFT, padx="2m")
     HelpMenu.menu =Menu(HelpMenu)
@@ -772,8 +787,12 @@ class appWin(imageWin):
     frameMenubar.tk_menuBar((FileMenu, ToolMenu, CrystMenu, HelpMenu))
 
   def OpenFile(self,filename=True):
-    fname = askopenfilename(filetypes=[("EDF files", "*.edf"),("Tif files", "*.tif"),("MarCCD/Mosaic files", "*.mccd"),("ADSC files", "*.img"),("Bruker files", "*.*"),("All Files", "*")])
+    presentdir = globals()["opendir"]
+    fname = askopenfilename(initialdir=presentdir,filetypes=[("EDF files", "*.edf"),("Tif files", "*.tif"),("MarCCD/Mosaic files", "*.mccd"),("ADSC files", "*.img"),("Bruker files", "*.*"),("All Files", "*")])
     if len(fname) == 0: return
+    
+    presentdir = os.path.split(fname)[0]
+    globals()["opendir"] = presentdir
     self.filename.set(fname)
     (newfilenumber,filetype)=deconstruct_filename(self.filename.get())
     self.filetype=filetype
@@ -845,11 +864,33 @@ class appWin(imageWin):
     self.master.config(cursor='left_ptr')
     return True
 
+  def gotohist(self):
+    # Open file from  history
+    newfilename =self.histfile.get()
+    (newfilenumber,filetype)=deconstruct_filename(newfilename)
+    try:
+      self.openimage(newfilename)#try to open that file
+    except IOError:
+      e=Error()
+      msg="No such file: %s " %(newfilename)
+      e.Er(msg)
+      self.master.config(cursor='left_ptr')
+      return False
+    #image loaded ok
+    self.filename.set(newfilename)
+    self.displaynumber.set(newfilenumber)
+    self.update(newimage=self.im,filename=newfilename)
+    self.update_header_page()
+    self.update_header_label()
+    self.master.config(cursor='left_ptr')
+    return True
+
   def nextimage(self,event=None):
     #update filename, prefix and number
     self.master.config(cursor='watch')
     newfilenumber=int(self.displaynumber.get())+1
     newfilename=construct_filename(self.filename.get(),newfilenumber)
+    print newfilename
     try:
       self.openimage(newfilename)#try to open that file
     except IOError:
@@ -915,6 +956,24 @@ class appWin(imageWin):
     self.master.title("fabian - %s" %(filename))
     globals()["image_xsize"] =self.xsize
     globals()["image_ysize"] =self.ysize
+
+    # Make/update file history
+    maxlen = 20
+
+    if filename in self.HistMenuItems:
+      print 'IS IN'
+    else:
+      if self.histlength > maxlen:
+        self.HistMenu.menu.delete(1)
+        self.HistMenuItems[:maxlen] = self.HistMenuItems[1:maxlen+1]
+        self.HistMenuItems[maxlen] = filename
+      else:
+        self.histlength = self.histlength + 1
+        self.HistMenuItems.append(filename)
+
+      self.HistMenu.menu.add_radiobutton(label=filename ,command=self.gotohist,variable=self.histfile,value=filename)
+      self.histfile.set(filename)
+
       
   def about(self,event=None):
     About()
