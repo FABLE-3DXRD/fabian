@@ -797,14 +797,18 @@ class appWin(imageWin):
       self.gotoimage()
       try:
         #set the image dimensions and zoom out if it is big
-        screen_width = master.winfo_screenwidth()
-        screen_height = master.winfo_screenheight()
+        screen_width = self.master.winfo_screenwidth()
+        screen_height = self.master.winfo_screenheight()
+        self.xsize = globals()["image_xsize"]
+        self.ysize = globals()["image_ysize"]
         self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10, round(screen_height/(2.*self.ysize)*10)/10)
         self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
         self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
         self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
         self.noteb1.setnaturalsize() # update size of notebook page
+        print 'TRY'
       except:
+        print 'PASSED'
         pass
  
   def rescale(self,event=None):
@@ -864,6 +868,22 @@ class appWin(imageWin):
     (newfilenumber,filetype)=deconstruct_filename(newfilename)
     try:
       self.openimage(newfilename)#try to open that file
+      try:
+        #set the image dimensions and zoom out if it is big
+        screen_width = self.master.winfo_screenwidth()
+        screen_height = self.master.winfo_screenheight()
+        self.xsize = globals()["image_xsize"]
+        self.ysize = globals()["image_ysize"]
+        self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10, round(screen_height/(2.*self.ysize)*10)/10)
+        self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
+        self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
+        self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
+        self.noteb1.setnaturalsize() # update size of notebook page
+        print 'TRY'
+      except:
+        print 'PASSED'
+        pass
+
     except IOError:
       e=Error()
       msg="No such file: %s " %(newfilename)
@@ -941,12 +961,13 @@ class appWin(imageWin):
       (self.im.minval,self.im.maxval,self.im.meanval)=(img.getmin(),img.getmax(),img.getmean())
       self.im.header=img.getheader()
       (self.xsize, self.ysize)=(img.dim1, img.dim2)
+      print self.xsize, self.ysize
     except IOError:
       raise
     self.zoomarea=[0,0,self.xsize,self.ysize]
     self.master.title("fabian - %s" %(filename))
-    globals()["image_xsize"] =self.xsize
-    globals()["image_ysize"] =self.ysize
+    globals()["image_xsize"] = self.xsize
+    globals()["image_ysize"] = self.ysize
 
     # Make/update file history
     maxlen = 20
