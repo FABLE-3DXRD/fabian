@@ -879,9 +879,7 @@ class appWin(imageWin):
         self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
         self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
         self.noteb1.setnaturalsize() # update size of notebook page
-        print 'TRY'
       except:
-        print 'PASSED'
         pass
 
     except IOError:
@@ -904,7 +902,6 @@ class appWin(imageWin):
     self.master.config(cursor='watch')
     newfilenumber=int(self.displaynumber.get())+1
     newfilename=construct_filename(self.filename.get(),newfilenumber)
-    print newfilename
     try:
       self.openimage(newfilename)#try to open that file
     except IOError:
@@ -961,7 +958,6 @@ class appWin(imageWin):
       (self.im.minval,self.im.maxval,self.im.meanval)=(img.getmin(),img.getmax(),img.getmean())
       self.im.header=img.getheader()
       (self.xsize, self.ysize)=(img.dim1, img.dim2)
-      print self.xsize, self.ysize
     except IOError:
       raise
     self.zoomarea=[0,0,self.xsize,self.ysize]
