@@ -584,7 +584,6 @@ class appWin(imageWin):
     self.scaled_max=0
     self.displaynumber=StringVar()
     self.filename=StringVar()
-    self.filetype = filetype
     self.ToolType = StringVar()
     self.tool = 'Zoom' # Set default event of mouse bottom 1 to Zoom
     self.histfile = StringVar()
@@ -625,10 +624,6 @@ class appWin(imageWin):
       self.filename.set(filename)
       (newfilenumber,filetype)=deconstruct_filename(filename)
       self.displaynumber.set(newfilenumber)
-      if not filetype:
-        self.filetype=os.path.splitext(filename)[1][1:]
-      else:
-        self.filetype=filetype
     else:
       self.OpenFile(filename=None)
 
@@ -795,7 +790,6 @@ class appWin(imageWin):
     globals()["opendir"] = presentdir
     self.filename.set(fname)
     (newfilenumber,filetype)=deconstruct_filename(self.filename.get())
-    self.filetype=filetype
     self.displaynumber.set(newfilenumber)
     if filename == None: # No image has been opened before
       return 
@@ -938,12 +932,9 @@ class appWin(imageWin):
     #if a filename is supplied use that - otherwise get it from the GUI
     if filename==None:
       filename=self.filename.get()
-    #if the filetype instance variable is set use that - otherwise extract it from the filename extension
-    if self.filetype:
-      filetype=self.filetype
-    else:
-      filetype=os.path.splitext(filename)[1][1:]
-    
+
+    (filenumber,filetype)=deconstruct_filename(filename)
+   
     img=eval( filetype+'image.'+filetype+'image()')
     try:
       self.im=img.read(filename).toPIL16()
@@ -960,9 +951,7 @@ class appWin(imageWin):
     # Make/update file history
     maxlen = 20
 
-    if filename in self.HistMenuItems:
-      print 'IS IN'
-    else:
+    if filename not in self.HistMenuItems:
       if self.histlength > maxlen:
         self.HistMenu.menu.delete(1)
         self.HistMenuItems[:maxlen] = self.HistMenuItems[1:maxlen+1]
