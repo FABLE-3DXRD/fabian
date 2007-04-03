@@ -26,7 +26,7 @@ matplotlib.use('TkAgg')
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
-colour={'transientaoi':'RoyalBlue', 'Zoom':'red', 'Relief':'LimeGreen', 'Rocker':'LightBlue', 'transientline':'red', 'LineProfile':'RoyalBlue'}
+colour={'transientaoi':'RoyalBlue', 'Zoom':'red', 'Relief':'LimeGreen', 'Rocker':'LightBlue', 'transientline':'red', 'LineProfile':'RoyalBlue','peak_colour':'red'}
 
       
 class imageWin:
@@ -182,11 +182,11 @@ class imageWin:
         self.ShowPeaks.set(False)
         return
     for ipeaks in peaks[self.filename.get()]:
-      if int(ipeaks[0])>4:
+      if int(ipeaks[0]) > globals()["min_pixel"]:
         circ_center=[(ipeaks[1]-self.zoomarea[0])*self.zoomfactor, (ipeaks[2]-self.zoomarea[1])*self.zoomfactor]
-        rad = 8*self.zoomfactor
+        rad = globals()["peak_radius"]*self.zoomfactor
         corners=(circ_center[0]-rad,circ_center[1]-rad,circ_center[0]+rad,circ_center[1]+rad)
-        self.canvas.create_oval(corners,tag='peaks',outline='red')
+        self.canvas.create_oval(corners,tag='peaks',outline=colour['peak_colour'])
     self.master.config(cursor='left_ptr')
     return
 
@@ -216,6 +216,9 @@ class imageWin:
 
   def update_peaks(self,event=None):
     self.canvas.delete('peaks')
+    globals()["min_pixel"] = self.min_pixel.get()
+    globals()["peak_radius"] = self.peak_radius.get()
+    #colour['peak_colour'] = self.peak_colour.get()
     self.show_peaks()
 
 
@@ -591,13 +594,15 @@ class appWin(imageWin):
     self.HistMenuItems = []
 
     globals()["opendir"] = "."
-
+    globals()["min_pixel"] = 4
+    globals()["peak_radius"] = 8
     self.draw2=self.drawAoi2
     self.ToolType.set(self.tool)
     self.ShowPeaks = BooleanVar()
     self.showpeaks = False
     self.ShowPeaks.set(False)
     self.peaks = {}
+    self.min_pixel = IntVar()
     master.bind('<F1>',self.updatebindings)
     master.bind('<F2>',self.updatebindings)
     master.bind('<F3>',self.updatebindings)
@@ -764,7 +769,11 @@ class appWin(imageWin):
     CrystMenu = Menubutton(frameMenubar, text='CrystTools',underline=0)
     CrystMenu.pack(side=LEFT, padx="2m")
     CrystMenu.menu =Menu(CrystMenu)
-    CrystMenu.menu.add_checkbutton(label='Show peaks..',command=self.show_peaks,onvalue=True,offvalue=False,variable=self.ShowPeaks)
+    CrystMenu.menu.peaks =Menu(CrystMenu.menu)
+    #CrystMenu.menu.add_checkbutton(label='Show peaks..',command=self.show_peaks,onvalue=True,offvalue=False,variable=self.ShowPeaks)
+    CrystMenu.menu.add_cascade(label='Peaks..',menu=CrystMenu.menu.peaks)
+    CrystMenu.menu.peaks.add_checkbutton(label='Show',command=self.show_peaks,onvalue=True,offvalue=False,variable=self.ShowPeaks)
+    CrystMenu.menu.peaks.add_command(label='Options',command=self.peak_options)
     CrystMenu['menu']=CrystMenu.menu
 
     self.HistMenu  = Menubutton(frameMenubar, text='History',underline=0)
@@ -781,6 +790,42 @@ class appWin(imageWin):
     frameMenubar.pack(fill=X,side=TOP)
     frameMenubar.tk_menuBar((FileMenu, ToolMenu, CrystMenu, HelpMenu))
 
+  def peak_options(self):
+    self.peak_colour = StringVar()
+    self.peak_colour.set(colour['peak_colour'])
+    self.peak_radius = IntVar()
+    self.peak_radius.set(globals()["peak_radius"])
+    self.peakoptions=Toplevel(self.master)
+    self.peakoptions.title('Peak options')
+    framepixel = Frame(self.peakoptions, bd=0, bg="white")
+    framepixel.pack()
+    self.min_pixel.set(globals()["min_pixel"])
+    Label(framepixel, text="Show only peaks with more pixels than ").pack(side=LEFT)
+    Entry(framepixel, textvariable=self.min_pixel, bg='white', width=6).pack(side=LEFT)
+    framepixelcolour = Frame(self.peakoptions, bd=0, bg="white")
+    framepixelcolour.pack(fill=X,expand='yes')
+    PeakColourSelect = Pmw.ComboBox(framepixelcolour,label_text="Colour of peak outline ", labelpos='wn',dropdown = 2, listheight=100, selectioncommand=self.PeakColour,scrolledlist_items=("red","blue","green","orange","purple"))
+    PeakColourSelect.pack()
+    PeakColourSelect.selectitem(colour['peak_colour'])
+
+    framepeaksize = Frame(self.peakoptions, bd=0, bg="white")
+    framepeaksize.pack(fill=X,expand='yes')
+    Label(framepeaksize, text="Radius of peak outline ").pack(side=LEFT)
+    Entry(framepeaksize, textvariable=self.peak_radius, bg='white', width=6).pack(side=LEFT,fill=X,expand='yes')
+
+    but = Frame(self.peakoptions, bd=0, bg="white")
+    but.pack(side=BOTTOM,fill=X,expand='yes')
+    Button(but, text='Update', command=self.update_peaks).pack(side=LEFT,fill=X,expand='yes')
+    Button(but, text='Close', command=self.setminpixel).pack(side=LEFT,fill=X,expand='yes')
+
+  def PeakColour(self,entry):
+    colour['peak_colour']=entry
+    
+    
+  def setminpixel(self):
+    self.update_peaks()
+    self.peakoptions.destroy()
+  
   def OpenFile(self,filename=True):
     presentdir = globals()["opendir"]
     fname = askopenfilename(initialdir=presentdir,filetypes=[("EDF files", "*.edf"),("Tif files", "*.tif"),("MarCCD/Mosaic files", "*.mccd"),("ADSC files", "*.img"),("Bruker files", "*.*"),("All Files", "*")])
