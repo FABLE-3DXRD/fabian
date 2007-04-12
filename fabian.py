@@ -897,6 +897,9 @@ class appWin(imageWin):
         msg="No such file: %s " %(newfilename)
         e.Er(msg)
         self.master.config(cursor='left_ptr')
+         #Reset filenumber entry
+        (oldfilenumber,filetype)=deconstruct_filename(self.filename.get())
+        self.displaynumber.set(oldfilenumber)
         return False
     #image loaded ok
     self.filename.set(newfilename)
