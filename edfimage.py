@@ -203,7 +203,7 @@ class edfimage:
     f.close()
 
 if __name__=='__main__':
-  import sys,os,time
+  import sys,time
   I=edfimage()
   b=time.clock()
   while (sys.argv[1:]):
