@@ -59,7 +59,7 @@ class bruker100image(brukerimage.brukerimage):
     return self
 
 if __name__=='__main__':
-  import sys,os,time
+  import sys,time
   I=bruker100image()
   b=time.clock()
   while (sys.argv[1:]):
