@@ -26,7 +26,7 @@ matplotlib.use('TkAgg')
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
-colour={'transientaoi':'RoyalBlue', 'Zoom':'red', 'Relief':'LimeGreen', 'Rocker':'LightBlue', 'transientline':'red', 'LineProfile':'RoyalBlue','peak_colour':'red'}
+colour={'transientaoi':'RoyalBlue', 'Zoom':'red', 'Relief':'LimeGreen', 'Rocker':'LightBlue', 'transientline':'red', 'IntProfile':'RoyalBlue', 'LineProfile':'RoyalBlue','peak_colour':'red'}
 
       
 class imageWin:
@@ -38,6 +38,7 @@ class imageWin:
     self.aoi=[]
     self.zoom_win = 0
     self.line_win = 0
+    self.intprof_win = 0
     self.offset=0
     self.transientaoi=None
     self.transientline=None
@@ -55,13 +56,14 @@ class imageWin:
     #initialize drawing function to draw the correct object 
     #draw2 points to a drawing function
     if 'Line' in tool:
-      self.draw2=self.drawLine2
+      self.draw2=self.drawLine
     else:
-      self.draw2=self.drawAoi2
+      self.draw2=self.drawAoi
     master.bind('<F1>',self.updatebindings)
     master.bind('<F2>',self.updatebindings)
     master.bind('<F3>',self.updatebindings)
     master.bind('<F4>',self.updatebindings)
+    master.bind('<F5>',self.updatebindings)
     master.bind('q',self.quit)
     master.bind('<FocusIn>',self.MouseEntry)
     master.bind('z',self.rezoom)
@@ -245,7 +247,7 @@ class imageWin:
     y=self.canvas.canvasy(event.y)
     x,y=self.val_canvas_coord((x,y))
     self.transientcorners[2:]=[x,y]
-    self.drawAoi2()
+    self.drawAoi()
   def Mouse3Release(self, event):
     x=self.canvas.canvasx(event.x)
     y=self.canvas.canvasy(event.y)
@@ -253,7 +255,7 @@ class imageWin:
     self.transientcorners[2:]=[x,y]
     #save whichever tool was active
     tmp=self.draw2
-    self.draw2=self.drawAoi2
+    self.draw2=self.drawAoi
     self.use_tool(tool='Zoom')
     self.draw2=tmp
     
@@ -326,6 +328,17 @@ class imageWin:
           t='zoom %d' % self.zoom_win
         opensubwin=self.openzoom
         self.zoom_win=self.zoom_win+1
+    elif 'IntProfile' in tool:
+        if corners[0]==corners[2] or corners[1]==corners[3]:
+          self.canvas.delete('transientaoi')
+          return
+        if 'zoom' in self.master.wm_title():
+          t= 'Integrated profile %d of ' %self.intprof_win + self.master.wm_title()
+          self.intprof_win = self.intprof_win + 1
+        else:
+          t='Integrated profile %d' % self.intprof_win
+          self.intprof_win = self.intprof_win + 1
+        opensubwin=self.openintprofile
     elif 'Rock' in tool:
 	t = 'rock'
 	opensubwin=self.openrocker
@@ -343,11 +356,11 @@ class imageWin:
 
     self.aoi.append({'coords':self.transientcorners,'aoi':[self.draw2(tool=tool)],'zoomwin': opensubwin(t), 'wintype':tool})
 
-  def drawAoi2(self,tool='transientaoi'):
+  def drawAoi(self,tool='transientaoi'):
     self.canvas.delete('transientaoi')
     return self.canvas.create_rectangle(self.transientcorners,tag=tool,outline=colour[tool])
 
-  def drawLine2(self,tool='transientline'):
+  def drawLine(self,tool='transientline'):
     self.canvas.delete('transientline')
     t_end=4
     tc=self.transientcorners
@@ -374,6 +387,36 @@ class imageWin:
     else:
       newwin=imageWin(w,title=tag,filename=self.filename,zoomfactor=self.zoomfactor*4,coords=corners,image=self.im,tool=None)
     return newwin
+
+  def openintprofile(self,tag):
+    t=self.transientcorners
+    corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
+    w=Toplevel(self.master)
+    
+    xbins = []
+    ybins = []
+    xvalues = []
+    yvalues = []
+    for x in range(corners[0],corners[2]):
+      y_int = 0
+      xbins.append(x)
+      for y in range(corners[1],corners[3]):
+        y_int = y_int + self.im.getpixel((x,y))
+      yvalues.append(y_int)
+
+    for y in range(corners[1],corners[3]):
+      x_int = 0
+      ybins.append(y)
+      for x in range(corners[0],corners[2]):
+        x_int = x_int + self.im.getpixel((x,y))
+      xvalues.append(x_int)
+      
+    linewin = imagePlot(w,title=tag,\
+                        x=xbins,y=yvalues,ptitle='Horizontal',\
+                        x2=ybins,y2=xvalues, ptitle2='Vertical')  
+    return linewin
+
+
 
   def openlineprofile(self,tag):
       # Make lineprofile  relief window
@@ -531,9 +574,9 @@ class imageWin:
     except:
       pass
     if 'LineProfile' in self.tool:
-      self.draw2=self.drawLine2
+      self.draw2=self.drawLine
     else:
-      self.draw2=self.drawAoi2
+      self.draw2=self.drawAoi
     #update children
     for w in self.aoi:
       if w['wintype']=='Zoom':
@@ -555,11 +598,17 @@ class imageWin:
       self.setbindings()
     if event.keysym=='F3':
       try:
+        self.ToolType.set('IntProfile')
+      except:
+        self.tool='IntProfile'
+      self.setbindings()
+    if event.keysym=='F4':
+      try:
         self.ToolType.set('Relief')
       except:
         self.tool='Relief'
       self.setbindings()
-    if event.keysym=='F4':
+    if event.keysym=='F5':
       try:
         self.ToolType.set('Rocker')
       except:
@@ -577,6 +626,7 @@ class appWin(imageWin):
     self.aoi=[]
     self.zoom_win = 0
     self.line_win = 0
+    self.intprof_win = 0
     self.scale=0
     self.offset=0
     self.transientaoi=None
@@ -596,7 +646,7 @@ class appWin(imageWin):
     globals()["opendir"] = "."
     globals()["min_pixel"] = 4
     globals()["peak_radius"] = 8
-    self.draw2=self.drawAoi2
+    self.draw2=self.drawAoi
     self.ToolType.set(self.tool)
     self.ShowPeaks = BooleanVar()
     self.showpeaks = False
@@ -607,6 +657,7 @@ class appWin(imageWin):
     master.bind('<F2>',self.updatebindings)
     master.bind('<F3>',self.updatebindings)
     master.bind('<F4>',self.updatebindings)
+    master.bind('<F5>',self.updatebindings)
     master.bind('o',self.OpenFile)
     master.bind('q',self.quit)
     master.bind('a',self.about)
@@ -617,7 +668,6 @@ class appWin(imageWin):
     master.bind('p',self.show_peaks)
     master.bind('<Up>',self.nextimage)
     master.bind('<Down>',self.previousimage)
-
 
     frame = Frame(master, bd=0, bg="white")
     frame.pack(fill=X)
@@ -672,9 +722,6 @@ class appWin(imageWin):
     #change this to draw/redraw set of functions at some point?
     self.update()
     self.setbindings()
-
-      
-
 
   def make_header_page(self):
       self.headcheck=[]
@@ -762,8 +809,9 @@ class appWin(imageWin):
     ToolMenu.menu =Menu(ToolMenu)
     ToolMenu.menu.add_radiobutton(label='Zoom%15s%2s' %('','F1') ,command=self.setbindings,variable=self.ToolType,value='Zoom')
     ToolMenu.menu.add_radiobutton(label='Line profile%7s%2s' %('','F2') ,command=self.setbindings,variable=self.ToolType,value='LineProfile')
-    ToolMenu.menu.add_radiobutton(label='Relief plot%8s%2s' %('','F3') ,command=self.setbindings,variable=self.ToolType,value='Relief')
-    ToolMenu.menu.add_radiobutton(label='Rocking curve%2s%2s' %('','F4'),command=self.setbindings,variable=self.ToolType,value='Rocker')
+    ToolMenu.menu.add_radiobutton(label='Integr. profile%3s%2s' %('','F3') ,command=self.setbindings,variable=self.ToolType,value='IntProfile')
+    ToolMenu.menu.add_radiobutton(label='Relief plot%8s%2s' %('','F4') ,command=self.setbindings,variable=self.ToolType,value='Relief')
+    ToolMenu.menu.add_radiobutton(label='Rocking curve%2s%2s' %('','F5'),command=self.setbindings,variable=self.ToolType,value='Rocker')
     ToolMenu['menu']=ToolMenu.menu
 
     CrystMenu = Menubutton(frameMenubar, text='CrystTools',underline=0)
@@ -1037,19 +1085,29 @@ class appWin(imageWin):
     webbrowser.open('http://fable.sourceforge.net/index.php/Fabian')
 
 class imagePlot:
-  def __init__(self,master,title='Plot',x=None,y=None):
+  def __init__(self,master,title='Plot',x=None,y=None,ptitle='',x2=None,y2=None,ptitle2=''):
       self.master = master
       self.master.title(title)
       self.master.bind('q',self.quit)
       self.frame = Frame(self.master)
       self.frame.pack()
       self.f = Figure(figsize=(8,5), dpi=100)
-      self.a = self.f.add_subplot(111)
+      self.f.subplots_adjust(hspace = .2)
       self.plotcanvas = FigureCanvasTkAgg(self.f, master=self.master)
       self.plotcanvas.show()
       self.plotcanvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-      #self.f.xticks(x)
-      self.a.plot(x, y, 'b-')
+      if x2 != None and y2 !=None:
+        self.a = self.f.add_subplot(211)
+        self.a.plot(x, y, 'b-')
+        self.a.set_title(ptitle)
+        self.b = self.f.add_subplot(212)
+        self.b.plot(x2, y2, 'b-')
+        self.b.set_title(ptitle2)
+      else:
+        self.a = self.f.add_subplot(111)
+        self.a.plot(x, y, ptitle)
+        self.a.set_title(ptitle)
+        
 
   def setbindings(self):
     pass
