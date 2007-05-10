@@ -1,5 +1,5 @@
 fabian
-version 0.1
+version XXX
 Henning Osholm Sørensen & Erik Knudsen
 
 fabian is designed for the purpose of viewing image files series. In particular
@@ -12,6 +12,18 @@ pyopengl - http://pyopengl.sourceforge.net
 Pmw - Python Mega Widgets -  http://pmw.sourceforge.net
 Matplotlib - http://matplotlib.sourceforge.net
 
-Supposedly,
-python setup.py install
-should do the trick for installation
+
+INSTALL:
+
+Just unpack the distribution either as
+	tar xvzf fabian-XXX.tar.gz or
+	unzip fabian-XXX.zip
+depending on the type of package you have downloaded.
+
+Hereafter
+cd fabian-XXX and
+./fabian.py
+
+Hopefully you will get a file dialog opened at this moment.
+
+

@@ -30,8 +30,7 @@ update function does rescaling of root image even though it is not necessary - D
 Only half on the AOIs from closed zoom windows are removed upon each appWin focus. - DONE
 
 The show peaks does not work in zoom windows. if fabian is not opened in the directory where 
-peaks.out is located it can not find peaks.out. Furthermore a question on which file to use would be appropriate.
-
+peaks.out is located it can not find peaks.out. Furthermore a question on which file to use would be appropriate. -DONE
 
 #TODO
 Put under cvs control - DONE
@@ -45,4 +44,5 @@ clean up the filename splitting and joining code - it is a jumbled mess right no
 also update Relief windows - DONE
 Write setup script and compile executable for windows
 List of AOIs - possibly with load/save functionality
+Make a automatic file update when new images are collected
 
