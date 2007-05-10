@@ -2,7 +2,6 @@
 
 import image_file_series
 import edfimage
-import rocker
 import Numeric
 
 class median_file_series:
