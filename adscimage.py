@@ -32,7 +32,6 @@ class adscimage:
       return PILimage
 	
   def read(self,fname,verbose=0):
-    import os
     f=open(fname,"rb")
     l=f.readline()
     bytesread = len(l)
@@ -49,7 +48,7 @@ class adscimage:
     #now read the data into the array
     (self.dim1,self.dim2)=int(self.header['SIZE1']),int(self.header['SIZE2'])
     if 'little' in self.header['BYTE_ORDER']:
-      test=Numeric.fromstring(l[0:(self.dim1*self.dim2*2)],Numeric.UInt16)
+      #test=Numeric.fromstring(l[0:(self.dim1*self.dim2*2)],Numeric.UInt16)
       try:
 	 self.data=Numeric.reshape(Numeric.fromstring(l,Numeric.UInt16),[self.dim2, self.dim1])
       except ValueError:
