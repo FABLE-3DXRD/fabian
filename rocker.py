@@ -9,7 +9,6 @@ Authors: Henning O. Sorensen & Erik Knudsen
          email:henning.sorensen@risoe.dk
 """
 import Numeric
-import os,sys
 import image_file_series
 
 class rocker:
@@ -53,7 +52,7 @@ class rocker:
     return self.data
 
 if __name__=='__main__':
-  import sys,os,time
+  import sys,time
   from string import atoi
   b=time.clock()
   c=[atoi(sys.argv[4]),atoi(sys.argv[5]),atoi(sys.argv[6]),atoi(sys.argv[7])]
