@@ -651,6 +651,8 @@ class appWin(imageWin):
     self.ShowPeaks = BooleanVar()
     self.showpeaks = False
     self.ShowPeaks.set(False)
+    self.autofileupdate = BooleanVar()
+    self.autofileupdate.set(False)
     self.peaks = {}
     self.min_pixel = IntVar()
     master.bind('<F1>',self.updatebindings)
@@ -801,6 +803,7 @@ class appWin(imageWin):
     FileMenu.pack(side=LEFT, padx="2m")
     FileMenu.menu =Menu(FileMenu)
     FileMenu.menu.add_command(label='Open', underline=0, command=self.OpenFile)
+    FileMenu.menu.add_checkbutton(label='Auto file update',command=self.autonextimage,onvalue=True,offvalue=False,variable=self.autofileupdate)
     FileMenu.menu.add_command(label='Quit', underline=0, command=self.quit)
     FileMenu['menu']=FileMenu.menu
 
@@ -993,6 +996,31 @@ class appWin(imageWin):
     self.master.config(cursor='left_ptr')
     return True
 
+  def autonextimage(self,event=None):
+    #update filename, prefix and number
+    print self.autofileupdate.get()
+    self.master.config(cursor='watch')
+    newfilenumber=int(self.displaynumber.get())+1
+    newfilename=construct_filename(self.filename.get(),newfilenumber)
+    while(self.autofileupdate.get()==True):
+      try:
+        self.openimage(newfilename)#try to open that file
+        self.filename.set(newfilename)
+        self.displaynumber.set(newfilenumber)
+        self.update(newimage=self.im,filename=newfilename)
+        self.update_header_page()
+        self.update_header_label()
+        self.master.config(cursor='left_ptr')
+        self.master.config(cursor='watch')
+        newfilenumber=int(self.displaynumber.get())+1
+        newfilename=construct_filename(self.filename.get(),newfilenumber)
+        time.sleep(5)
+      except:
+        pass
+      
+    #image loaded ok
+    return True
+
   def nextimage(self,event=None):
     #update filename, prefix and number
     self.master.config(cursor='watch')
@@ -1014,7 +1042,7 @@ class appWin(imageWin):
     self.update_header_label()
     self.master.config(cursor='left_ptr')
     return True
-      
+
   def previousimage(self,event=None):
     self.master.config(cursor='watch')
     newfilenumber=int(self.displaynumber.get())-1
