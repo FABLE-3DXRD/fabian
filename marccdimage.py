@@ -15,13 +15,14 @@ from PIL import Image
 import Numeric
 
 class marccdimage:
-  data=None
-  header={}
-  filename = None
-  dim1=dim2=0
-  m=maxval=stddev=minval=None
-  header_keys=[]
-  bytecode=None
+   def __init__(self):
+    self.data=None
+    self.header={}
+    self.filename = None
+    self.dim1=self.dim2=0
+    self.m=self.maxval=self.stddev=self.minval=None
+    self.header_keys=[]
+    self.bytecode=None
  
   def toPIL32(self,filename=None):
     if filename:
