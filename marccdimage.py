@@ -15,7 +15,7 @@ from PIL import Image
 import Numeric
 
 class marccdimage:
-   def __init__(self):
+  def __init__(self):
     self.data=None
     self.header={}
     self.filename = None
