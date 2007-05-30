@@ -446,7 +446,6 @@ class imageWin:
       return newReli
 
   def openrocker(self,tag):
-      # Make 3D relief window
       t=self.transientcorners
       self.corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
       self.center = deconstruct_filename(self.filename.get())[0]
@@ -748,19 +747,31 @@ class appWin(imageWin):
       child.destroy()
 
   def update_header_page(self):
-    #check if the set of (possibly newly read from disk) header items is compatible with the ones displayed
+    #check if the set of (possibly newly read from disk) header items is identical to the one displayed
     if set(self.im.header.keys())==set(self.headtext.keys()):
       #they seem to be compatible, note - this keeps the checked checkboxes alive
       for item,value in self.im.header.iteritems():
         self.headtext[item].config(text='%s' % value)
     else:
       #they differ - make a new header page from scratch
+      #first remember the checked items to keep them checked if the exist in the new header
+      checkeditems=[]
+      for item,value in self.newitem.iteritems():
+        if value.get()=='1':
+          checkeditems.append(item)
       self.clear_header_page()
       self.make_header_page()
-      
+      #recheck the items that are found in the hew header
+      for item in checkeditems:
+        if item in self.newitem.keys():
+          self.newitem[item].set('1')
+
   def update_header_label(self):
     headertext = ''
-    for item in self.newitem:
+    self.newitem.keys().sort()
+    keys=self.newitem.keys()
+    keys.sort()
+    for item in keys:
       if self.newitem[item].get() == '1':
             headertext = headertext+item+': '+self.im.header[item] +'; '
     self.HeaderInfo.config(text='%s' %(headertext))
@@ -1135,7 +1146,6 @@ class imagePlot:
         self.a = self.f.add_subplot(111)
         self.a.plot(x, y, ptitle)
         self.a.set_title(ptitle)
-        
 
   def setbindings(self):
     pass
