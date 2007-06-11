@@ -664,6 +664,7 @@ class appWin(imageWin):
     master.bind('o',self.OpenFile)
     master.bind('q',self.quit)
     master.bind('a',self.about)
+    master.bind('h',self.help)
     master.bind('<FocusIn>',self.MouseEntry)
     master.bind('z',self.rezoom)
     master.bind('x',self.rezoom)
