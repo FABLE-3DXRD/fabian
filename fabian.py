@@ -18,13 +18,15 @@ from string import *
 from PIL import Image, ImageTk, ImageFile, ImageStat
 from tkFileDialog import *
 import tkFont
-import re,os,sys,time
+import re,os,sys,time,thread
 from sets import Set as set
 
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
+
+
 
 colour={'transientaoi':'RoyalBlue', 'Zoom':'red', 'Relief':'LimeGreen', 'Rocker':'LightBlue', 'transientline':'red', 'IntProfile':'RoyalBlue', 'LineProfile':'RoyalBlue','peak_colour':'red'}
 
@@ -105,7 +107,7 @@ class imageWin:
     self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
 #    self.frameImage = Pmw.ScrolledFrame(container, hull_width=self.canvas_xsize+30, hull_height=self.canvas_ysize+30, usehullsize=1,hscrollmode='static',vscrollmode='static')
     self.frameImage = Frame(container)
-    self.canvas = Canvas(self.frameImage, width=self.canvas_xsize, height=self.canvas_ysize)
+    self.canvas = Canvas(self.frameImage, width=self.canvas_xsize, height=self.canvas_ysize, bg='black')
     self.canvas.pack(side=TOP,anchor='center', expand=1, fill=X)
     self.frameImage.pack(side=TOP,expand=1)
     #bind events
@@ -544,7 +546,6 @@ class imageWin:
     #update children
     for w in self.aoi:
       if w['wintype'] in ('Zoom'):
-        print w['wintype']
         w['zoomwin'].update(scaled_min,scaled_max,newimage=newimage,showpeaks=showpeaks)
       if w['wintype'] in ('LineProfile'):
         w['zoomwin'].update(coord=w['coords'],zoomarea=self.zoomarea,zoomfactor=self.zoomfactor,newimage=newimage)
@@ -652,6 +653,7 @@ class appWin(imageWin):
     self.ShowPeaks.set(False)
     self.autofileupdate = BooleanVar()
     self.autofileupdate.set(False)
+    self.sleeptime = 0
     self.peaks = {}
     self.min_pixel = IntVar()
     master.bind('<F1>',self.updatebindings)
@@ -667,8 +669,11 @@ class appWin(imageWin):
     master.bind('x',self.rezoom)
     master.bind('c',self.clear_peaks)
     master.bind('p',self.show_peaks)
-    master.bind('<Up>',self.nextimage)
-    master.bind('<Down>',self.previousimage)
+    master.bind('f',self.autonextimage)
+    master.bind('<Right>',self.nextimage)
+    master.bind('<Left>',self.previousimage)
+    master.bind('<Up>',self.updatetime)
+    master.bind('<Down>',self.updatetime)
 
     frame = Frame(master, bd=0, bg="white")
     frame.pack(fill=X)
@@ -1007,30 +1012,50 @@ class appWin(imageWin):
     self.master.config(cursor='left_ptr')
     return True
 
+  # The time to sleep between update i
+  def updatetime(self,event=None):
+    if event !=None:
+      if event.keysym == 'Up':
+        self.sleeptime =self.sleeptime + 0.5
+      elif event.keysym == 'Down':
+        if self.sleeptime > 0: 
+          self.sleeptime=self.sleeptime - 0.5
+        else:
+          print 'Can\'t go any quicker!'
+         
+    
   def autonextimage(self,event=None):
+    # If called using keybinding
+    if event !=None:
+      if event.keysym == 'f':
+        if self.autofileupdate.get() == False:
+          self.autofileupdate.set(True)
+        else:
+          self.autofileupdate.set(False)
+
     #update filename, prefix and number
-    print self.autofileupdate.get()
-    self.master.config(cursor='watch')
-    newfilenumber=int(self.displaynumber.get())+1
-    newfilename=construct_filename(self.filename.get(),newfilenumber)
+    self.newfilenumber=int(self.displaynumber.get())+1
+    self.newfilename=construct_filename(self.filename.get(),self.newfilenumber)
+    thread.start_new_thread(self.run,())
+    
+  # run thread until autofileupdate is set to False 
+  def run(self):
     while(self.autofileupdate.get()==True):
       try:
-        self.openimage(newfilename)#try to open that file
-        self.filename.set(newfilename)
-        self.displaynumber.set(newfilenumber)
-        self.update(newimage=self.im,filename=newfilename)
+        self.master.config(cursor='watch')
+        self.openimage(self.newfilename)#try to open that file
+        self.filename.set(self.newfilename)
+        self.displaynumber.set(self.newfilenumber)
+        self.update(newimage=self.im,filename=self.newfilename)
         self.update_header_page()
         self.update_header_label()
         self.master.config(cursor='left_ptr')
-        self.master.config(cursor='watch')
-        newfilenumber=int(self.displaynumber.get())+1
-        newfilename=construct_filename(self.filename.get(),newfilenumber)
-        time.sleep(5)
+        self.newfilenumber=int(self.displaynumber.get())+1
+        self.newfilename=construct_filename(self.filename.get(),self.newfilenumber)
+        time.sleep(self.sleeptime)
       except:
         pass
-      
-    #image loaded ok
-    return True
+
 
   def nextimage(self,event=None):
     #update filename, prefix and number
