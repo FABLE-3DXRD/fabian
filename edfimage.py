@@ -32,8 +32,25 @@ class edfimage:
       'f':Image.frombuffer("F",(self.dim1,self.dim2),self.data.astype(Numeric.UInt16),"raw","F;16",0,-1),
       }[self.bytecode]
     return PILimage
-	
-  def read(self,fname,verbose=0,padding='0'):
+
+  def readheader(self,fname):
+    #only read the header of the file: useful for fast scanning for a header item
+    f=self._open(fname)
+    self._readheader(f)
+    f.close()
+    return self
+
+  def _readheader(self,infile=None):
+    ll=""
+    while '}' not in ll:
+      ll= ll+ infile.read(1024)
+    for l in ll.split(';'):
+      if '=' in l:
+	(k,v)=l.split('=',1)
+	self.header_keys.append(k.strip(' ;\n\r'))
+	self.header[k.strip(' ;\n\r')]=v.strip(' ;\n\r')
+  
+  def _open(self,fname):
     # Check whether edf file has been compressed
     if os.path.splitext(fname)[1] == '.gz':
       import gzip
@@ -43,24 +60,25 @@ class edfimage:
       f=bz2.BZ2File(fname,"rb")
     else:
       f=open(fname,"rb")
-    l=f.readline()
-    while '}' not in l:
-      if '=' in l:
-	(k,v)=l.split('=')
-	self.header_keys.append(k.strip())
-	self.header[k.strip()]=v.strip(' ;\n')
-      l=f.readline()
+    return f
+
+  def read(self,fname,verbose=0,padding='0'):
+    #open the file and read the header
+    f=self._open(fname)
+    self._readheader(f)
+    #read the rest of the file
     l=f.read()
     f.close()
     #check the datatype of the edffile (fit2d uses FLOAT for instance) default is 16 bit integer
     if 'DataType' in self.header_keys:
-      if self.header['DataType'] in ('FLOAT','Float'):
+      if self.header['DataType'] in ('FLOAT','Float','FloatValue'):
         bytecode=Numeric.Float32
       else:
         bytecode=Numeric.UInt16
-    else: 
+    else:
       bytecode=Numeric.UInt16 # Default bytecode if none given
     bpp={Numeric.UInt16:2,Numeric.Float32:4} [bytecode]
+    
     #now read the data into the array
     (self.dim1,self.dim2)=int(self.header['Dim_1']),int(self.header['Dim_2'])
     if len(l)!=self.dim1*self.dim2*bpp:
