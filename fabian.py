@@ -12,7 +12,7 @@ from Tkinter import *
 import Pmw
 import Numeric
 import math
-import edfimage, tifimage, adscimage, brukerimage, marccdimage,bruker100image,pnmimage
+import edfimage, tifimage, adscimage, brukerimage, marccdimage,bruker100image,pnmimage,mar345image
 import insert_peaks
 from string import *
 from PIL import Image, ImageTk, ImageFile, ImageStat
@@ -1364,7 +1364,8 @@ def deconstruct_filename(filename):
     'img': 'adsc',
     'mccd': 'marccd',
     'sfrm': 'bruker100',
-    m.group(2): 'bruker'
+    m.group(2): 'bruker',
+    'mar2300': 'mar345'
     }[ext[1][1:]]
   return (number,filetype)
 
