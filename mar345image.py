@@ -49,7 +49,17 @@ class mar345image:
     f=self._open(self.filename,"rb")
     self._readheader(f)
  
-    import mar345_io
+    try:
+      import mar345_io
+    except:
+      print 'error importing the mar345_io backend - generating empty picture'
+      f.close()
+      self.dim1=1
+      self.dim2=1
+      self.bytecode='w'
+      self.data=Numeric.resize(Numeric.array([0],'w'),[1,1])
+      return self
+
     if 'compressed' in self.header['Format']:
       self.data=mar345_io.unpack(f,self.dim1,self.dim2,self.numhigh)
     else:
