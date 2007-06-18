@@ -11,7 +11,6 @@ setup(name='fabian',
   maintainer_email='henning.sorensen@risoe.dk or erik.knudsen@risoe.dk',
   url='http://fable.sourceforge.net',
   py_modules=['edfimage','tifimage','adscimage','brukerimage','bruker100image',
-  'marccdimage','mar345image','pnmimage','pixel_trace','rocker','image_file_series'],
+  'marccdimage','mar345image','pnmimage','pixel_trace','rocker','image_file_series','insert_peaks'],
   ext_modules=[mar345_backend],
   scripts=["fabian.py"])
-
