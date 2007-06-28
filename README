@@ -1,6 +1,7 @@
 fabian
 version XXX
 Henning Osholm Sørensen & Erik Knudsen
+Materials Research Department, Riso National Laboratory, DTU
 
 fabian is designed for the purpose of viewing image files series. In particular
 such image files obtained when doing experiments at the ESRF.
@@ -12,18 +13,32 @@ pyopengl - http://pyopengl.sourceforge.net
 Pmw - Python Mega Widgets -  http://pmw.sourceforge.net
 Matplotlib - http://matplotlib.sourceforge.net
 
+and possibly a c compiler (neseccary for reading mar345 images).
 
 INSTALL:
 
-Just unpack the distribution either as
+Download fabian from http://sourceforge.net/project/showfiles.php?group_id=82044
+
+Unpack the distribution either as
 	tar xvzf fabian-XXX.tar.gz or
 	unzip fabian-XXX.zip
 depending on the type of package you have downloaded.
 
-Hereafter
+Hereafter:
 cd fabian-XXX and
 ./fabian.py
 
+or to do a proper install:
+cd fabian-XXX and
+python setup.py install
+fabian.py
+
 Hopefully you will get a file dialog opened at this moment.
+You can also provide an image file to be opened as an argument:
+fabian.py lyzo0013.edf
+
+MANUAL:
+the manual written as a wiki page: http://fable.sourceforge.net/index.php/Fabian
 
 
+Enjoy!
