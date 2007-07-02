@@ -185,7 +185,7 @@ class imageWin:
         self.master.config(cursor='left_ptr') 
         self.ShowPeaks.set(False)
         return
-    for ipeaks in peaks[self.filename.get()]:
+    for ipeaks in peaks[os.path.split(self.filename.get())[-1]]:
       if int(ipeaks[0]) > globals()["min_pixel"]:
         circ_center=[(ipeaks[1]-self.zoomarea[0])*self.zoomfactor, (ipeaks[2]-self.zoomarea[1])*self.zoomfactor]
         rad = globals()["peak_radius"]*self.zoomfactor
@@ -202,8 +202,9 @@ class imageWin:
         return False
     rpeaks.readallpeaks(peakfilename)
     peaks = rpeaks.images
+    ks = [ os.path.split(name)[-1] for name in peaks.keys() ]
     # convert coordinates to "fabian" coordinates
-    for k in peaks.keys():
+    for k in ks:
       for i in range(len(peaks[k])):
         mx = float(peaks[k][i][2])
         my = image_ysize-float(peaks[k][i][1])
@@ -643,6 +644,13 @@ class appWin(imageWin):
     self.histlength = 0
     self.HistMenuItems = []
 
+
+    self.peak_colour = StringVar()
+    self.peak_colour.set("blue")
+    self.peak_radius = IntVar()
+    self.peak_radius.set(8)
+    print self.peak_radius
+
     globals()["opendir"] = "."
     globals()["min_pixel"] = 4
     globals()["peak_radius"] = 8
@@ -859,10 +867,6 @@ class appWin(imageWin):
     frameMenubar.tk_menuBar((FileMenu, ToolMenu, CrystMenu, HelpMenu))
 
   def peak_options(self):
-    self.peak_colour = StringVar()
-    self.peak_colour.set(colour['peak_colour'])
-    self.peak_radius = IntVar()
-    self.peak_radius.set(globals()["peak_radius"])
     self.peakoptions=Toplevel(self.master)
     self.peakoptions.title('Peak options')
     framepixel = Frame(self.peakoptions, bd=0, bg="white")
@@ -1313,7 +1317,7 @@ class About:
         frame.pack()
 
         frameAbout = Frame(frame, bd=0)
-        message = "\nfabian was brought to you by \n\n\
+        message = "\nfabian (0.3) was brought to you by \n\n\
 Henning O. Sorensen & Erik Knudsen\n\
 Center for Fundamental Research: Metal Structures in Four Dimensions\n\
 Risoe National Laboratory\n\
