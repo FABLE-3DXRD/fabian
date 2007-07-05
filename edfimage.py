@@ -136,7 +136,8 @@ class edfimage:
       #also the (for whichever reason) the image is flipped upside down wrt to the matrix
       # hence these tranformations
       c=(self.dim2-coords[3]-1,coords[0],self.dim2-coords[1]-1,coords[2])
-      S=Numeric.sum(Numeric.ravel(self.data[int(c[0]):int(c[2])+1,int(c[1]):int(c[3])+1]))
+      # avoid overflows
+      S=Numeric.sum(Numeric.ravel(self.data[int(c[0]):int(c[2])+1,int(c[1]):int(c[3])+1].astype(Numeric.Float32)))
       
       S=S-floor*(1+c[2]-c[0])*(1+c[3]-c[1])
     return S
