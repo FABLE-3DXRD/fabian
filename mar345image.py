@@ -32,8 +32,9 @@ class mar345image:
     if filename:
       self.read(filename)
     PILimage={
-      'w':Image.frombuffer("F",(self.dim1,self.dim2),self.data,"raw","F;16",0,-1),
       'f':Image.frombuffer("F",(self.dim1,self.dim2),self.data.astype(Numeric.UInt16),"raw","F;16",0,-1),
+      'w':Image.frombuffer("F",(self.dim1,self.dim2),self.data,"raw","F;16",0,-1),
+      'u':Image.fromstring("F",(self.dim1,self.dim2),self.data,"raw","F;32N",0,-1),
       }[self.bytecode]
     return PILimage
 
@@ -56,8 +57,8 @@ class mar345image:
       f.close()
       self.dim1=1
       self.dim2=1
-      self.bytecode='w'
-      self.data=Numeric.resize(Numeric.array([0],'w'),[1,1])
+      self.bytecode='u'
+      self.data=Numeric.resize(Numeric.array([0],'u'),[1,1])
       return self
 
     if 'compressed' in self.header['Format']:
@@ -65,7 +66,7 @@ class mar345image:
     else:
       print "error: cannot handle these formats yet due to lack of documentation"
       return None
-    self.bytecode='w'
+    self.bytecode='u'
     f.close()
     return self
   

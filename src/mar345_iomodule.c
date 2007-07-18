@@ -15,7 +15,7 @@ static PyObject * mar345_io_unpack(PyObject *self, PyObject *args){
   if (!PyArg_ParseTuple(args, "Oiii", &py_file,&dim1,&dim2,&ocount))
     return NULL;
   dims[0]=dim1;dims[1]=dim2;
-  py_unpacked=(PyArrayObject*)PyArray_FromDims(2,dims,PyArray_USHORT);
+  py_unpacked=(PyArrayObject*)PyArray_FromDims(2,dims,PyArray_UINT);
   file=PyFile_AsFile(py_file);
 
   unpacked=mar345_read_data(file,ocount,dim1,dim2);
@@ -30,8 +30,7 @@ static PyMethodDef mar345_io_Methods[] = {
 };
 
 PyMODINIT_FUNC
-initmar345_io(void)
-{
+initmar345_io(void){
   (void) Py_InitModule("mar345_io", mar345_io_Methods);
     import_array();
 }
