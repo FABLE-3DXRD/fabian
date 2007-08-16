@@ -185,12 +185,20 @@ class imageWin:
         self.master.config(cursor='left_ptr') 
         self.ShowPeaks.set(False)
         return
-    for ipeaks in peaks[os.path.split(self.filename.get())[-1]]:
-      if int(ipeaks[0]) > globals()["min_pixel"]:
-        circ_center=[(ipeaks[1]-self.zoomarea[0])*self.zoomfactor, (ipeaks[2]-self.zoomarea[1])*self.zoomfactor]
-        rad = globals()["peak_radius"]*self.zoomfactor
-        corners=(circ_center[0]-rad,circ_center[1]-rad,circ_center[0]+rad,circ_center[1]+rad)
-        self.canvas.create_oval(corners,tag='peaks',outline=colour['peak_colour'])
+    try:
+      for ipeaks in peaks[os.path.split(self.filename.get())[-1]]:
+        if int(ipeaks[0]) > globals()["min_pixel"]:
+          circ_center=[(ipeaks[1]-self.zoomarea[0])*self.zoomfactor, (ipeaks[2]-self.zoomarea[1])*self.zoomfactor]
+          rad = globals()["peak_radius"]*self.zoomfactor
+          corners=(circ_center[0]-rad,circ_center[1]-rad,circ_center[0]+rad,circ_center[1]+rad)
+          self.canvas.create_oval(corners,tag='peaks',outline=colour['peak_colour'])
+    except:
+        e=Error()
+        msg="No peak information about %s is found in peaksearch file" %(os.path.split(self.filename.get())[-1])
+        e.Er(msg)
+        self.master.config(cursor='left_ptr')
+        self.ShowPeaks.set(False)
+
     self.master.config(cursor='left_ptr')
     return
 
@@ -232,6 +240,9 @@ class imageWin:
     y=self.canvas.canvasx(event.y)
     if x<self.canvas_xsize and y<self.canvas_ysize:
       xy =  "%5i,%5i"%(x/self.zoomfactor +self.zoomarea[0],y/self.zoomfactor +self.zoomarea[1])
+      self.xsize = globals()["image_xsize"]
+      self.ysize = globals()["image_ysize"]
+      xy =  "%5i,%5i"%(self.xsize-1-(x/self.zoomfactor +self.zoomarea[0]),self.ysize-1-(y/self.zoomfactor +self.zoomarea[1]))
       self.ShowCoor.config(text=xy)
       I = "%5.0f"% self.im.getpixel((x/self.zoomfactor +self.zoomarea[0],y/self.zoomfactor +self.zoomarea[1]))
       self.ShowInt.config(text=I)
@@ -528,6 +539,7 @@ class imageWin:
     
     if newimage: self.im=newimage
     imcrop = self.im.crop(self.zoomarea)
+    print imcrop
     im8c = imcrop.point(lambda i: i * self.scale + self.offset).convert('L')
     self.img = ImageTk.PhotoImage(im8c.resize((self.canvas_xsize,self.canvas_ysize)))
     self.im_min,self.im_max,self.im_mean = self.get_img_stats(imcrop)
@@ -646,11 +658,20 @@ class appWin(imageWin):
     self.histlength = 0
     self.HistMenuItems = []
 
-
     self.peak_colour = StringVar()
     self.peak_colour.set("blue")
     self.peak_radius = IntVar()
     self.peak_radius.set(8)
+    self.FlipHorz = BooleanVar()
+    self.FlipHorz.set(False)
+    self.FlipVert = BooleanVar()
+    self.FlipVert.set(False)
+    self.Rot90 = BooleanVar()
+    self.Rot90.set(False)
+    self.Rot180 = BooleanVar()
+    self.Rot180.set(False)
+    self.Rot270 = BooleanVar()
+    self.Rot270.set(False)
 
     globals()["opendir"] = "."
     globals()["min_pixel"] = 4
@@ -843,6 +864,19 @@ class appWin(imageWin):
     ToolMenu.menu.add_radiobutton(label='Rocking curve%2s%2s' %('','F5'),command=self.setbindings,variable=self.ToolType,value='Rocker')
     ToolMenu['menu']=ToolMenu.menu
 
+    ImageMenu = Menubutton(frameMenubar, text='Image',underline=0)
+    ImageMenu.pack(side=LEFT, padx="2m")
+    ImageMenu.menu =Menu(ImageMenu)
+    ImageMenu.menu.transform =Menu(ImageMenu.menu)
+    ImageMenu.menu.add_cascade(label='Transform',menu=ImageMenu.menu.transform)
+    ImageMenu.menu.transform.add_checkbutton(label='Flip horizontal',command=(lambda:self.transform(0,self.FlipHorz.get())),onvalue=True,offvalue=False,variable=self.FlipHorz)
+    ImageMenu.menu.transform.add_checkbutton(label='Flip vertical',command=(lambda:self.transform(1,self.FlipVert.get())),onvalue=True,offvalue=False,variable=self.FlipVert)
+    ImageMenu.menu.transform.add_checkbutton(label='Rotate 90',command=(lambda:self.transform(4,self.Rot90.get())),onvalue=True,offvalue=False,variable=self.Rot90)
+    ImageMenu.menu.transform.add_checkbutton(label='Rotate 180',command=(lambda:self.transform(3,self.Rot180.get())),onvalue=True,offvalue=False,variable=self.Rot180)
+    ImageMenu.menu.transform.add_checkbutton(label='Rotate 270',command=(lambda:self.transform(2,self.Rot270.get())),onvalue=True,offvalue=False,variable=self.Rot270)
+    ImageMenu.menu.transform.add_command(label='Reset all',command=(lambda:self.transform(5)))
+    ImageMenu['menu']=ImageMenu.menu
+
     CrystMenu = Menubutton(frameMenubar, text='CrystTools',underline=0)
     CrystMenu.pack(side=LEFT, padx="2m")
     CrystMenu.menu =Menu(CrystMenu)
@@ -866,6 +900,36 @@ class appWin(imageWin):
     HelpMenu['menu']=HelpMenu.menu
     frameMenubar.pack(fill=X,side=TOP)
     frameMenubar.tk_menuBar((FileMenu, ToolMenu, CrystMenu, HelpMenu))
+
+  def transform(self,type,value=None):
+    if type == 5: # Reset image transformations
+      self.FlipHorz.set(False)
+      self.FlipVert.set(False)
+      self.Rot90.set(False)
+      self.Rot180.set(False)
+      self.Rot270.set(False)
+      self.gotoimage()
+      return
+
+    if type == 2:
+      (self.xsize, self.ysize)=(self.ysize, self.xsize)
+      self.zoomarea=[0,0,self.xsize,self.ysize]
+      globals()["image_xsize"] = self.xsize
+      globals()["image_ysize"] = self.ysize
+      if value == False:
+        type = 4
+    elif type == 4:
+      (self.xsize, self.ysize)=(self.ysize, self.xsize)
+      self.zoomarea=[0,0,self.xsize,self.ysize]
+      globals()["image_xsize"] = self.xsize
+      globals()["image_ysize"] = self.ysize
+      if value == False:
+        type = 2
+
+    imean = self.im.meanval # hack to make get_img_stats hack work
+    self.im = self.im.transpose(type)
+    self.im.meanval = imean  #hack to make get_img_stats hack work
+    self.update(self.im)
 
   def peak_options(self):
     self.peakoptions=Toplevel(self.master)
@@ -923,6 +987,8 @@ class appWin(imageWin):
         self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
         self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
         self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
+        print self.xsize,self.ysize
+        print self.canvas_xsize,self.canvas_ysize
         self.noteb1.setnaturalsize() # update size of notebook page
         print 'TRY'
       except:
@@ -952,6 +1018,7 @@ class appWin(imageWin):
     #implementation in the specific image classes
     imin,imax=image.getextrema()
     imean=self.im.meanval
+    print imean
     return (imin,imax,imean)
   
   def gotoimage(self,event=None):
