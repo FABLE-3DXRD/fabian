@@ -6,6 +6,7 @@ adscimage.py
 brukerimage.py
 bruker100image.py
 marccdimage.py
+mar345image.py
 pnmimage.py
 setup.py
 pixel_trace.py
@@ -13,3 +14,6 @@ image_file_series.py
 rocker.py
 median.py
 insert_peaks.py
+src/
+src/ccp4_pack.c
+src/mar345_iomodule.c
