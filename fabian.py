@@ -672,6 +672,8 @@ class appWin(imageWin):
     self.Rot180.set(False)
     self.Rot270 = BooleanVar()
     self.Rot270.set(False)
+    self.header_sort_type = StringVar()
+    self.header_sort_type.set('orig')
 
     globals()["opendir"] = "."
     globals()["min_pixel"] = 4
@@ -750,6 +752,12 @@ class appWin(imageWin):
     self.noteb1.setnaturalsize()
     
     # Put header on page2 Info
+    hc = Pmw.Group(self.page2,tag_text='Order of header items')
+    hc.pack(fill=BOTH,side=TOP,anchor=W)
+
+
+    r=Radiobutton(hc.interior(),text='Original', command=self.update_header_page, variable=self.header_sort_type, value='orig',anchor=W, width=20).pack(side=LEFT,anchor=W)
+    r=Radiobutton(hc.interior(),text='Alphabetical', command=self.update_header_page, variable=self.header_sort_type, value='alphabetical', anchor=W, width=20).pack(side=LEFT,anchor=W)
     self.HeaderFrame = Pmw.ScrolledFrame(self.page2, labelpos=N)
     self.HeaderFrame.pack(fill=BOTH, expand=YES)
     self.HeaderInterior = self.HeaderFrame.interior()
@@ -1188,11 +1196,24 @@ class appWin(imageWin):
     img=eval( filetype+'image.'+filetype+'image()')
     try:
       self.im=img.read(filename).toPIL16()
-      (self.im.minval,self.im.maxval,self.im.meanval)=(img.getmin(),img.getmax(),img.getmean())
-      self.im.header=img.getheader()
       (self.xsize, self.ysize)=(img.dim1, img.dim2)
     except IOError:
       raise
+    # Check image oriention
+    if self.FlipHorz.get() == True:
+	self.im=self.im.transpose(0)
+    if self.FlipVert.get() == True:
+	self.im=self.im.transpose(1)
+    if self.Rot90.get() == True:
+	self.im=self.im.transpose(4)
+	(self.xsize, self.ysize)=(self.ysize, self.xsize)
+    if self.Rot180.get() == True:
+	self.im=self.im.transpose(3)
+    if self.Rot270.get() == True:
+	self.im=self.im.transpose(2)
+	(self.xsize, self.ysize)=(self.ysize, self.xsize)
+    (self.im.minval,self.im.maxval,self.im.meanval)=(img.getmin(),img.getmax(),img.getmean())
+    self.im.header=img.getheader()
     self.zoomarea=[0,0,self.xsize,self.ysize]
     self.master.title("fabian - %s" %(filename))
     globals()["image_xsize"] = self.xsize
