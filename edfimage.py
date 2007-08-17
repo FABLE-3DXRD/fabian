@@ -44,7 +44,7 @@ class edfimage:
     ll=""
     while '}' not in ll:
       ll= ll+ infile.read(1024)
-    ll.strip('{\n')
+    ll = ll.strip('{\n')
     for l in ll.split(';'):
       if '=' in l:
 	(k,v)=l.split('=',1)
