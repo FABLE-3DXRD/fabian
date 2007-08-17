@@ -274,6 +274,7 @@ class imageWin:
     self.draw2=tmp
     
   def Mouse1Press(self, event):
+    self.master.focus_set()
     x=self.canvas.canvasx(event.x)
     y=self.canvas.canvasy(event.y)
     x,y=self.val_canvas_coord((x,y))
@@ -539,7 +540,6 @@ class imageWin:
     
     if newimage: self.im=newimage
     imcrop = self.im.crop(self.zoomarea)
-    print imcrop
     im8c = imcrop.point(lambda i: i * self.scale + self.offset).convert('L')
     self.img = ImageTk.PhotoImage(im8c.resize((self.canvas_xsize,self.canvas_ysize)))
     self.im_min,self.im_max,self.im_mean = self.get_img_stats(imcrop)
@@ -704,10 +704,10 @@ class appWin(imageWin):
     master.bind('c',self.clear_peaks)
     master.bind('p',self.show_peaks)
     master.bind('f',self.autonextimage)
-    master.bind('<Right>',self.nextimage)
-    master.bind('<Left>',self.previousimage)
     master.bind('<Up>',self.updatetime)
     master.bind('<Down>',self.updatetime)
+    master.bind('<Right>',self.nextimage)
+    master.bind('<Left>',self.previousimage)
 
     frame = Frame(master, bd=0, bg="white")
     frame.pack(fill=X)
@@ -734,7 +734,6 @@ class appWin(imageWin):
     self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10, round(screen_height/(2.*self.ysize)*10)/10)
     self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
     self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
-
 
     #Add Notebook tabs
     self.noteb1 = Pmw.NoteBook(frame)
@@ -833,34 +832,43 @@ class appWin(imageWin):
             headertext = headertext+item+': '+self.im.header[item] +'; '
     self.HeaderInfo.config(text='%s' %(headertext))
 
-        
+  def rebind(self,e): # Hack to unbind the image change stuff when focus is in an entry
+    if self.master.focus_get() == self.master:
+      self.master.bind('<Left>',self.previousimage)
+      self.master.bind('<Right>',self.nextimage)
+    else:
+      self.master.unbind('<Left>')
+      self.master.unbind('<Right>')
+          
   def make_scaling_ctls(self,master):
     frameScale = Frame(master, bd=0)
+    #self.master2 = master
     # Image scale controls  
     Label(frameScale,text='Scale: ').pack(side=LEFT)
     Label(frameScale,text='min:', bg='white').pack(side=LEFT)
-    e=Entry(frameScale, textvariable=self.minval, bg='white', width=6)
-    #e.bind('<FocusOut>',self.rescale)
-    e.bind('<Return>',self.rescale)
-    e.bind('<KP_Enter>',self.rescale)
-    e.pack(side=LEFT,padx=4)
+    self.emin=Entry(frameScale, textvariable=self.minval, bg='white', width=6)
+    self.emin.bind('<Return>',self.rescale)
+    self.emin.bind('<FocusIn>', self.rebind)
+    self.emin.bind('<FocusOut>',self.rebind)
+    self.emin.bind('<KP_Enter>',self.rescale)
+    self.emin.pack(side=LEFT,padx=4)
     Label(frameScale,text='max:', bg='white').pack(side=LEFT)
-    e=Entry(frameScale, textvariable=self.maxval, bg='white', width=6)
-    #e.bind('<FocusOut>',self.rescale)
-    e.bind('<Return>',self.rescale)
-    e.bind('<KP_Enter>',self.rescale)
-    e.pack(side=LEFT,padx=4)
-    
+    self.emax=Entry(frameScale, textvariable=self.maxval, bg='white', width=6)
+    self.emax.bind('<Return>',self.rescale)
+    self.emax.bind('<KP_Enter>',self.rescale)
+    self.emax.bind('<FocusIn>', self.rebind)
+    self.emax.bind('<FocusOut>',self.rebind)
+    self.emax.pack(side=LEFT,padx=4)
     Button(frameScale,text='update', bg='white', command=self.update).pack(side=LEFT,padx=2)
     Button(frameScale,text='reset', bg='white', command=self.reset_scale).pack(side=LEFT,padx=2)
-    
     Button(frameScale,text='next', bg='white', command=self.nextimage).pack(side=RIGHT)
     Button(frameScale,text='previous', bg='white', command=self.previousimage).pack(side=RIGHT)
-    e=Entry(frameScale, textvariable=self.displaynumber, bg='white', width=6)
-    e.bind('<FocusOut>',self.gotoimage)
-    e.bind('<Return>',self.gotoimage)
-    e.bind('<KP_Enter>',self.gotoimage)
-    e.pack(side=RIGHT,padx=8)
+    self.efilen=Entry(frameScale, textvariable=self.displaynumber, bg='white', width=6)
+    self.efilen.bind('<FocusOut>',self.rebind)
+    self.efilen.bind('<FocusIn>',self.rebind)
+    self.efilen.bind('<Return>',self.gotoimage)
+    self.efilen.bind('<KP_Enter>',self.gotoimage)
+    self.efilen.pack(side=RIGHT,padx=8)
     Button(frameScale,text='go to number:', bg='white', command=self.gotoimage).pack(side=RIGHT,padx=2)
     frameScale.pack(side=TOP,expand=1, pady=10, fill=X)
      
@@ -1039,7 +1047,6 @@ class appWin(imageWin):
     #implementation in the specific image classes
     imin,imax=image.getextrema()
     imean=self.im.meanval
-    print imean
     return (imin,imax,imean)
   
   def gotoimage(self,event=None):
