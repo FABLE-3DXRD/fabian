@@ -954,6 +954,12 @@ class appWin(imageWin):
       globals()["image_ysize"] = self.ysize
       if value == False:
         type = 2
+    ##### Make sure canvas has the right size
+    self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
+    self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
+    self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
+    self.frameScroll.config(width=self.canvas_xsize+30, height=self.canvas_ysize+30)
+    self.noteb1.setnaturalsize() # update size of notebook page
 
     imean = self.im.meanval # hack to make get_img_stats hack work
     self.im = self.im.transpose(type)
@@ -1016,12 +1022,11 @@ class appWin(imageWin):
         self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
         self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
         self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
-        print self.xsize,self.ysize
-        print self.canvas_xsize,self.canvas_ysize
+        self.frameScroll.config(width=self.canvas_xsize+30, height=self.canvas_ysize+30)
         self.noteb1.setnaturalsize() # update size of notebook page
-        print 'TRY'
+        #print 'TRY'
       except:
-        print 'PASSED'
+        #print 'PASSED'
         pass
  
   def rescale(self,event=None):
@@ -1094,6 +1099,7 @@ class appWin(imageWin):
         self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
         self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
         self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
+        self.frameScroll.config(width=self.canvas_xsize+30, height=self.canvas_ysize+30)
         self.noteb1.setnaturalsize() # update size of notebook page
       except:
         pass
