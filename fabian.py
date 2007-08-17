@@ -673,7 +673,8 @@ class appWin(imageWin):
     self.Rot270 = BooleanVar()
     self.Rot270.set(False)
     self.header_sort_type = StringVar()
-    self.header_sort_type.set('orig')
+    self.header_sort_type.set('original')
+    #self.header_sort_type.set('alphabetical')
 
     globals()["opendir"] = "."
     globals()["min_pixel"] = 4
@@ -756,8 +757,8 @@ class appWin(imageWin):
     hc.pack(fill=BOTH,side=TOP,anchor=W)
 
 
-    r=Radiobutton(hc.interior(),text='Original', command=self.update_header_page, variable=self.header_sort_type, value='orig',anchor=W, width=20).pack(side=LEFT,anchor=W)
-    r=Radiobutton(hc.interior(),text='Alphabetical', command=self.update_header_page, variable=self.header_sort_type, value='alphabetical', anchor=W, width=20).pack(side=LEFT,anchor=W)
+    r=Radiobutton(hc.interior(),text='Original', command=(lambda:self.update_header_page(True)), variable=self.header_sort_type, value='original',anchor=W, width=20).pack(side=LEFT,anchor=W)
+    r=Radiobutton(hc.interior(),text='Alphabetical', command=(lambda:self.update_header_page(True)), variable=self.header_sort_type, value='alphabetical', anchor=W, width=20).pack(side=LEFT,anchor=W)
     self.HeaderFrame = Pmw.ScrolledFrame(self.page2, labelpos=N)
     self.HeaderFrame.pack(fill=BOTH, expand=YES)
     self.HeaderInterior = self.HeaderFrame.interior()
@@ -772,7 +773,15 @@ class appWin(imageWin):
       self.headcheck=[]
       self.headtext={}
       self.newitem={}
-      for item in self.im.header:
+      # To choose sorting type 
+      if self.header_sort_type.get() == 'original':
+        header_sorted = self.im.header.keys()
+      elif self.header_sort_type.get() == 'alphabetical':
+        header_sorted = self.im.header.keys()
+        header_sorted.sort()
+      #       
+      
+      for item in header_sorted:
         fm = Frame(self.HeaderInterior)
         self.newitem[item]=StringVar()
         c=Checkbutton(fm,text='%s' %(item), command=self.update_header_label,variable=self.newitem[item], bg='white',anchor=W,width=20).pack(side=LEFT,anchor=W)
@@ -790,25 +799,29 @@ class appWin(imageWin):
     for child in self.HeaderInterior.winfo_children():
       child.destroy()
 
-  def update_header_page(self):
+  def update_header_page(self,newsorting=False):
     #check if the set of (possibly newly read from disk) header items is identical to the one displayed
-    if set(self.im.header.keys())==set(self.headtext.keys()):
-      #they seem to be compatible, note - this keeps the checked checkboxes alive
-      for item,value in self.im.header.iteritems():
-        self.headtext[item].config(text='%s' % value)
-    else:
-      #they differ - make a new header page from scratch
-      #first remember the checked items to keep them checked if the exist in the new header
-      checkeditems=[]
-      for item,value in self.newitem.iteritems():
-        if value.get()=='1':
-          checkeditems.append(item)
+    if newsorting == True:
       self.clear_header_page()
       self.make_header_page()
-      #recheck the items that are found in the hew header
-      for item in checkeditems:
-        if item in self.newitem.keys():
-          self.newitem[item].set('1')
+    else:      
+      if set(self.im.header.keys())==set(self.headtext.keys()):
+          #they seem to be compatible, note - this keeps the checked checkboxes alive
+          for item,value in self.im.header.iteritems():
+            self.headtext[item].config(text='%s' % value)
+      else:
+          #they differ - make a new header page from scratch
+          #first remember the checked items to keep them checked if the exist in the new header
+          checkeditems=[]
+          for item,value in self.newitem.iteritems():
+            if value.get()=='1':
+              checkeditems.append(item)
+          self.clear_header_page()
+          self.make_header_page()
+          #recheck the items that are found in the hew header
+          for item in checkeditems:
+            if item in self.newitem.keys():
+              self.newitem[item].set('1')
 
   def update_header_label(self):
     headertext = ''
