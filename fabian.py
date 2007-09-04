@@ -262,6 +262,7 @@ class imageWin:
     x,y=self.val_canvas_coord((x,y))
     self.transientcorners[2:]=[x,y]
     self.drawAoi()
+    self.MouseMotion(event)
   def Mouse3Release(self, event):
     x=self.canvas.canvasx(event.x)
     y=self.canvas.canvasy(event.y)
@@ -285,6 +286,7 @@ class imageWin:
     x,y=self.val_canvas_coord((x,y))
     self.transientcorners[2:]=[x,y]
     self.draw2()
+    self.MouseMotion(event)
   def Mouse1Release(self, event):
     x=self.canvas.canvasx(event.x)
     y=self.canvas.canvasy(event.y)
@@ -1525,32 +1527,39 @@ def construct_filename(oldfilename,newfilenumber,padding=True):
   else:
     return oldfilename
 
-def deconstruct_filename(filename):
+def get_filetype(filename):
+  ext=os.path.splitext(filename)
+  filetype={'edf': lambda : 'edf',
+    'gz': lambda : get_filetype(ext[0]),
+    'bz2': lambda : get_filetype(ext[0]),
+    'pnm' : lambda : 'pnm',
+    'pgm' : lambda : 'pnm',
+    'pbm' : lambda : 'pnm',
+    'tif': lambda : 'tif',
+    'tiff': lambda : 'tif',
+    'img': lambda :'adsc',
+    'mccd': lambda : 'marccd',
+    'sfrm': lambda : 'bruker100',
+    str(get_filenumber(filename)): lambda: 'bruker',
+    'mar2300': lambda : 'mar345'
+    }[ext[1][1:]]()
+  return filetype
+
+def get_filenumber(filename):
   p=re.compile(r"^(.*?)(-?[0-9]{0,4})(\D*)$")
   m=re.match(p,filename)
   if m==None or m.group(2)=='':
     number=0;
   else:
     number=int(m.group(2))
-  ext=os.path.splitext(filename)
-  filetype={'edf': 'edf',
-    'gz': 'edf',
-    'bz2': 'edf',
-    'pnm' : 'pnm',
-    'pgm' : 'pnm',
-    'pbm' : 'pnm',
-    'tif': 'tif',
-    'tiff': 'tif',
-    'img': 'adsc',
-    'mccd': 'marccd',
-    'sfrm': 'bruker100',
-    m.group(2): 'bruker',
-    'mar2300': 'mar345'
-    }[ext[1][1:]]
+
+def deconstruct_filename(filename):
+  number=get_filenumber(filename)
+  filetype=get_filetype(filename)
   return (number,filetype)
 
 def extract_filenumber(filename):
-  return deconstruct_filename(filename)[0]
+  return get_filenumber(filename)
 
 ##########################
 #   Main                 #
