@@ -1447,7 +1447,7 @@ class ReliefPlot:
          GL.glColor3f(1.0, 1.0, 1.0) # white
          GL.glPointSize(self.pointsize)
          GL.glPushMatrix()
-         GL.glScale(self.scale,self.scale,self.scale)
+         GL.glScalef(self.scale,self.scale,self.scale)
          GL.glRotate(-20,0,0,1)
          GL.glRotate(-110,1,0,0)
          GL.glTranslatef(-self.sizex/2.0,-self.sizey/2.0,self.zcenter)
