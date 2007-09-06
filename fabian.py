@@ -1002,7 +1002,7 @@ class appWin(imageWin):
   
   def OpenFile(self,filename=True):
     presentdir = globals()["opendir"]
-    fname = askopenfilename(initialdir=presentdir,filetypes=[("EDF files", "*.edf"),("Tif files", "*.tif"),("MarCCD/Mosaic files", "*.mccd"),("ADSC files", "*.img"),("Bruker files", "*.*"),("All Files", "*")])
+    fname = askopenfilename(initialdir=presentdir,filetypes=[("EDF files", "*.edf"),("EDF files", "*.cor"),("Tif files", "*.tif"),("MarCCD/Mosaic files", "*.mccd"),("ADSC files", "*.img"),("Bruker files", "*.*"),("All Files", "*")])
     if len(fname) == 0: return
     
     presentdir = os.path.split(fname)[0]
@@ -1530,6 +1530,7 @@ def construct_filename(oldfilename,newfilenumber,padding=True):
 def get_filetype(filename):
   ext=os.path.splitext(filename)
   filetype={'edf': lambda : 'edf',
+    'cor': lambda : 'edf',
     'gz': lambda : get_filetype(ext[0]),
     'bz2': lambda : get_filetype(ext[0]),
     'pnm' : lambda : 'pnm',
@@ -1552,6 +1553,7 @@ def get_filenumber(filename):
     number=0;
   else:
     number=int(m.group(2))
+  return number
 
 def deconstruct_filename(filename):
   number=get_filenumber(filename)
