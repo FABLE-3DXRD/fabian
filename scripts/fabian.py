@@ -1495,7 +1495,7 @@ class About:
         frame.pack()
 
         frameAbout = Frame(frame, bd=0)
-        message = "\nfabian (0.3) was brought to you by \n\n\
+        message = "\nfabian (RELEASE) was brought to you by \n\n\
 Henning O. Sorensen & Erik Knudsen\n\
 Center for Fundamental Research: Metal Structures in Four Dimensions\n\
 Risoe National Laboratory\n\
