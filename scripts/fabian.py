@@ -12,7 +12,7 @@ from Tkinter import *
 import Pmw
 import Numeric
 import math
-from Fabian import edfimage, tifimage, adscimage, brukerimage, marccdimage,bruker100image,pnmimage,mar345image
+import edfimage, tifimage, adscimage, brukerimage, marccdimage,bruker100image,pnmimage,mar345image
 import insert_peaks
 from string import *
 from PIL import Image, ImageTk, ImageFile, ImageStat
@@ -153,7 +153,7 @@ class imageWin:
     self.ShowMax.pack(side=LEFT)
     self.ShowMean = Label(frameInfo, text="Mean -1", bg ='white',bd=1, relief=SUNKEN, anchor=W)
     self.ShowMean.pack(side=LEFT)
-    self.ShowInt = Label(frameInfo, text='    0', width=5, bg='white', bd=1, relief=RIDGE, anchor=W)
+    self.ShowInt = Label(frameInfo, text='    0', width=10, bg='white', bd=1, relief=RIDGE, anchor=W)
     self.ShowInt.pack(side=RIGHT, padx=2)
     self.ShowCoor = Label(frameInfo, text='    0,    0', width =10, bg ='white',bd=1, relief=RIDGE, anchor=W)
     self.ShowCoor.pack(side=RIGHT, padx = 2)
@@ -244,7 +244,7 @@ class imageWin:
       self.ysize = globals()["image_ysize"]
       xy =  "%5i,%5i"%(self.xsize-1-(x/self.zoomfactor +self.zoomarea[0]),self.ysize-1-(y/self.zoomfactor +self.zoomarea[1]))
       self.ShowCoor.config(text=xy)
-      I = "%5.0f"% self.im.getpixel((x/self.zoomfactor +self.zoomarea[0],y/self.zoomfactor +self.zoomarea[1]))
+      I = " %8f"% self.im.getpixel((x/self.zoomfactor +self.zoomarea[0],y/self.zoomfactor +self.zoomarea[1]))
       self.ShowInt.config(text=I)
  
   def Mouse2Press(self, event):
@@ -539,16 +539,14 @@ class imageWin:
       self.maxval.set(scaled_max)
     self.scale = 255.0 / (scaled_max - scaled_min)
     self.offset = - scaled_min * self.scale
-    
     if newimage: self.im=newimage
     imcrop = self.im.crop(self.zoomarea)
     im8c = imcrop.point(lambda i: i * self.scale + self.offset).convert('L')
     self.img = ImageTk.PhotoImage(im8c.resize((self.canvas_xsize,self.canvas_ysize)))
     self.im_min,self.im_max,self.im_mean = self.get_img_stats(imcrop)
-
-    self.ShowMin.config(text="Min %i" %(self.im_min))
-    self.ShowMax.config(text="Max %i" %(self.im_max))
-    self.ShowMean.config(text="Mean %i" %(self.im_mean))
+    self.ShowMin.config(text="Min %f" %(self.im_min))
+    self.ShowMax.config(text="Max %f" %(self.im_max))
+    self.ShowMean.config(text="Mean %f" %(self.im_mean))
     self.canvas.lower(self.canvas.create_image(0,0,anchor=NW, image=self.img))
     try:
       showpeaks = self.ShowPeaks.get()
@@ -573,18 +571,32 @@ class imageWin:
   def reset_scale(self):
     #find best image grayscale for the present image.
     #only to be called when this is the main window instance
-    self.im_min,self.im_max = self.im.getextrema()
-    self.maxval.set(self.im_max)
-    self.minval.set("%.0f"%self.im_min)
-    hist = self.im.histogram()
-    i = 2
-    cc = sum(hist[:i+1])
-    while cc < 0.98*sum(hist) and i < 255:
-      i=i+1
-      cc = cc + hist[i]
-    scaled_max = max(self.im_min+1,1,((self.im_max - self.im_min)/255 *i)+self.im_min)
-    self.maxval.set("%.0f"%scaled_max)
 
+    self.im_min,self.im_max = self.im.getextrema()
+    
+
+    #Autoscaling image
+    hist = self.im.histogram()
+    sumhist = sum(hist)
+
+    ilow = -1
+    cc = 0
+    while cc < 0.01*sumhist:
+      ilow = ilow + 1
+      cc = cc + hist[ilow]
+
+    cc= 0
+    ihigh = 255
+    while cc < 0.01*sumhist:
+      ihigh = ihigh - 1
+      cc = cc + hist[ihigh]
+      
+    if ilow==ihigh: ihigh = ihigh +1
+    scaled_min = (self.im_max - self.im_min)/255 *ilow +self.im_min
+    scaled_max = (self.im_max - self.im_min)/255 *ihigh +self.im_min
+    self.minval.set("%f"%scaled_min)
+    self.maxval.set("%f"%scaled_max)
+    
   def setbindings(self):
     try:
       self.tool = self.ToolType.get()
@@ -1495,7 +1507,7 @@ class About:
         frame.pack()
 
         frameAbout = Frame(frame, bd=0)
-        message = "\nfabian (RELEASE) was brought to you by \n\n\
+        message = "\nfabian (0.3) was brought to you by \n\n\
 Henning O. Sorensen & Erik Knudsen\n\
 Center for Fundamental Research: Metal Structures in Four Dimensions\n\
 Risoe National Laboratory\n\

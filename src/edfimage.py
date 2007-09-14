@@ -27,10 +27,12 @@ class edfimage:
   def toPIL16(self,filename=None):
     if filename:
       self.read(filename)
-    PILimage={
-      'w':Image.frombuffer("F",(self.dim1,self.dim2),self.data,"raw","F;16",0,-1),
-      'f':Image.frombuffer("F",(self.dim1,self.dim2),self.data.astype(Numeric.UInt16),"raw","F;16",0,-1),
-      }[self.bytecode]
+    if self.bytecode == 'w':
+      PILimage = Image.frombuffer("F",(self.dim1,self.dim2),self.data,"raw","F;16",0,-1)
+    if self.bytecode == 'd':
+      PILimage = Image.frombuffer("F",(self.dim1,self.dim2),self.data,"raw","F;16",0,-1)
+    if self.bytecode == 'f':
+      PILimage = Image.frombuffer("F",(self.dim1,self.dim2),self.data,"raw","F;32NF",0,-1)
     return PILimage
 
   def readheader(self,fname):
@@ -78,7 +80,7 @@ class edfimage:
         bytecode=Numeric.UInt16
     else:
       bytecode=Numeric.UInt16 # Default bytecode if none given
-    bpp={Numeric.UInt16:2,Numeric.Float32:4} [bytecode]
+    bpp={Numeric.UInt16:2,Numeric.Float32:4,Numeric.Float64:8} [bytecode]
     
     #now read the data into the array
     (self.dim1,self.dim2)=int(self.header['Dim_1']),int(self.header['Dim_2'])
@@ -117,13 +119,13 @@ class edfimage:
     if self.maxval==None:
       max_xel=Numeric.argmax(Numeric.ravel(self.data))
       self.maxval=Numeric.ravel(self.data)[max_xel]
-    return int(self.maxval)
+    return self.maxval
   
   def getmin(self):
     if self.minval==None:
       min_xel=Numeric.argmin(Numeric.ravel(self.data))
       self.minval=Numeric.ravel(self.data)[min_xel]
-    return int(self.minval)
+    return self.minval
 
   def integrate_area(self,coords,floor=0):
     if self.data==None:
