@@ -439,7 +439,7 @@ class imageWin:
       # Make lineprofile  relief window
       t=self.transientcorners
       corners=[(self.zoomarea[0]+t[0]/self.zoomfactor), (self.zoomarea[1]+t[1]/self.zoomfactor), (self.zoomarea[0]+t[2]/self.zoomfactor-1), (self.zoomarea[1]+t[3]/self.zoomfactor)-1]
-      import pixel_trace
+      from Fabian import pixel_trace
       w=Toplevel(self.master)
       pixels = pixel_trace.pixel_trace(corners)
       t = []
@@ -508,7 +508,7 @@ class imageWin:
       endframe = self.center+self.delta.get()
       self.startframe.set(startframe)
       self.endframe.set(endframe)
-    import rocker
+    from Fabian import rocker
     rockdata = rocker.rocker(filename_sample=self.filename.get(), coord=self.corners, startnumber=startframe, endnumber=endframe)
     rockdata.run()
     w=Toplevel(self.master)
@@ -1313,7 +1313,7 @@ class imagePlot:
     self.master.destroy()
 
   def update(self,coord=[0,0,0,0],zoomarea=[0,0,0,0],zoomfactor=1, newimage=None):
-      import pixel_trace
+      from Fabian import pixel_trace
       t=coord
       
       corners=[(zoomarea[0]+t[0]/zoomfactor), (zoomarea[1]+t[1]/zoomfactor), (zoomarea[0]+t[2]/zoomfactor), (zoomarea[1]+t[3]/zoomfactor)]
@@ -1361,7 +1361,7 @@ class imagePlot2:
     self.master.destroy()
 
   def update(self,coord=[0,0,0,0],zoomarea=[0,0,0,0],zoomfactor=1, newimage=None):
-      import pixel_trace
+      from Fabian import pixel_trace
       t=coord
       corners=[int(zoomarea[0]+t[0]/zoomfactor), int(zoomarea[1]+t[1]/zoomfactor), int(zoomarea[0]+t[2]/zoomfactor), int(zoomarea[1]+t[3]/zoomfactor)]
       xbins = []
