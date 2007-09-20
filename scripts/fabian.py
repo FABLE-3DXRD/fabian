@@ -1507,7 +1507,7 @@ class About:
         frame.pack()
 
         frameAbout = Frame(frame, bd=0)
-        message = "\nfabian (0.3) was brought to you by \n\n\
+        message = "\nfabian (RELEASE) was brought to you by \n\n\
 Henning O. Sorensen & Erik Knudsen\n\
 Center for Fundamental Research: Metal Structures in Four Dimensions\n\
 Risoe National Laboratory\n\
@@ -1553,7 +1553,7 @@ def get_filetype(filename):
     'img': lambda :'adsc',
     'mccd': lambda : 'marccd',
     'sfrm': lambda : 'bruker100',
-    str(get_filenumber(filename)): lambda: 'bruker',
+    ("%04d" % get_filenumber(filename)): lambda: 'bruker',
     'mar2300': lambda : 'mar345'
     }[ext[1][1:]]()
   return filetype
