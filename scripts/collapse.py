@@ -10,8 +10,8 @@ Authors: Henning O. Sorensen & Erik Knudsen
          email:henning.sorensen@risoe.dk, erik.knudsen@risoe.dk
 """
 import Numeric
-import image_file_series
-import edfimage
+from Fabian import image_file_series
+from Fabian import edfimage
 
 class collapse:
   def __init__(self, filename_sample=None, startnumber=0, endnumber=-1,bgimage=None):

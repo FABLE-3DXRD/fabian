@@ -12,8 +12,8 @@ from Tkinter import *
 import Pmw
 import Numeric
 import math
-import edfimage, tifimage, adscimage, brukerimage, marccdimage,bruker100image,pnmimage,mar345image
-import insert_peaks
+from Fabian import edfimage, tifimage, adscimage, brukerimage, marccdimage,bruker100image,pnmimage,mar345image
+from Fabian import insert_peaks
 from string import *
 from PIL import Image, ImageTk, ImageFile, ImageStat
 from tkFileDialog import *
