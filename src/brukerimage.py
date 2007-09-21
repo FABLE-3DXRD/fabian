@@ -19,21 +19,25 @@ from PIL import Image
 import os
 
 class brukerimage:
-  data=None
-  header={}
-  dim1=dim2=0
-  m=maxval=stddev=minval=None
-  header_keys=[]
-  bytecode=None
+  def __init__(self):
+    self.data=None
+    self.header={}
+    self.dim1=self.dim2=0
+    self.m=self.maxval=self.stddev=self.minval=None
+    self.header_keys=[]
+    self.bytecode=None
   
   def toPIL16(self,filename=None):
+    print self.bytecode
     if filename:
       self.read(filename)
-      PILimage=Image.frombuffer("F",(self.dim1,self.dim2),self.data,"raw","F;16",0,-1)
-      return PILimage
-    else:
-      PILimage= Image.frombuffer("F",(self.dim1,self.dim2),self.data,"raw","F;16",0,-1)
-      return PILimage
+    if self.bytecode == 'b':
+      PILimage = Image.frombuffer("F",(self.dim1,self.dim2),self.data,"raw","F;8",0,-1)
+    if self.bytecode == 'w':
+      PILimage = Image.frombuffer("F",(self.dim1,self.dim2),self.data,"raw","F;16",0,-1)
+    if self.bytecode == 'u':
+      PILimage = Image.frombuffer("F",(self.dim1,self.dim2),self.data,"raw","F;32N",0,-1)
+    return PILimage
 
   def _readheader(self,f):
     l=f.read(512*5)
@@ -41,7 +45,6 @@ class brukerimage:
     self.header = {}
     while i < 512*5:
       if l[i-80:i].find(":") > 0:          # as for first 512 bytes of header
-        print i
         key,val=l[i-80:i].split(":",1)   # uses 80 char lines in key : value format
         key=key.strip()         # remove the whitespace (why?)
         val=val.strip()
@@ -49,12 +52,14 @@ class brukerimage:
 	  self.header[key]=self.header[key]+'\n'+val
         else:
 	  self.header[key]=val
+          self.header_keys.append(key)
       i=i+80                  # next 80 characters
       
-    nhdrblks=int(self.header['HDRBLKS'])    # we must have read this in the first 512 bytes.
+    nhdrblks=int(self.header['HDRBLKS'])    # we must have read this in the first 512*5 bytes.
     # Now read in the rest of the header blocks, appending to what we have
     rest=f.read(512*(nhdrblks-5))
-    l = l[i-80:512] + rest
+    l = l[i-80:] + rest
+    i=80
     j=512*nhdrblks
     while i < j :
       # print i,"*",block[i-80:i].strip(),"*"
@@ -66,7 +71,23 @@ class brukerimage:
 	  self.header[key]=self.header[key]+'\n'+val
         else:
           self.header[key]=val
+          self.header_keys.append(key)
       i=i+80
+    #set bytecode values for later on
+    try:
+      npixelb=int(self.header['NPIXELB'])
+      if npixelb==1:
+        self.bytecode='b'
+      elif npixelb==2:
+        self.bytecode='w'
+      elif npixelb==4:
+        self.bytecode='u'
+    except:
+      #if none given assume 16 bit values (should never happen)
+      self.bytecode='w'
+
+    self.dim1=int(self.header['NROWS'])
+    self.dim2=int(self.header['NCOLS'])
     self.header['datastart']=f.tell()        # make a header item called "datastart"
 	
   def read(self,fname,verbose=0):
@@ -76,9 +97,8 @@ class brukerimage:
       self._readheader(f)
     except:
       raise
-    rows   =int(self.header['NROWS'])
-    cols   =int(self.header['NCOLS'])
-    print self.header
+    rows   =self.dim1
+    cols   =self.dim2
     try:
       npixelb=int(self.header['NPIXELB'])   # you had to read the Bruker docs to know this!
     except:
@@ -89,11 +109,13 @@ class brukerimage:
     # We are now at the start of the image - assuming readbrukerheader worked
     size=rows*cols*npixelb
     self.data=self.readbytestream(f,f.tell(),rows,cols,npixelb,datatype="int",signed='n',swap='n')
-    no=int(self.header['NOVERFL'])        # now process the overflows
-    print no
+    #handle overflows
+    no=int(self.header['NOVERFL'])
     if no>0:   # Read in the overflows
         # need at least Int32 sized data I guess - can reach 2^21
         self.data=self.data.astype(Numeric.UInt32)
+        #reset the byutecode
+        self.bytecode='u' #Numeric.UInt32
         # 16 character overflows, 9 characters of intensity, 7 character position
         for i in range(no):
             ov=f.read(16)
@@ -101,13 +123,12 @@ class brukerimage:
             position=int(ov[9:16])
             r=position%rows           # relies on python style modulo being always +
             c=position/rows           # relies on truncation down
-            #print "Overflow ",r,c,intensity,position,self.data[r,c],self.data[c,r]
             self.data[c,r]=intensity
+            #print "Overflow ",r,c,intensity,position,self.data[r,c],self.data[c,r]
     f.close()
     
     #now read the data into the array
     (self.dim1,self.dim2)=(rows,cols)
-    print self.dim1, self.dim2
     self.resetvals()
     return self
 
@@ -130,7 +151,6 @@ class brukerimage:
     PLEASE LEAVE THE STRANGE INTERFACE ALONE - IT IS USEFUL FOR THE BRUKER FORMAT
     """
     tin="dunno"
-    print datatype
     len=nbytespp*x*y # bytes per pixel times number of pixels
     if datatype=='int' and signed=='n':
         if nbytespp==1 : tin=Numeric.UInt8
@@ -275,7 +295,7 @@ if __name__=='__main__':
     I.read(sys.argv[1])
     r=I.toPIL16()
     I.rebin(2,2)
-    print sys.argv[1] + (": max=%d, min=%d, mean=%.2e, stddev=%.2e") % (I.getmax(),I.getmin(), I.getmean(), I.getstddev()) 
+    print sys.argv[1] + (": max=%ld, min=%d, mean=%.2e, stddev=%.2e") % (I.getmax(),I.getmin(), I.getmean(), I.getstddev()) 
     print 'integrated intensity (%d %d %d %d) =%.3f' % (10,20,20,40,I.integrate_area((10,20,20,40)))
     sys.argv[1:]=sys.argv[2:]
   e=time.clock()
