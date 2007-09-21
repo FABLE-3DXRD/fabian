@@ -36,22 +36,24 @@ class brukerimage:
       return PILimage
 
   def _readheader(self,f):
-    l=f.read(512)
+    l=f.read(512*5)
     i = 80
     self.header = {}
-    while i < 512:
-      key,val=l[i-80:i].split(":",1)   # uses 80 char lines in key : value format
-      key=key.strip()         # remove the whitespace (why?)
-      val=val.strip()
-      if self.header.has_key(key):             # append lines if key already there
-	self.header[key]=self.header[key]+'\n'+val
-      else:
-	self.header[key]=val
+    while i < 512*5:
+      if l[i-80:i].find(":") > 0:          # as for first 512 bytes of header
+        print i
+        key,val=l[i-80:i].split(":",1)   # uses 80 char lines in key : value format
+        key=key.strip()         # remove the whitespace (why?)
+        val=val.strip()
+        if self.header.has_key(key):             # append lines if key already there
+	  self.header[key]=self.header[key]+'\n'+val
+        else:
+	  self.header[key]=val
       i=i+80                  # next 80 characters
-
+      
     nhdrblks=int(self.header['HDRBLKS'])    # we must have read this in the first 512 bytes.
     # Now read in the rest of the header blocks, appending to what we have
-    rest=f.read(512*(nhdrblks-1))
+    rest=f.read(512*(nhdrblks-5))
     l = l[i-80:512] + rest
     j=512*nhdrblks
     while i < j :
@@ -76,7 +78,7 @@ class brukerimage:
       raise
     rows   =int(self.header['NROWS'])
     cols   =int(self.header['NCOLS'])
-    
+    print self.header
     try:
       npixelb=int(self.header['NPIXELB'])   # you had to read the Bruker docs to know this!
     except:
