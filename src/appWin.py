@@ -959,6 +959,7 @@ class appWin(imageWin):
       self.Rot90.set(False)
       self.Rot180.set(False)
       self.Rot270.set(False)
+      print self.zoomarea
       self.gotoimage()
       return
 
@@ -1048,11 +1049,13 @@ class appWin(imageWin):
         self.xsize = globals()["image_xsize"]
         self.ysize = globals()["image_ysize"]
         self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10, round(screen_height/(2.*self.ysize)*10)/10)
+    
         self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
         self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
         self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
         self.frameScroll.config(width=self.canvas_xsize+30, height=self.canvas_ysize+30)
         self.noteb1.setnaturalsize() # update size of notebook page
+        self.update(newimage=self.im)
         #print 'TRY'
       except:
         #print 'PASSED'
