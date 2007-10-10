@@ -209,7 +209,7 @@ class imageWin:
       
   def read_peaks(self):
     rpeaks = insert_peaks.readpeaksearch()
-    peakfilename = askopenfilename(filetypes=[("out files", "*.out"),("All Files", "*")])
+    peakfilename = askopenfilename(filetypes=[("pks files", "*.pks"),("All Files", "*")])
     if peakfilename == '':
         return False
     rpeaks.readallpeaks(peakfilename)
@@ -231,10 +231,11 @@ class imageWin:
     self.ShowPeaks.set(self.showpeaks)
     self.canvas.delete('peaks')
 
+
   def update_peaks(self,event=None):
     self.canvas.delete('peaks')
-    globals()["min_pixel"] = self.min_pixel.get()
-    globals()["peak_radius"] = self.peak_radius.get()
+    #globals()["min_pixel"] = self.min_pixel.get()
+    #globals()["peak_radius"] = self.peak_radius.get()
     #colour['peak_colour'] = self.peak_colour.get()
     self.show_peaks()
 
@@ -697,6 +698,10 @@ class appWin(imageWin):
     globals()["opendir"] = "."
     globals()["min_pixel"] = 4
     globals()["peak_radius"] = 8
+    self.min_pixel = IntVar()
+    self.min_pixel.set(globals()["min_pixel"])
+    self.peak_radius = IntVar()
+    self.peak_radius.set(globals()["peak_radius"])
     self.draw2=self.drawAoi
     self.ToolType.set(self.tool)
     self.ShowPeaks = BooleanVar()
@@ -706,7 +711,6 @@ class appWin(imageWin):
     self.autofileupdate.set(False)
     self.sleeptime = 0
     self.peaks = {}
-    self.min_pixel = IntVar()
     master.bind('<F1>',self.updatebindings)
     master.bind('<F2>',self.updatebindings)
     master.bind('<F3>',self.updatebindings)
@@ -1005,9 +1009,16 @@ class appWin(imageWin):
 
     but = Frame(self.peakoptions, bd=0, bg="white")
     but.pack(side=BOTTOM,fill=X,expand='yes')
-    Button(but, text='Update', command=self.update_peaks).pack(side=LEFT,fill=X,expand='yes')
+    Button(but, text='Update', command=self.update_peak_options).pack(side=LEFT,fill=X,expand='yes')
     Button(but, text='Close', command=self.setminpixel).pack(side=LEFT,fill=X,expand='yes')
 
+
+  def update_peak_options(self):
+    globals()["min_pixel"] = self.min_pixel.get()
+    globals()["peak_radius"] = self.peak_radius.get()
+    self.update_peaks()
+    self.update(newimage=self.im)
+    
   def PeakColour(self,entry):
     colour['peak_colour']=entry
     
