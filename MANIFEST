@@ -6,6 +6,7 @@ TODO
 MANIFEST
 setup.py
 src/
+src/__init__.py
 src/edfimage.py
 src/tifimage.py
 src/adscimage.py
@@ -21,3 +22,8 @@ src/median.py
 src/insert_peaks.py
 src/ccp4_pack.c
 src/mar345_iomodule.c
+src/About.py
+src/Error.py
+src/appWin.py
+src/ImagePlot.py
+src/ReliefPlot.py
