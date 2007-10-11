@@ -244,7 +244,7 @@ class imageWin:
       self.ysize = globals()["image_ysize"]
       xy =  "%5i,%5i"%(self.xsize-1-(x/self.zoomfactor +self.zoomarea[0]),self.ysize-1-(y/self.zoomfactor +self.zoomarea[1]))
       self.ShowCoor.config(text=xy)
-      I = " %8f"% self.im.getpixel((x/self.zoomfactor +self.zoomarea[0],y/self.zoomfactor +self.zoomarea[1]))
+      I = " %10g"% self.im.getpixel((x/self.zoomfactor +self.zoomarea[0],y/self.zoomfactor +self.zoomarea[1]))
       self.ShowInt.config(text=I)
  
   def Mouse2Press(self, event):
@@ -544,9 +544,9 @@ class imageWin:
     im8c = imcrop.point(lambda i: i * self.scale + self.offset).convert('L')
     self.img = ImageTk.PhotoImage(im8c.resize((self.canvas_xsize,self.canvas_ysize)))
     self.im_min,self.im_max,self.im_mean = self.get_img_stats(imcrop)
-    self.ShowMin.config(text="Min %f" %(self.im_min))
-    self.ShowMax.config(text="Max %f" %(self.im_max))
-    self.ShowMean.config(text="Mean %f" %(self.im_mean))
+    self.ShowMin.config(text="Min %10g" %(self.im_min))
+    self.ShowMax.config(text="Max %10g" %(self.im_max))
+    self.ShowMean.config(text="Mean %10g" %(self.im_mean))
     self.canvas.lower(self.canvas.create_image(0,0,anchor=NW, image=self.img))
     try:
       showpeaks = self.ShowPeaks.get()
@@ -566,6 +566,9 @@ class imageWin:
         w['zoomwin'].update(coord=w['coords'],zoomarea=self.zoomarea,zoomfactor=self.zoomfactor,newimage=newimage)
       if w['wintype'] in ('Relief'):
         w['zoomwin'].update(newimage=self.im)
+      #check for invalid aois, i.e. remove those outside an image
+      if w['zoomwin'].zoomarea[2]>self.zoomarea[2] or  w['zoomwin'].zoomarea[3]>self.zoomarea[3]:
+        w['zoomwin'].quit()
     return True
   
   def reset_scale(self):
@@ -954,7 +957,6 @@ class appWin(imageWin):
       self.Rot90.set(False)
       self.Rot180.set(False)
       self.Rot270.set(False)
-      print self.zoomarea
       self.gotoimage()
       return
 
