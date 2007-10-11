@@ -21,11 +21,6 @@ import tkFont
 import re,os,sys,time,thread
 from sets import Set as set
 
-import matplotlib
-matplotlib.use('TkAgg')
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.figure import Figure
-
 #local fabian imports
 import About
 import Error
