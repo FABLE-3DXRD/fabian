@@ -18,7 +18,7 @@ from Fabian import insert_peaks
 from PIL import Image, ImageTk, ImageFile, ImageStat
 from tkFileDialog import *
 import tkFont
-import re,os,sys,time,thread
+import re,os,sys,time,thread,glob
 from sets import Set as set
 
 #local fabian imports
@@ -1175,20 +1175,22 @@ class appWin(imageWin):
   # run thread until autofileupdate is set to False 
   def run(self):
     while(self.autofileupdate.get()==True):
-      try:
-        self.master.config(cursor='watch')
-        self.openimage(self.newfilename)#try to open that file
-        self.filename.set(self.newfilename)
-        self.displaynumber.set(self.newfilenumber)
-        self.update(newimage=self.im,filename=self.newfilename)
-        self.update_header_page()
-        self.update_header_label()
-        self.master.config(cursor='left_ptr')
-        self.newfilenumber=int(self.displaynumber.get())+1
-        self.newfilename=construct_filename(self.filename.get(),self.newfilenumber)
-        time.sleep(self.sleeptime)
-      except:
-        pass
+      if self.newfilename in glob.glob('*'):
+        try:
+          self.master.config(cursor='watch')
+          self.openimage(self.newfilename)#try to open that file
+          self.filename.set(self.newfilename)
+          self.displaynumber.set(self.newfilenumber)
+          self.update(newimage=self.im,filename=self.newfilename)
+          self.update_header_page()
+          self.update_header_label()
+          self.master.config(cursor='left_ptr')
+          self.newfilenumber=int(self.displaynumber.get())+1
+          self.newfilename=construct_filename(self.filename.get(),self.newfilenumber)
+          self.master.config(cursor='left_ptr')
+          time.sleep(self.sleeptime)
+        except:
+          pass
 
 
   def nextimage(self,event=None):
