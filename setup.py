@@ -6,7 +6,7 @@ mar345_backend=Extension('mar345_io',sources = ['src/mar345_iomodule.c','src/ccp
 
 setup(
   name='fabian',
-  version='0.4',
+  version='RELEASE',
   description='Image viewer for file series of diffraction images',
   license='GPL', maintainer='Henning Osholm Soerensen and Erik Knudsen',
   maintainer_email='henning.sorensen@risoe.dk or erik.knudsen@risoe.dk',
