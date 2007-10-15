@@ -27,6 +27,9 @@ import Error
 from ReliefPlot import ReliefPlot
 from ImagePlot import imagePlot, imagePlot2
 
+# fabio imports
+from fabio import construct_filename,deconstruct_filename
+
 colour={'transientaoi':'RoyalBlue', 'Zoom':'red', 'Relief':'LimeGreen', 'Rocker':'LightBlue', 'transientline':'red', 'IntProfile':'RoyalBlue', 'LineProfile':'RoyalBlue','peak_colour':'red'}
 
       
@@ -450,6 +453,7 @@ class imageWin:
         t.append(i)
         pixval.append(self.im.getpixel((pixels[i][0],pixels[i][1])))
       linewin = imagePlot(w,title=tag,x=t,y=pixval)
+      linewin.zoomarea = corners
       return linewin
     
   def openrelief(self,tag):
@@ -558,6 +562,11 @@ class imageWin:
 
     #update children
     for w in self.aoi:
+      # Firstly check if object is inside image area
+      if w['zoomwin'].zoomarea[2]>self.zoomarea[2] or  w['zoomwin'].zoomarea[3]>self.zoomarea[3]:
+        w['zoomwin'].quit()
+        continue
+      # If so update obj.
       if w['wintype'] in ('Zoom'):
         w['zoomwin'].update(scaled_min,scaled_max,newimage=newimage,showpeaks=showpeaks)
       if w['wintype'] in ('IntProfile'):
@@ -567,14 +576,11 @@ class imageWin:
       if w['wintype'] in ('Relief'):
         w['zoomwin'].update(newimage=self.im)
       #check for invalid aois, i.e. remove those outside an image
-      if w['zoomwin'].zoomarea[2]>self.zoomarea[2] or  w['zoomwin'].zoomarea[3]>self.zoomarea[3]:
-        w['zoomwin'].quit()
     return True
   
   def reset_scale(self):
     #find best image grayscale for the present image.
     #only to be called when this is the main window instance
-
     self.im_min,self.im_max = self.im.getextrema()
     
 
@@ -1027,7 +1033,19 @@ class appWin(imageWin):
   
   def OpenFile(self,filename=True):
     presentdir = globals()["opendir"]
-    fname = askopenfilename(initialdir=presentdir,filetypes=[("EDF files", "*.edf"),("EDF files", "*.cor"),("Tif files", "*.tif"),("MarCCD/Mosaic files", "*.mccd"),("ADSC files", "*.img"),("Bruker files", "*.*"),("All Files", "*")])
+    fname = askopenfilename(initialdir=presentdir,filetypes=[
+      ("EDF files", "*.edf"),
+      ("EDF files", "*.cor"),
+      ("EDF files compressed", "*.edf.*"),
+      ("Tif files", "*.tif"),
+      ("Tif files compressed", "*.tif.*"),
+      ("MarCCD/Mosaic files", "*.mccd"),
+      ("MarCCD/Mosaic files compressed", "*.mccd.*"),
+      ("ADSC files", "*.img"),
+      ("ADSC files compressed", "*.img.*"),
+      ("Bruker files", "*.*"),
+      ("Bruker files compressed", "*.*.*"),
+      ("All Files", "*")])
     if len(fname) == 0: return
     
     presentdir = os.path.split(fname)[0]
@@ -1080,7 +1098,7 @@ class appWin(imageWin):
     #override the imageWin version to use optimized
     #implementation in the specific image classes
     imin,imax=image.getextrema()
-    imean=self.im.meanval
+    imean= self.im.meanval
     return (imin,imax,imean)
   
   def gotoimage(self,event=None):
@@ -1245,17 +1263,23 @@ class appWin(imageWin):
   
   def openimage(self,filename=None):
     #if a filename is supplied use that - otherwise get it from the GUI
+    # Import fabio 
+    from fabio import openimage
+
     if filename==None:
       filename=self.filename.get()
 
-    (filenumber,filetype)=deconstruct_filename(filename)
-   
-    img=eval( filetype+'image.'+filetype+'image()')
     try:
-      self.im=img.read(filename).toPIL16()
+      img = openimage.openimage(filename)
+      self.im = img.toPIL16()
+      # We have earlier on used a flip making a PIL image
+      # to keep images in the same direction we do the same here
+      self.im = self.im.transpose(1)
+      
       (self.xsize, self.ysize)=(img.dim1, img.dim2)
     except IOError:
       raise
+
     # Check image oriention
     if self.FlipHorz.get() == True:
 	self.im=self.im.transpose(0)
@@ -1269,6 +1293,7 @@ class appWin(imageWin):
     if self.Rot270.get() == True:
 	self.im=self.im.transpose(2)
 	(self.xsize, self.ysize)=(self.ysize, self.xsize)
+        
     (self.im.minval,self.im.maxval,self.im.meanval)=(img.getmin(),img.getmax(),img.getmean())
     self.im.header=img.getheader()
     self.zoomarea=[0,0,self.xsize,self.ysize]
@@ -1299,52 +1324,4 @@ class appWin(imageWin):
     import webbrowser
     webbrowser.open('http://fable.sourceforge.net/index.php/Fabian')
 
-
-def construct_filename(oldfilename,newfilenumber,padding=True):
-  #some code to replace the filenumber in oldfilename with newfilenumber
-  #by figuring out how the files are named
-  p=re.compile(r"^(.*?)(-?[0-9]{0,4})(\D*)$")
-  m=re.match(p,oldfilename)
-  if padding==False:
-    return "".join( (m.group(1),str(newfilenumber),m.group(3)))
-  if m.group(2)!='':
-    return "".join( (m.group(1),str(newfilenumber).zfill(len(m.group(2))),m.group(3)) )# +'.' + m.group(4)
-  else:
-    return oldfilename
-
-def get_filetype(filename):
-  ext=os.path.splitext(filename)
-  filetype={'edf': lambda : 'edf',
-    'cor': lambda : 'edf',
-    'gz': lambda : get_filetype(ext[0]),
-    'bz2': lambda : get_filetype(ext[0]),
-    'pnm' : lambda : 'pnm',
-    'pgm' : lambda : 'pnm',
-    'pbm' : lambda : 'pnm',
-    'tif': lambda : 'tif',
-    'tiff': lambda : 'tif',
-    'img': lambda :'adsc',
-    'mccd': lambda : 'marccd',
-    'sfrm': lambda : 'bruker100',
-    ("%04d" % get_filenumber(filename)): lambda: 'bruker',
-    'mar2300': lambda : 'mar345'
-    }[ext[1][1:]]()
-  return filetype
-
-def get_filenumber(filename):
-  p=re.compile(r"^(.*?)(-?[0-9]{0,4})(\D*)$")
-  m=re.match(p,filename)
-  if m==None or m.group(2)=='':
-    number=0;
-  else:
-    number=int(m.group(2))
-  return number
-
-def deconstruct_filename(filename):
-  number=get_filenumber(filename)
-  filetype=get_filetype(filename)
-  return (number,filetype)
-
-def extract_filenumber(filename):
-  return get_filenumber(filename)
 
