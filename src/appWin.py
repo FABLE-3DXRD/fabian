@@ -410,6 +410,15 @@ class imageWin:
 
   def openintprofile(self,tag):
     t=self.transientcorners
+    % Make sure smallest pixel value is first
+    if t[0] > t[2]:
+      tmp = t[0]
+      t[0] = t[2]
+      t[2] = tmp
+    if t[1] > t[3]:
+      tmp = t[1]
+      t[1] = t[3]
+      t[3] = tmp
     corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
     w=Toplevel(self.master)
     
