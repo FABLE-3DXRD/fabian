@@ -8,7 +8,6 @@ Authors: Henning O. Sorensen & Erik Knudsen
          DK-4000 Roskilde
          email:henning.sorensen@risoe.dk
 """
-import Numeric
 import image_file_series
 
 class rocker:
@@ -20,8 +19,8 @@ class rocker:
     self.start=startnumber
     self.end=endnumber
     self.coord=tuple(coord)
-    self.data=Numeric.zeros((endnumber-startnumber+1))
-    self.imagenumber=Numeric.zeros((endnumber-startnumber+1))
+    self.data=[0]*(endnumber-startnumber+1)
+    self.imagenumber=[0]*(endnumber-startnumber+1)
 
   def newstart(self,start):
     #jump to a new starting number
@@ -34,15 +33,13 @@ class rocker:
     
   def run(self):
     series=self.series
-    print range(len(self.data))
     for i in range(len(self.data)):
       self.data[i]=series.current(toPIL=False).integrate_area(self.coord)
       self.imagenumber[i] = series.number
-      print i
       if i < len(self.data)-1:
         try:
           series.next()
-	  #if theres an error opening the file just skip over it
+          #if there's an error opening the file just skip over it
         except (ValueError,IOError), msg:
           print msg, '- aborted!'
           break
