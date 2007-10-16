@@ -568,11 +568,11 @@ class imageWin:
         continue
       # If so update obj.
       if w['wintype'] in ('Zoom'):
-        w['zoomwin'].update(scaled_min,scaled_max,newimage=newimage,showpeaks=showpeaks)
+        w['zoomwin'].update(scaled_min,scaled_max,newimage=self.im,showpeaks=showpeaks)
       if w['wintype'] in ('IntProfile'):
-        w['zoomwin'].update(coord=w['coords'],zoomarea=self.zoomarea,zoomfactor=self.zoomfactor,newimage=newimage)
+        w['zoomwin'].update(coord=w['coords'],zoomarea=self.zoomarea,zoomfactor=self.zoomfactor,newimage=self.im)
       if w['wintype'] in ('LineProfile'):
-        w['zoomwin'].update(coord=w['coords'],zoomarea=self.zoomarea,zoomfactor=self.zoomfactor,newimage=newimage)
+        w['zoomwin'].update(coord=w['coords'],zoomarea=self.zoomarea,zoomfactor=self.zoomfactor,newimage=self.im)
       if w['wintype'] in ('Relief'):
         w['zoomwin'].update(newimage=self.im)
       #check for invalid aois, i.e. remove those outside an image
