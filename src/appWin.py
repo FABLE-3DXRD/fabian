@@ -410,7 +410,7 @@ class imageWin:
 
   def openintprofile(self,tag):
     t=self.transientcorners
-    % Make sure smallest pixel value is first
+    # Make sure smallest pixel value is first
     if t[0] > t[2]:
       tmp = t[0]
       t[0] = t[2]
@@ -469,6 +469,16 @@ class imageWin:
   def openrelief(self,tag):
       # Make 3D relief window
       t=self.transientcorners
+      # Make sure smallest pixel value is first
+      if t[0] > t[2]:
+        tmp = t[0]
+        t[0] = t[2]
+        t[2] = tmp
+      if t[1] > t[3]:
+        tmp = t[1]
+        t[1] = t[3]
+        t[3] = tmp
+
       corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
       
       reli=Toplevel(self.master)
@@ -478,6 +488,15 @@ class imageWin:
 
   def openrocker(self,tag):
       t=self.transientcorners
+      # Make sure smallest pixel value is first
+      if t[0] > t[2]:
+        tmp = t[0]
+        t[0] = t[2]
+        t[2] = tmp
+      if t[1] > t[3]:
+        tmp = t[1]
+        t[1] = t[3]
+        t[3] = tmp
       self.corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
       self.center = deconstruct_filename(self.filename.get())[0]
       defdelta = 1
