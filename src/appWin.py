@@ -433,7 +433,8 @@ class imageWin:
       
     linewin = imagePlot2(w,title=tag,\
                         x=xbins,y=yvalues,ptitle='Horizontal',\
-                        x2=ybins,y2=xvalues, ptitle2='Vertical')  
+                        x2=ybins,y2=xvalues, ptitle2='Vertical')
+    linewin.zoomarea = corners
     return linewin
 
 
