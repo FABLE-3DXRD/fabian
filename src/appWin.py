@@ -10,7 +10,6 @@ Authors: Henning O. Sorensen & Erik Knudsen
 """
 from Tkinter import *
 import Pmw
-import Numeric
 import math
 from Fabian import edfimage, tifimage, adscimage, brukerimage, marccdimage,bruker100image,pnmimage,mar345image
 from Fabian import insert_peaks
@@ -385,13 +384,14 @@ class imageWin:
     t_end=4
     tc=self.transientcorners
     #calc the end section coordinates
-    endsec = Numeric.array([tc[2]-tc[0], tc[3]-tc[1]])
-    normendsec = math.sqrt(sum(endsec*endsec))
+    endsec = ([tc[2]-tc[0], tc[3]-tc[1]])
+    normendsec = math.sqrt(endsec[0]*endsec[0]+endsec[1]*endsec[1])
     if normendsec == 0:
       #line has no length - i.e. no line should be drawn and no plot should be opened (no?)
       return
     else:
-      endsec = endsec/normendsec*t_end
+      endsec[0] = endsec[0]/normendsec*t_end
+      endsec[1] = endsec[1]/normendsec*t_end
       #line is drawn as a polyline in one single object
       line=(tc[0]-endsec[1],tc[1]+endsec[0],tc[0]+endsec[1],tc[1]-endsec[0],tc[0],tc[1],tc[2],tc[3],tc[2]-endsec[1],tc[3]+endsec[0],tc[2]+endsec[1],tc[3]-endsec[0])
     return self.canvas.create_line(line,tag=tool,fill=colour[tool])
