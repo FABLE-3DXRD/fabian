@@ -484,6 +484,8 @@ class imageWin:
       reli=Toplevel(self.master)
       reli.title(tag)
       newReli=ReliefPlot(reli,newimage=self.im,corners=corners)
+      newReli.zoomarea = corners
+
       return newReli
 
   def openrocker(self,tag):
