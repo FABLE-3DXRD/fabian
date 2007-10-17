@@ -1,4 +1,4 @@
-import Numeric
+import numpy.oldnumeric as Numeric
 class ReliefPlot:
     def __init__(self,master,newimage=None,corners=[0,0,0,0]):
         import OpenGL.GL as GL

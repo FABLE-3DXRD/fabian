@@ -13,7 +13,7 @@ Authors: Henning O. Sorensen & Erik Knudsen
  Proc. Eurographics '87, Amsterdam, The Netherlands, August 1987, pp 1-10.
 """
 
-from  Numeric import *
+from  numpy.oldnumeric import *
 import copy
 
 def pixel_trace(corners):

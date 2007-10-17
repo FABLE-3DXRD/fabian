@@ -1,5 +1,5 @@
 
-import Numeric
+import numpy.oldnumeric as Numeric
 from fabio import edfimage
 #this will eventually come from fabio as well
 from Fabian import image_file_series

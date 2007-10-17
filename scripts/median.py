@@ -1,4 +1,4 @@
-#!/usr/bin/env python -w
+#!/usr/bin/env python
 from Fabian.median import median_file_series
 
 if __name__=='__main__':
