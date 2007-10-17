@@ -1,4 +1,4 @@
-from Tkinter import Tk
+from Tkinter import Tk, Frame, Message, X, Button, RIGHT
 
 class About:
     def __init__(self):
