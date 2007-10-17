@@ -11,7 +11,8 @@ Authors: Henning O. Sorensen & Erik Knudsen
 """
 import Numeric
 from Fabian import image_file_series
-from Fabian import edfimage
+from fabio import edfimage
+from fabio import openimage
 
 class collapse:
   def __init__(self, filename_sample=None, startnumber=0, endnumber=-1,bgimage=None):
@@ -20,10 +21,14 @@ class collapse:
     self.series.jump(startnumber)
     self.start=startnumber
     self.end=endnumber
-    d1,d2=self.series.current(toPIL=False).dim1,self.series.current(toPIL=False).dim2
+    d1=self.series.current(toPIL=False).dim1
+    d2=self.series.current(toPIL=False).dim2
     self.header = self.series.current(toPIL=False).getheader()
     self.coord=(0,0,d1,d2)
-    self.bgimage=bgimage.astype(Numeric.Int32)
+    if bgimage:
+      self.bgimage=bgimage.astype(Numeric.Int32)
+    else:
+      self.bgimage = None
     self.total_image=Numeric.zeros((d2,d1),Numeric.Float32)
     self.data=Numeric.zeros((endnumber-startnumber+1))
 
@@ -47,7 +52,8 @@ class collapse:
         except (ValueError,IOError), msg:
           print msg, '- aborted!'
           break
-    self.total_image=self.total_image-len(self.data)*self.bgimage
+    if self.bgimage: 
+      self.total_image=self.total_image-len(self.data)*self.bgimage
 
     # Scale image
     im_max = Numeric.argmax(Numeric.ravel(self.total_image))
@@ -70,6 +76,7 @@ class collapse:
     e.header['col_end']=e.dim1-1
     e.header['row_end']=e.dim2-1
     e.header['DataType']='UnsignedShort'
+    e.header['Image']=1
     e.write(fname)
 
 
@@ -77,9 +84,11 @@ if __name__=='__main__':
   import sys,time
   from string import atoi
   b=time.clock()
-  bgimage = edfimage.edfimage()
-  bgimage.read(sys.argv[4])
-  bgim = bgimage.data
+  try:
+    bgimage = openimage.openimage(sys.argv[4])
+    bgim = bgimage.data
+  except:
+    bgim = None
   R=collapse(filename_sample=sys.argv[1],startnumber=atoi(sys.argv[2]),endnumber=atoi(sys.argv[3]),bgimage=bgim)
   R.run()
   R.write('pseudopowder2D.edf')
