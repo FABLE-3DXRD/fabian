@@ -205,7 +205,7 @@ class imageWin:
       
   def read_peaks(self):
     rpeaks = insert_peaks.readpeaksearch()
-    peakfilename = askopenfilename(filetypes=[("pks files", "*.pks"),("All Files", "*")])
+    peakfilename = askopenfilename(filetypes=[("spt files", "*.spt"),("All Files", "*")])
     if peakfilename == '':
         return False
     rpeaks.readallpeaks(peakfilename)
