@@ -9,7 +9,7 @@ Authors: Henning O. Sorensen & Erik Knudsen
          DK-4000 Roskilde
          email:henning.sorensen@risoe.dk, erik.knudsen@risoe.dk
 """
-import Numeric
+import numpy.oldnumeric as Numeric
 from Fabian import image_file_series
 from fabio import edfimage
 from fabio import openimage
