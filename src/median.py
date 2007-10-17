@@ -1,22 +1,22 @@
-#!/usr/bin/env python -w
 
-import image_file_series
-import edfimage
 import Numeric
+from fabio import edfimage
+#this will eventually come from fabio as well
+from Fabian import image_file_series
 
 class median_file_series:
 
-  def __init__(self,filename,startnumber, filterlength, delta=1):
+  def __init__(self,filename,startnumber, filterlength, delta=1, quiet=1):
     self.filterlength=filterlength
     self.files=[]
     self.series=image_file_series.image_file_series(filename)
     self.series.jump(startnumber)
     self.files.append(self.series.current(toPIL=False))
-    print self.series.filename
+    if not quiet: print self.series.filename
     for i in range(filterlength-1):
       self.series.next(steps=delta)
       self.files.append(self.series.current(toPIL=False))
-      print self.series.filename
+      if not quiet: print self.series.filename
     d1,d2=self.files[0].dim1,self.files[0].dim2
     self.median=Numeric.zeros((d2,d1)).astype(Numeric.Float)
   
@@ -49,7 +49,6 @@ class median_file_series:
     print 'slide', steps, self.filterlength 
     if steps+1000<self.filterlength:
       for i in range(steps):
-        print i
         #pop the first element of the filelist
         self.files.pop()
         #append the next one
@@ -66,39 +65,8 @@ class median_file_series:
   def write(self,fname):
     e=edfimage.edfimage()
     e.data=self.median
-    e.dim2,e.dim1=self.median.shape
-    e.header['Dim_1']=e.dim1
-    e.header['Dim_2']=e.dim2
+    e.header=edfimage.DEFAULT_VALUES
     e.header['col_end']=e.dim1-1
     e.header['row_end']=e.dim2-1
     e.header['DataType']='UnsignedShort'
     e.write(fname)
-  
-
-
-if __name__=='__main__':
-  def start():
-    import sys,os,time
-    b=time.clock()
-    #mf=median_file_series(sys.argv[1],int(sys.argv[2]),int(sys.argv[3]),delta=int(sys.argv[4]))
-    mf=median_file_series(sys.argv[1],int(sys.argv[2]),int(sys.argv[3]))
-    mf.run()
-    mf.write('median_image.edf');
-    #mf.slide(int(sys.argv[3]),int(sys.argv[4]))
-    #mf.write('med2.edf');
-    #mf.slide(int(sys.argv[3]),int(sys.argv[4]))
-    #mf.write('med3.edf');
-    print (time.clock()-b)
-  start()
-
-
-  #Debug stuff
-  #import profile
-  #profile.run('start()','profile_results')
-  #import pstats
-  #p=pstats.Stats('profile_results')
-  #p.sort_stats('cumulative').print_stats(40)
-  
-
-
-    
