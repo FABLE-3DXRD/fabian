@@ -26,7 +26,7 @@ from ReliefPlot import ReliefPlot
 from ImagePlot import imagePlot, imagePlot2
 
 # fabio imports
-from fabio import construct_filename,deconstruct_filename
+import fabio 
 
 colour={'transientaoi':'RoyalBlue', 'Zoom':'red', 'Relief':'LimeGreen', 'Rocker':'LightBlue', 'transientline':'red', 'IntProfile':'RoyalBlue', 'LineProfile':'RoyalBlue','peak_colour':'red'}
 
@@ -499,7 +499,8 @@ class imageWin:
         t[1] = t[3]
         t[3] = tmp
       self.corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
-      self.center = deconstruct_filename(self.filename.get())[0]
+      # change here for change to deconstruct
+      self.center = fabio.getnum(self.filename.get())
       defdelta = 1
       rockerpar=Toplevel(self.master)
       rockerpar.title('Rocking curve setup')
@@ -773,8 +774,7 @@ class appWin(imageWin):
 
     if filename:
       self.filename.set(filename)
-      (newfilenumber,filetype)=deconstruct_filename(filename)
-      self.displaynumber.set(newfilenumber)
+      self.displaynumber.set(fabio.getnum(self.filename.get()))
     else:
       self.OpenFile(filename=None)
 
@@ -1081,8 +1081,8 @@ class appWin(imageWin):
     presentdir = os.path.split(fname)[0]
     globals()["opendir"] = presentdir
     self.filename.set(fname)
-    (newfilenumber,filetype)=deconstruct_filename(self.filename.get())
-    self.displaynumber.set(newfilenumber)
+    # (newfilenumber,filetype)=deconstruct_filename(self.filename.get())
+    self.displaynumber.set(fabio.getnum(self.filename.get()))
     if filename == None: # No image has been opened before
       return 
     else:
@@ -1134,13 +1134,14 @@ class appWin(imageWin):
   def gotoimage(self,event=None):
     self.master.config(cursor='watch')
     newfilenumber=int(self.displaynumber.get())
-    newfilename=construct_filename(self.filename.get(),newfilenumber)
+    newfilename = fabio.jump_filename(self.filename.get(),newfilenumber)
+    #  newfilename=construct_filename(self.filename.get(),newfilenumber)
     try:
       self.openimage(newfilename)#try to open that file
     except IOError:
       try:
         #that didn't work - so try the unpadded version
-        newfilename=construct_filename(self.filename.get(),newfilenumber,padding=False)
+        newfilename=fabio.jump_filename(self.filename.get(),newfilenumber,padding=False)
         self.openimage(newfilename)
       except IOError:
         e=Error.Error()
@@ -1148,8 +1149,7 @@ class appWin(imageWin):
         e.Er(msg)
         self.master.config(cursor='left_ptr')
          #Reset filenumber entry
-        (oldfilenumber,filetype)=deconstruct_filename(self.filename.get())
-        self.displaynumber.set(oldfilenumber)
+        self.displaynumber.set(fabio.getnum(self.filename.get()))
         return False
     #image loaded ok
     self.filename.set(newfilename)
@@ -1163,7 +1163,6 @@ class appWin(imageWin):
   def gotohist(self):
     # Open file from  history
     newfilename =self.histfile.get()
-    (newfilenumber,filetype)=deconstruct_filename(newfilename)
     try:
       self.openimage(newfilename)#try to open that file
       try:
@@ -1189,8 +1188,8 @@ class appWin(imageWin):
       return False
     #image loaded ok
     self.filename.set(newfilename)
-    self.displaynumber.set(newfilenumber)
-    self.update(newimage=self.im,filename=newfilename)
+    self.displaynumber.set(fabio.getnum(self.filename.get()))
+    self.update(newimage=self.im, filename=newfilename)
     self.update_header_page()
     self.update_header_label()
     self.master.config(cursor='left_ptr')
@@ -1218,10 +1217,10 @@ class appWin(imageWin):
           self.autofileupdate.set(False)
 
     #update filename, prefix and number
-    self.newfilenumber=int(self.displaynumber.get())+1
-    self.newfilename=construct_filename(self.filename.get(),self.newfilenumber)
+    self.newfilenumber = int(self.displaynumber.get())+1
+    self.newfilename = fabio.jump_filename(self.filename.get(),self.newfilenumber)
     thread.start_new_thread(self.run,())
-    
+
   # run thread until autofileupdate is set to False 
   def run(self):
     while(self.autofileupdate.get()==True):
@@ -1236,7 +1235,7 @@ class appWin(imageWin):
           self.update_header_label()
           self.master.config(cursor='left_ptr')
           self.newfilenumber=int(self.displaynumber.get())+1
-          self.newfilename=construct_filename(self.filename.get(),self.newfilenumber)
+          self.newfilename=fabio.jump_filename(self.filename.get(),self.newfilenumber)
           self.master.config(cursor='left_ptr')
           time.sleep(self.sleeptime)
         except:
@@ -1247,7 +1246,7 @@ class appWin(imageWin):
     #update filename, prefix and number
     self.master.config(cursor='watch')
     newfilenumber=int(self.displaynumber.get())+1
-    newfilename=construct_filename(self.filename.get(),newfilenumber)
+    newfilename = fabio.jump_filename(self.filename.get(), newfilenumber)
     try:
       self.openimage(newfilename)#try to open that file
     except IOError:
@@ -1268,13 +1267,15 @@ class appWin(imageWin):
   def previousimage(self,event=None):
     self.master.config(cursor='watch')
     newfilenumber=int(self.displaynumber.get())-1
+    newfilename = fabio.jump_filename(self.filename.get(), newfilenumber)
     try:
-      newfilename=construct_filename(self.filename.get(),newfilenumber)
+      # newfilename=construct_filename(self.filename.get(),newfilenumber)
       self.openimage(newfilename)#try to open that file
     except IOError:
       try:
         #that didn't work - so try the unpadded version
-        newfilename=construct_filename(self.filename.get(),newfilenumber,padding=False)
+        newfilename = fabio.jump_filename(self.filename.get(), newfilenumber, padding=False)
+        # newfilename=construct_filename(self.filename.get(),newfilenumber,padding=False)
         self.openimage(newfilename)
       except IOError:
         e=Error.Error()
@@ -1345,7 +1346,7 @@ class appWin(imageWin):
 
       self.HistMenu.menu.add_radiobutton(label=filename ,command=self.gotohist,variable=self.histfile,value=filename)
       self.histfile.set(filename)
-
+    
       
   def about(self,event=None):
     About.About()

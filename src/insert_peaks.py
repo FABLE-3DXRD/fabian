@@ -8,8 +8,8 @@ Authors: Henning O. Sorensen & Erik Knudsen
          DK-4000 Roskilde
          email:henning.sorensen@risoe.dk
 """
-from image_file_series import construct_filename, deconstruct_filename
- 
+from fabio.file_series import filename_series
+
 class readpeaksearch:
     """
     The useful class - called by the gui to process peaksearch output
@@ -19,7 +19,7 @@ class readpeaksearch:
         self.lines=None
         self.peaks = []
  
-    def readpeaks(self,peaksfilename,imagefile):
+    def readpeaks(self, peaksfilename, imagefile):
         """
         read in peaks found with peaksearch (ImageD11)
         """
@@ -32,11 +32,13 @@ class readpeaksearch:
                 name = line.split()[-1]
                 self.images[name]=i
 
-        stem, numb, filetype = deconstruct_filename(imagefile)
+        
+        # stem, numb, filetype = deconstruct_filename(imagefile)
+        fsobj =  filename_series(imagefile)
         start = self.images[imagefile]
         print imagefile
         try:
-            end = self.images[construct_filename(imagefile,numb+1)]
+            end = self.images[fsobj.next()]
         except:
             end = len(self.lines)
             
