@@ -25,7 +25,7 @@ class collapse:
     d2=self.series.current(toPIL=False).dim2
     self.header = self.series.current(toPIL=False).getheader()
     self.coord=(0,0,d1,d2)
-    if bgimage:
+    if bgimage is not None:
       self.bgimage=bgimage.astype(Numeric.Int32)
     else:
       self.bgimage = None
@@ -52,7 +52,7 @@ class collapse:
         except (ValueError,IOError), msg:
           print msg, '- aborted!'
           break
-    if self.bgimage: 
+    if self.bgimage is not None: 
       self.total_image=self.total_image-len(self.data)*self.bgimage
 
     # Scale image
