@@ -1245,7 +1245,11 @@ class appWin(imageWin):
   def nextimage(self,event=None):
     #update filename, prefix and number
     self.master.config(cursor='watch')
-    newfilenumber=int(self.displaynumber.get())+1
+    try:
+        newfilenumber=int(self.displaynumber.get())+1
+    except:
+        self.master.config(cursor='left_ptr')
+        return True 
     newfilename = fabio.jump_filename(self.filename.get(), newfilenumber)
     try:
       self.openimage(newfilename)#try to open that file
@@ -1266,7 +1270,11 @@ class appWin(imageWin):
 
   def previousimage(self,event=None):
     self.master.config(cursor='watch')
-    newfilenumber=int(self.displaynumber.get())-1
+    try:
+        newfilenumber=int(self.displaynumber.get())-1
+    except:
+        self.master.config(cursor='left_ptr')
+        return True 
     newfilename = fabio.jump_filename(self.filename.get(), newfilenumber)
     try:
       # newfilename=construct_filename(self.filename.get(),newfilenumber)
