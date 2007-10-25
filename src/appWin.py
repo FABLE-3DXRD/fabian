@@ -572,7 +572,10 @@ class imageWin:
     else:
       self.minval.set(scaled_min)
       self.maxval.set(scaled_max)
-    self.scale = 255.0 / (scaled_max - scaled_min)
+    if (scaled_max-scaled_min) < 10**(-6): # set scale to zero if min=max 
+      self.scale = 0.0
+    else:
+      self.scale = 255.0 / (scaled_max - scaled_min)
     self.offset = - scaled_min * self.scale
     if newimage: self.im=newimage
     imcrop = self.im.crop(self.zoomarea)
