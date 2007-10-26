@@ -243,7 +243,8 @@ class imageWin:
       xy =  "%5i,%5i"%(x/self.zoomfactor +self.zoomarea[0],y/self.zoomfactor +self.zoomarea[1])
       self.xsize = globals()["image_xsize"]
       self.ysize = globals()["image_ysize"]
-      xy =  "%5i,%5i"%(self.xsize-1-(x/self.zoomfactor +self.zoomarea[0]),self.ysize-1-(y/self.zoomfactor +self.zoomarea[1]))
+#      xy =  "%5i,%5i"%(self.xsize-1-(x/self.zoomfactor +self.zoomarea[0]),self.ysize-1-(y/self.zoomfactor +self.zoomarea[1]))
+      xy =  "%5i,%5i"%(self.xsize-1-math.floor(x/self.zoomfactor +self.zoomarea[0]),self.ysize-1-math.floor(y/self.zoomfactor +self.zoomarea[1]))
       self.ShowCoor.config(text=xy)
       I = " %10g"% self.im.getpixel((x/self.zoomfactor +self.zoomarea[0],y/self.zoomfactor +self.zoomarea[1]))
       self.ShowInt.config(text=I)
