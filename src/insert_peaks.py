@@ -36,7 +36,6 @@ class readpeaksearch:
         # stem, numb, filetype = deconstruct_filename(imagefile)
         fsobj =  filename_series(imagefile)
         start = self.images[imagefile]
-        print imagefile
         try:
             end = self.images[fsobj.next()]
         except:
@@ -53,6 +52,7 @@ class readpeaksearch:
         """
         read in peaks found with peaksearch (ImageD11)
         """
+        import os
         self.lines = open(peaksfilename,"r").readlines()
         self.images={}
         name = 'None'
@@ -60,12 +60,11 @@ class readpeaksearch:
             if line[0:6] =="# File":
                 if name != 'None': self.images[name]=self.peaks
                 self.peaks = []
-                name = line.split()[-1]
+                name =  os.path.split(line.split()[-1])[-1] 
             elif line[0]!='#' and len(line)>10:
                     [npixels, yt, ypos, zpos] =  line.split()[0:4]
                     if npixels > 20:
-                        self.peaks.append([npixels, ypos, zpos])
-                    
+                        self.peaks.append([npixels, ypos, zpos])               
         self.images[name]=self.peaks
                 
 
