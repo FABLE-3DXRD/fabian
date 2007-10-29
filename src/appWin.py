@@ -1085,7 +1085,6 @@ class appWin(imageWin):
     presentdir = os.path.split(fname)[0]
     globals()["opendir"] = presentdir
     self.filename.set(fname)
-    print self.filename.get()
     # (newfilenumber,filetype)=deconstruct_filename(self.filename.get())
     self.displaynumber.set(fabio.getnum(self.filename.get()))
     if filename == None: # No image has been opened before
