@@ -1085,6 +1085,7 @@ class appWin(imageWin):
     presentdir = os.path.split(fname)[0]
     globals()["opendir"] = presentdir
     self.filename.set(fname)
+    print self.filename.get()
     # (newfilenumber,filetype)=deconstruct_filename(self.filename.get())
     self.displaynumber.set(fabio.getnum(self.filename.get()))
     if filename == None: # No image has been opened before
@@ -1137,7 +1138,11 @@ class appWin(imageWin):
   
   def gotoimage(self,event=None):
     self.master.config(cursor='watch')
-    newfilenumber=int(self.displaynumber.get())
+    try:
+      newfilenumber=int(self.displaynumber.get())
+    except:
+      newfilenumber = None
+      pass
     newfilename = fabio.jump_filename(self.filename.get(),newfilenumber)
     #  newfilename=construct_filename(self.filename.get(),newfilenumber)
     try:
