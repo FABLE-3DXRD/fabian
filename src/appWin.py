@@ -829,7 +829,8 @@ class appWin(imageWin):
     self.update()
     self.setbindings()
     self.page1.focus_force() # In Windows the focus seemingly need to enforced otherwise
-                             # the entries can not be edited unless one moves focus to a different window and back 
+                             # the entries can not be edited unless one moves focus to a
+                             # different window and back 
 
 
   def make_header_page(self):
