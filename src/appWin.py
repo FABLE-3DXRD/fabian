@@ -99,6 +99,7 @@ class imageWin:
     #change this to draw/redraw set of functions at some point?
     self.update()
     if self.showpeaks == True: self.show_peaks()
+
     
 
   def make_image_canvas(self,container):
@@ -827,6 +828,9 @@ class appWin(imageWin):
     #change this to draw/redraw set of functions at some point?
     self.update()
     self.setbindings()
+    self.page1.focus_force() # In Windows the focus seemingly need to enforced otherwise
+                             # the entries can not be edited unless one moves focus to a different window and back 
+
 
   def make_header_page(self):
       self.headcheck=[]
@@ -912,6 +916,7 @@ class appWin(imageWin):
     self.emin.bind('<FocusOut>',self.rebind)
     self.emin.bind('<KP_Enter>',self.rescale)
     self.emin.pack(side=LEFT,padx=4)
+    
     Label(frameScale,text='max:', bg='white').pack(side=LEFT)
     self.emax=Entry(frameScale, textvariable=self.maxval, bg='white', width=6)
     self.emax.bind('<Return>',self.rescale)
