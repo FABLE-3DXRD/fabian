@@ -894,7 +894,7 @@ class appWin(imageWin):
     keys.sort()
     for item in keys:
       if self.newitem[item].get() == '1':
-            headertext = headertext+item+': '+self.im.header[item] +'; '
+            headertext = headertext+item+': '+'%s' %(self.im.header[item]) +'; '
     self.HeaderInfo.config(text='%s' %(headertext))
 
   def rebind(self,e): # Hack to unbind the image change stuff when focus is in an entry
