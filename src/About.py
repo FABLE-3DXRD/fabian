@@ -1,5 +1,5 @@
 from Tkinter import Tk, Frame, Message, X, Button, RIGHT
-
+import Fabian
 class About:
     def __init__(self):
         self.master = Tk()
@@ -8,13 +8,13 @@ class About:
         frame.pack()
 
         frameAbout = Frame(frame, bd=0)
-        message = "\nfabian (RELEASE) was brought to you by \n\n\
+        message = "\nfabian (%s) was brought to you by \n\n\
 Henning O. Sorensen & Erik Knudsen\n\
 Center for Fundamental Research: Metal Structures in Four Dimensions\n\
 Risoe National Laboratory\n\
 Frederiksborgvej 399\n\
 DK-4000 Roskilde\n\
-email: henning.sorensen@risoe.dk"
+email: henning.sorensen@risoe.dk"%(Fabian.__version__)
 
         Message(frameAbout, text=message,width=500).pack(fill=X, padx=5)
         frameAbout.pack(expand=1, pady=10, padx=5)
