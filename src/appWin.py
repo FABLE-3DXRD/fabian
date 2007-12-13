@@ -502,7 +502,7 @@ class imageWin:
         t[3] = tmp
       self.corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
       # change here for change to deconstruct
-      self.center = fabio.getnum(self.filename.get())
+      self.center = fabio.deconstruct_filename(self.filename.get()).num
       defdelta = 1
       rockerpar=Toplevel(self.master)
       rockerpar.title('Rocking curve setup')
@@ -779,7 +779,7 @@ class appWin(imageWin):
 
     if filename:
       self.filename.set(filename)
-      self.displaynumber.set(fabio.getnum(self.filename.get()))
+      self.displaynumber.set(fabio.deconstruct_filename(self.filename.get()).num)
     else:
       self.OpenFile(filename=None)
 
@@ -1092,7 +1092,7 @@ class appWin(imageWin):
     globals()["opendir"] = presentdir
     self.filename.set(fname)
     # (newfilenumber,filetype)=deconstruct_filename(self.filename.get())
-    self.displaynumber.set(fabio.getnum(self.filename.get()))
+    self.displaynumber.set(fabio.deconstruct_filename(self.filename.get().num))
     if filename == None: # No image has been opened before
       return 
     else:
@@ -1163,7 +1163,7 @@ class appWin(imageWin):
         e.Er(msg)
         self.master.config(cursor='left_ptr')
          #Reset filenumber entry
-        self.displaynumber.set(fabio.getnum(self.filename.get()))
+        self.displaynumber.set(fabio.deconstruct_filename(self.filename.get()).num)
         return False
     #image loaded ok
     self.filename.set(newfilename)
@@ -1202,7 +1202,7 @@ class appWin(imageWin):
       return False
     #image loaded ok
     self.filename.set(newfilename)
-    self.displaynumber.set(fabio.getnum(self.filename.get()))
+    self.displaynumber.set(fabio.deconstruct_filename(self.filename.get()).num)
     self.update(newimage=self.im, filename=newfilename)
     self.update_header_page()
     self.update_header_label()
