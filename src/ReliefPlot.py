@@ -1,4 +1,5 @@
-import numpy.oldnumeric as Numeric
+import numpy as N
+
 class ReliefPlot:
     def __init__(self,master,newimage=None,corners=[0,0,0,0]):
         import OpenGL.GL as GL
@@ -10,11 +11,11 @@ class ReliefPlot:
         self.corners = corners
         data = list(newimage.crop(self.corners).getdata())
         extrema = [min(data),max(data)]
-        data = Numeric.reshape( data,[self.corners[3]-self.corners[1], self.corners[2]-self.corners[0]])
+        data = N.reshape( data,[self.corners[3]-self.corners[1], self.corners[2]-self.corners[0]])
         self.map=data.copy()
         self.pointsize=4.
 
-        self.map = Numeric.transpose(self.map)
+        self.map = N.transpose(self.map)
         self.sizex = self.map.shape[0]
         self.sizey = self.map.shape[1]
         self.size = (self.sizex+ self.sizey)/2.0
@@ -47,9 +48,9 @@ class ReliefPlot:
     def update(self,newimage=None):
         data = list(newimage.crop(self.corners).getdata())
         extrema = [min(data),max(data)]
-        data = Numeric.reshape( data,[self.corners[3]-self.corners[1], self.corners[2]-self.corners[0]])
+        data = N.reshape( data,[self.corners[3]-self.corners[1], self.corners[2]-self.corners[0]])
         self.map = data.copy()
-        self.map = Numeric.transpose(self.map)
+        self.map = N.transpose(self.map)
         self.zscale = self.size/(extrema[1]-extrema[0])
         self.map = self.map*self.zscale
         if self.sizex > self.sizey:

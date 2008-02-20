@@ -9,7 +9,7 @@ Authors: Henning O. Sorensen & Erik Knudsen
          DK-4000 Roskilde
          email:henning.sorensen@risoe.dk, erik.knudsen@risoe.dk
 """
-import numpy.oldnumeric as Numeric
+import numpy as N
 from Fabian import image_file_series
 from fabio import edfimage
 from fabio import openimage
@@ -26,11 +26,11 @@ class collapse:
     self.header = self.series.current(toPIL=False).getheader()
     self.coord=(0,0,d1,d2)
     if bgimage is not None:
-      self.bgimage=bgimage.astype(Numeric.Int32)
+      self.bgimage=bgimage.astype(N.int32)
     else:
       self.bgimage = None
-    self.total_image=Numeric.zeros((d2,d1),Numeric.Float32)
-    self.data=Numeric.zeros((endnumber-startnumber+1))
+    self.total_image=N.zeros((d2,d1),N.float32)
+    self.data=N.zeros((endnumber-startnumber+1))
 
   def newstart(self,start):
     #jump to a new starting number
@@ -56,11 +56,11 @@ class collapse:
       self.total_image=self.total_image-len(self.data)*self.bgimage
 
     # Scale image
-    im_max = Numeric.argmax(Numeric.ravel(self.total_image))
+    im_max = N.argmax(N.ravel(self.total_image))
     max_val = (2**16-1)*1.0/im_max
     self.total_image = self.total_image*max_val
     # set pixels with a value < 0 to 0, and values > 16bit to 16bit
-    self.total_image = Numeric.clip(self.total_image,0, 2**16-1)
+    self.total_image = N.clip(self.total_image,0, 2**16-1)
     
   def getdata(self):
     #return the array containing the rocking curve

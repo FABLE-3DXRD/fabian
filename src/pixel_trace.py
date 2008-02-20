@@ -13,45 +13,45 @@ Authors: Henning O. Sorensen & Erik Knudsen
  Proc. Eurographics '87, Amsterdam, The Netherlands, August 1987, pp 1-10.
 """
 
-from  numpy.oldnumeric import *
+import numpy as N
 import copy
 
 def pixel_trace(corners):
 
     # Initialize variables
-    p_start = array([corners[0], corners[1]],Float)
-    p_end = array([corners[2], corners[3]],Float)
+    p_start = N.array([corners[0], corners[1]],N.float)
+    p_end = N.array([corners[2], corners[3]],N.float)
     zero = 1e-09
     final_out = False
     t_total = 0
     nr_voxels = 0
-    nextpix = zeros(2,Int)
-    delta = ones(2,Int)
-    t = zeros(2,Float)
-    t_one = zeros(2,Float)
+    nextpix = N.zeros(2,N.int)
+    delta = N.ones(2,N.int)
+    t = N.zeros(2,N.float)
+    t_one = N.zeros(2,N.float)
     #voxel=zeros((product(gridsize),3))
     voxel = []
 
     # the ray is defined r0 + t *r
     r0 = p_start
     r = p_end-r0
-    t_max = sqrt(sum(r*r)) # Maximum ray path lenght in normalized coordinate system
+    t_max = N.sqrt(N.sum(r*r)) # Maximum ray path lenght in normalized coordinate system
     r = r/t_max
 
-    startpix = floor(r0)+1  #The pixel where the ray originates
+    startpix = N.floor(r0)+1  #The pixel where the ray originates
     # Set step size and direction in x,y,z
     # find first intersection with voxel border
     for i in range(2):
         if r[i] == 0:
-            t_one[i] = float('Inf') # Determine paths for stepping 1 in x,y,z respectively.
-            t[i] =  float('Inf')    # Maybe add a check for r(i) = 0 not to divide by zero
+            t_one[i] = N.inf # Determine paths for stepping 1 in x,y,z respectively.
+            t[i] =  N.inf    # Maybe add a check for r(i) = 0 not to divide by zero
         else:
-            t_one[i] = abs(1/r[i])  # Determine paths for stepping 1 in x,y,z respectively.
+            t_one[i] = N.abs(1/r[i])  # Determine paths for stepping 1 in x,y,z respectively.
             if r[i] > 0:
-                t[i] = (floor(r0[i])+1-r0[i])/r[i]
+                t[i] = (N.floor(r0[i])+1-r0[i])/r[i]
             else:
                 delta[i] = -1
-                t[i] = (floor(r0[i])-r0[i])/r[i]
+                t[i] = (N.floor(r0[i])-r0[i])/r[i]
 
     # Find which voxel border is intersected next
     while t_total < t_max-zero: # to make sure that an extra step is not taken if t_total essitianlly equals t_max
@@ -80,7 +80,7 @@ def pixel_trace(corners):
     # Correct t_voxel of the last voxel if overshot
     if final_out == False: voxel[nr_voxels-1][2] = voxel[nr_voxels-1][2]-(t_total-t_max)
     
-    voxel = array(voxel)
+    voxel = N.array(voxel)
         
     # Integrate intensity along ray
     return voxel

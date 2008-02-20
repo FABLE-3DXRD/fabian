@@ -1,5 +1,5 @@
 
-import numpy.oldnumeric as Numeric
+import numpy as N
 from fabio import edfimage
 #this will eventually come from fabio as well
 from Fabian import image_file_series
@@ -18,7 +18,7 @@ class median_file_series:
       self.files.append(self.series.current(toPIL=False))
       if not quiet: print self.series.filename
     d1,d2=self.files[0].dim1,self.files[0].dim2
-    self.median=Numeric.zeros((d2,d1)).astype(Numeric.Float)
+    self.median=N.zeros((d2,d1)).astype(N.float)
   
   def reset(self,number,delta=1):
     self.files=[]
@@ -32,13 +32,13 @@ class median_file_series:
   def run(self):
       flen=self.filterlength
       d1,d2=self.files[0].dim1,self.files[0].dim2
-      sorted=Numeric.zeros((flen,d1))
+      sorted=N.zeros((flen,d1))
       for i in range(d2):
         j=0
         for im in self.files:
           sorted[j,:]=im.data[i,:]
           j=j+1
-        sorted=Numeric.sort(sorted,0)
+        sorted=N.sort(sorted,0)
         if flen%2==0:
           #filterlength is even - use the mean of the two central values
           self.median[i,:]=0.5*(sorted[flen/2-1,...]+sorted[flen/2,...])
