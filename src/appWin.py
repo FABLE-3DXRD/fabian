@@ -148,21 +148,28 @@ class imageWin:
   def make_status_bar(self,container):
     frameInfo = Frame(container, bd=0)
     frameInfo.pack(side=BOTTOM,fill=X)
-    self.ShowMin = Label(frameInfo, text="Min -1",  bg ='white',bd=1, relief=SUNKEN, anchor=W)
+    self.ShowMin = Label(frameInfo, text="Min -1",
+                         bg ='white',bd=1, relief=SUNKEN, anchor=W)
     self.ShowMin.pack(side=LEFT)
-    self.ShowMax = Label(frameInfo, text="Max -1" , bg ='white',bd=1, relief=SUNKEN, anchor=W)
+    self.ShowMax = Label(frameInfo, text="Max -1" ,
+                         bg ='white',bd=1, relief=SUNKEN, anchor=W)
     self.ShowMax.pack(side=LEFT)
-    self.ShowMean = Label(frameInfo, text="Mean -1", bg ='white',bd=1, relief=SUNKEN, anchor=W)
+    self.ShowMean = Label(frameInfo, text="Mean -1",
+                          bg ='white',bd=1, relief=SUNKEN, anchor=W)
     self.ShowMean.pack(side=LEFT)
-    self.ShowInt = Label(frameInfo, text='    0', width=12, bg='white', bd=1, relief=RIDGE, anchor=W)
+    self.ShowInt = Label(frameInfo, text='    0', 
+                         width=12, bg='white', bd=1, relief=RIDGE, anchor=W)
     self.ShowInt.pack(side=RIGHT, padx=2)
-    self.ShowCoor = Label(frameInfo, text='    0,    0', width =10, bg ='white',bd=1, relief=RIDGE, anchor=W)
+    self.ShowCoor = Label(frameInfo, text='    0,    0', width =10, 
+                          bg ='white',bd=1, relief=RIDGE, anchor=W)
     self.ShowCoor.pack(side=RIGHT, padx = 2)
-    self.ShowZoom = Label(frameInfo, text="%3d %%" %(self.zoomfactor*100), width =6, bg ='white',bd=1, relief=RIDGE, anchor=W)
+    self.ShowZoom = Label(frameInfo, text="%3d %%" %(self.zoomfactor*100), 
+                          width =6, bg ='white',bd=1, relief=RIDGE, anchor=W)
     self.ShowZoom.pack(side=RIGHT, padx = 2)
 
   def show_peaks(self,event=None):
-    self.master.config(cursor='watch') # The next two lines is a hack to have the configure done imidiately
+    self.master.config(cursor='watch') # The next two lines is a hack to
+                                       # have the configure done imidiately
     self.canvas.create_oval((0,0,0,0),tag='hack',outline='red')
     self.canvas.delete('hack')
     # p used to toogle show_peaks check old value and change
@@ -182,7 +189,8 @@ class imageWin:
       self.master.config(cursor='left_ptr')
       return
     elif peaks == {}:
-      if self.read_peaks() == False: # If no peak file is given set reset varibles and return
+      if self.read_peaks() == False: # If no peak file is given 
+                                     # reset variables and return
         self.master.config(cursor='left_ptr') 
         self.ShowPeaks.set(False)
         return
@@ -980,6 +988,7 @@ class appWin(imageWin):
     #CrystMenu.menu.add_checkbutton(label='Show peaks..',command=self.show_peaks,onvalue=True,offvalue=False,variable=self.ShowPeaks)
     CrystMenu.menu.add_cascade(label='Peaks..',menu=CrystMenu.menu.peaks)
     CrystMenu.menu.peaks.add_checkbutton(label='Show',command=self.show_peaks,onvalue=True,offvalue=False,variable=self.ShowPeaks)
+    CrystMenu.menu.peaks.add_command(label='Read peaks',command=self.read_peaks)
     CrystMenu.menu.peaks.add_command(label='Options',command=self.peak_options)
     CrystMenu['menu']=CrystMenu.menu
 
@@ -1055,6 +1064,7 @@ class appWin(imageWin):
     but = Frame(self.peakoptions, bd=0, bg="white")
     but.pack(side=BOTTOM,fill=X,expand='yes')
     Button(but, text='Update', command=self.update_peak_options).pack(side=LEFT,fill=X,expand='yes')
+    Button(but, text='Read peaks', command=self.read_peaks).pack(side=LEFT,fill=X,expand='yes')
     Button(but, text='Close', command=self.setminpixel).pack(side=LEFT,fill=X,expand='yes')
 
 
@@ -1239,7 +1249,7 @@ class appWin(imageWin):
   # run thread until autofileupdate is set to False 
   def run(self):
     while(self.autofileupdate.get()==True):
-      if self.newfilename in glob.glob('*'):
+      #if self.newfilename in glob.glob('*'):
         try:
           self.master.config(cursor='watch')
           self.openimage(self.newfilename)#try to open that file
