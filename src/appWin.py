@@ -28,12 +28,22 @@ from ImagePlot import imagePlot, imagePlot2
 # fabio imports
 import fabio 
 
-colour={'transientaoi':'RoyalBlue', 'Zoom':'red', 'Relief':'LimeGreen', 'Rocker':'LightBlue', 'transientline':'red', 'IntProfile':'RoyalBlue', 'LineProfile':'RoyalBlue','peak_colour':'red'}
+colour={'transientaoi' :'RoyalBlue',
+        'Zoom'         :'red',
+        'Relief'       :'LimeGreen',
+        'Rocker'       :'LightBlue',
+        'transientline':'red',
+        'IntProfile'   :'RoyalBlue', 
+        'LineProfile'  :'RoyalBlue',
+        'peak_colour'  :'red'}
 
       
 class imageWin:
   globals()["peaks"] = {}
-  def __init__(self,master,filename=None,filenumber=0,title=None,zoomfactor=1,scaled_min=None,scaled_max=None,scale=None, mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None,tool=None,showpeaks=None):
+  def __init__(self,master,filename=None,filenumber=0,title=None,
+               zoomfactor=1,scaled_min=None,scaled_max=None,
+               scale=None, mainwin='no',zoomable='yes',coords=[0,0,0,0],
+               image=None,tool=None,showpeaks=None):
     #initialize var
     self.master=master
     #these keep track of the AOIs
@@ -47,6 +57,7 @@ class imageWin:
     self.maxval=StringVar()
     self.minval=StringVar()
     self.showpeaks = showpeaks
+    self.peakfilename=None
     #self.peaks={}
     if scaled_min: self.minval.set(scaled_min)
     if scaled_max: self.maxval.set(scaled_max)
@@ -106,9 +117,11 @@ class imageWin:
     #make imagecanvas
     self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
     self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
-#    self.frameImage = Pmw.ScrolledFrame(container, hull_width=self.canvas_xsize+30, hull_height=self.canvas_ysize+30, usehullsize=1,hscrollmode='static',vscrollmode='static')
     self.frameImage = Frame(container)
-    self.canvas = Canvas(self.frameImage, width=self.canvas_xsize, height=self.canvas_ysize, bg='black')
+    self.canvas = Canvas(self.frameImage,
+                         width=self.canvas_xsize, 
+                         height=self.canvas_ysize,
+                         bg='black')
     self.canvas.pack(side=TOP,anchor='center', expand=1, fill=X)
     self.frameImage.pack(side=TOP,expand=1)
     #bind events
@@ -142,8 +155,8 @@ class imageWin:
     self.zoomfactor=newzoomfactor
     self.ShowZoom.config(text="%3d %%" %(newzoomfactor*100))
     self.update(newimage=self.im)
-    if not 'zoom' in self.master.wm_title(): #If zooming in appWin center the image in the Scrolled frame 
-      self.centerImg()
+    if not 'zoom' in self.master.wm_title(): # If zooming in appWin center the
+      self.centerImg()                       # image in the Scrolled frame 
  
   def make_status_bar(self,container):
     frameInfo = Frame(container, bd=0)
@@ -168,56 +181,74 @@ class imageWin:
     self.ShowZoom.pack(side=RIGHT, padx = 2)
 
   def show_peaks(self,event=None):
-    self.master.config(cursor='watch') # The next two lines is a hack to
-                                       # have the configure done imidiately
-    self.canvas.create_oval((0,0,0,0),tag='hack',outline='red')
-    self.canvas.delete('hack')
-    # p used to toogle show_peaks check old value and change
-    self.master.config(cursor='watch')
+    # Using <p> to toggle between show and don't show peaks 
     if event !=None:
       if event.keysym == 'p':
         if self.ShowPeaks.get() == False:
           self.ShowPeaks.set(True)
         else:
           self.ShowPeaks.set(False)
+    self.master.config(cursor='watch') 
+    # The next two lines is a hack to have the configure done imidiately
+    self.canvas.create_oval((0,0,0,0),tag='hack',outline='red')
+    self.canvas.delete('hack')
     try:
       self.showpeaks = self.ShowPeaks.get()
     except:
       pass
-    if self.showpeaks == False:
+    if self.showpeaks == False:     # Remove peaks from canvas  
       self.clear_peaks()
       self.master.config(cursor='left_ptr')
       return
-    elif peaks == {}:
-      if self.read_peaks() == False: # If no peak file is given 
+    elif peaks == {} or self.newpeaks == True:   # If empty peak database
+      if self.read_peaks() == False: # Read peaks, 
+                                     #but if no peak file is given 
                                      # reset variables and return
         self.master.config(cursor='left_ptr') 
-        self.ShowPeaks.set(False)
+        if self.newpeaks == True:
+          self.newpeaks = False
+        else:
+          self.showpeaks = False
+          self.ShowPeaks.set(False)
         return
-    try:
+    try: # draw peaks on canvas
+      #self.clear_peaks()
+      self.canvas.delete('peaks')
       for ipeaks in peaks[os.path.split(self.filename.get())[-1]]:
         if int(ipeaks[0]) > globals()["min_pixel"]:
-          circ_center=[(ipeaks[1]-self.zoomarea[0])*self.zoomfactor, (ipeaks[2]-self.zoomarea[1])*self.zoomfactor]
+          circ_center=[(ipeaks[1]-self.zoomarea[0])*self.zoomfactor,
+                       (ipeaks[2]-self.zoomarea[1])*self.zoomfactor]
           rad = globals()["peak_radius"]*self.zoomfactor
-          corners=(circ_center[0]-rad,circ_center[1]-rad,circ_center[0]+rad,circ_center[1]+rad)
+          corners=(circ_center[0]-rad,circ_center[1]-rad,
+                   circ_center[0]+rad,circ_center[1]+rad)
           self.canvas.create_oval(corners,tag='peaks',outline=colour['peak_colour'])
-    except:
+    except: # no peaks for the present image was found in the peaks database
         e=Error.Error()
-        msg="No peak information about %s is found in peaksearch file" %(os.path.split(self.filename.get())[-1])
+        msg="No peak information about %s is found in peaksearch file" \
+            %(os.path.split(self.filename.get())[-1])
         e.Er(msg)
         self.master.config(cursor='left_ptr')
         self.ShowPeaks.set(False)
-
+        
+    # Reset parameters
     self.master.config(cursor='left_ptr')
+    self.newpeaks = False
     return
 
+  def read_newpeaks(self,event=None):
+    self.newpeaks = True
+    #globals()["peaks"] = {}
+    self.ShowPeaks.set(True)
+    self.showpeaks = True
+    self.show_peaks()
+    
       
   def read_peaks(self):
     rpeaks = insert_peaks.readpeaksearch()
-    peakfilename = askopenfilename(filetypes=[("spt files", "*.spt"),("All Files", "*")])
-    if peakfilename == '':
+    self.peakfilename = askopenfilename(filetypes=[("spt files", "*.spt"),("All Files", "*")])
+    if len(self.peakfilename) == 0:
         return False
-    rpeaks.readallpeaks(peakfilename)
+    rpeaks.readallpeaks(self.peakfilename)
     peaks = rpeaks.images
     ks = [ os.path.split(name)[-1] for name in peaks.keys() ]
     # convert coordinates to "fabian" coordinates
@@ -249,13 +280,17 @@ class imageWin:
     x=self.canvas.canvasx(event.x)
     y=self.canvas.canvasx(event.y)
     if x<self.canvas_xsize and y<self.canvas_ysize:
-      xy =  "%5i,%5i"%(x/self.zoomfactor +self.zoomarea[0],y/self.zoomfactor +self.zoomarea[1])
+      xy =  "%5i,%5i"%(x/self.zoomfactor +self.zoomarea[0],
+                       y/self.zoomfactor +self.zoomarea[1])
       self.xsize = globals()["image_xsize"]
       self.ysize = globals()["image_ysize"]
-#      xy =  "%5i,%5i"%(self.xsize-1-(x/self.zoomfactor +self.zoomarea[0]),self.ysize-1-(y/self.zoomfactor +self.zoomarea[1]))
-      xy =  "%5i,%5i"%(self.xsize-1-math.floor(x/self.zoomfactor +self.zoomarea[0]),self.ysize-1-math.floor(y/self.zoomfactor +self.zoomarea[1]))
+#      xy =  "%5i,%5i"%(self.xsize-1-(x/self.zoomfactor +self.zoomarea[0]),
+#                       self.ysize-1-(y/self.zoomfactor +self.zoomarea[1]))
+      xy =  "%5i,%5i"%(self.xsize-1-math.floor(x/self.zoomfactor +self.zoomarea[0]),
+                       self.ysize-1-math.floor(y/self.zoomfactor +self.zoomarea[1]))
       self.ShowCoor.config(text=xy)
-      I = " %10g"% self.im.getpixel((x/self.zoomfactor +self.zoomarea[0],y/self.zoomfactor +self.zoomarea[1]))
+      I = " %10g"% self.im.getpixel((x/self.zoomfactor +self.zoomarea[0],
+                                     y/self.zoomfactor +self.zoomarea[1]))
       self.ShowInt.config(text=I)
  
   def Mouse2Press(self, event):
@@ -335,7 +370,10 @@ class imageWin:
       tool=self.tool
     # Convert canvas coordinates into pixels
     t=self.transientcorners
-    corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
+    corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), 
+             int(self.zoomarea[1]+t[1]/self.zoomfactor),
+             int(self.zoomarea[0]+t[2]/self.zoomfactor),
+             int(self.zoomarea[1]+t[3]/self.zoomfactor)]
 
     if 'Relief' in tool:
         if corners[0]==corners[2] or corners[1]==corners[3]:
@@ -382,7 +420,10 @@ class imageWin:
         self.line_win = self.line_win + 1
       opensubwin=self.openlineprofile
 
-    self.aoi.append({'coords':self.transientcorners,'aoi':[self.draw2(tool=tool)],'zoomwin': opensubwin(t), 'wintype':tool})
+    self.aoi.append({'coords':self.transientcorners,
+                     'aoi':[self.draw2(tool=tool)],
+                     'zoomwin': opensubwin(t),
+                     'wintype':tool})
 
   def drawAoi(self,tool='transientaoi'):
     self.canvas.delete('transientaoi')
@@ -402,19 +443,39 @@ class imageWin:
       endsec[0] = endsec[0]/normendsec*t_end
       endsec[1] = endsec[1]/normendsec*t_end
       #line is drawn as a polyline in one single object
-      line=(tc[0]-endsec[1],tc[1]+endsec[0],tc[0]+endsec[1],tc[1]-endsec[0],tc[0],tc[1],tc[2],tc[3],tc[2]-endsec[1],tc[3]+endsec[0],tc[2]+endsec[1],tc[3]-endsec[0])
+      line=(tc[0]-endsec[1],tc[1]+endsec[0],tc[0]+endsec[1],tc[1]-endsec[0],
+            tc[0],tc[1],tc[2],tc[3],
+            tc[2]-endsec[1],tc[3]+endsec[0],tc[2]+endsec[1],tc[3]-endsec[0])
     return self.canvas.create_line(line,tag=tool,fill=colour[tool])
 
  
   def openzoom(self,tag):
     t=self.transientcorners
-    corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
+    corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor),
+             int(self.zoomarea[1]+t[1]/self.zoomfactor),
+             int(self.zoomarea[0]+t[2]/self.zoomfactor),
+             int(self.zoomarea[1]+t[3]/self.zoomfactor)]
     w=Toplevel(self.master)
     if self.tool:
-      newwin=imageWin(w,title=tag,filename=self.filename,zoomfactor=self.zoomfactor*4,scaled_min=self.minval.get(),scaled_max=self.maxval.get(),scale=self.scale,coords=corners,image=self.im,tool=self.tool,showpeaks=self.showpeaks)
+      newwin=imageWin(w,
+                      title=tag,
+                      filename=self.filename,
+                      zoomfactor=self.zoomfactor*4,
+                      scaled_min=self.minval.get(),
+                      scaled_max=self.maxval.get(),
+                      scale=self.scale,coords=corners,
+                      image=self.im,
+                      tool=self.tool,
+                      showpeaks=self.showpeaks)
       newwin.tool=self.tool
     else:
-      newwin=imageWin(w,title=tag,filename=self.filename,zoomfactor=self.zoomfactor*4,coords=corners,image=self.im,tool=None)
+      newwin=imageWin(w,
+                      title=tag,
+                      filename=self.filename,
+                      zoomfactor=self.zoomfactor*4,
+                      coords=corners,
+                      image=self.im,
+                      tool=None)
     return newwin
 
   def openintprofile(self,tag):
@@ -428,7 +489,10 @@ class imageWin:
       tmp = t[1]
       t[1] = t[3]
       t[3] = tmp
-    corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
+    corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor),
+             int(self.zoomarea[1]+t[1]/self.zoomfactor),
+             int(self.zoomarea[0]+t[2]/self.zoomfactor),
+             int(self.zoomarea[1]+t[3]/self.zoomfactor)]
     w=Toplevel(self.master)
     
     xbins = []
@@ -449,9 +513,14 @@ class imageWin:
         x_int = x_int + self.im.getpixel((x,y))
       xvalues.append(x_int)
       
-    linewin = imagePlot2(w,title=tag,\
-                        x=xbins,y=yvalues,ptitle='Horizontal',\
-                        x2=ybins,y2=xvalues, ptitle2='Vertical')
+    linewin = imagePlot2(w,
+                         title=tag,
+                         x=xbins,
+                         y=yvalues,
+                         ptitle='Horizontal',
+                         x2=ybins,
+                         y2=xvalues,
+                         ptitle2='Vertical')
     linewin.zoomarea = corners
     return linewin
 
@@ -460,7 +529,10 @@ class imageWin:
   def openlineprofile(self,tag):
       # Make lineprofile  relief window
       t=self.transientcorners
-      corners=[(self.zoomarea[0]+t[0]/self.zoomfactor), (self.zoomarea[1]+t[1]/self.zoomfactor), (self.zoomarea[0]+t[2]/self.zoomfactor-1), (self.zoomarea[1]+t[3]/self.zoomfactor)-1]
+      corners=[(self.zoomarea[0]+t[0]/self.zoomfactor),
+               (self.zoomarea[1]+t[1]/self.zoomfactor),
+               (self.zoomarea[0]+t[2]/self.zoomfactor-1),
+               (self.zoomarea[1]+t[3]/self.zoomfactor)-1]
       from Fabian import pixel_trace
       w=Toplevel(self.master)
       pixels = pixel_trace.pixel_trace(corners)
@@ -488,7 +560,10 @@ class imageWin:
         t[1] = t[3]
         t[3] = tmp
 
-      corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
+      corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor),
+               int(self.zoomarea[1]+t[1]/self.zoomfactor),
+               int(self.zoomarea[0]+t[2]/self.zoomfactor),
+               int(self.zoomarea[1]+t[3]/self.zoomfactor)]
       
       reli=Toplevel(self.master)
       reli.title(tag)
@@ -508,7 +583,10 @@ class imageWin:
         tmp = t[1]
         t[1] = t[3]
         t[3] = tmp
-      self.corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor), int(self.zoomarea[1]+t[1]/self.zoomfactor), int(self.zoomarea[0]+t[2]/self.zoomfactor), int(self.zoomarea[1]+t[3]/self.zoomfactor)]
+      self.corners=[int(self.zoomarea[0]+t[0]/self.zoomfactor),
+                    int(self.zoomarea[1]+t[1]/self.zoomfactor),
+                    int(self.zoomarea[0]+t[2]/self.zoomfactor),
+                    int(self.zoomarea[1]+t[3]/self.zoomfactor)]
       # change here for change to deconstruct
       self.center = fabio.extract_filenumber(self.filename.get())
       defdelta = 1
@@ -525,14 +603,20 @@ class imageWin:
       self.startframe.set(self.center-defdelta)
       self.endframe.set(self.center+defdelta)
       radio1 = Frame(frame)
-      Radiobutton(radio1,text='Rocking curve +/- ', variable=self.seriestype, value='delta',anchor=W).pack(side=LEFT,fill=BOTH)
+      Radiobutton(radio1,
+                  text='Rocking curve +/- ', 
+                  variable=self.seriestype, 
+                  value='delta',anchor=W).pack(side=LEFT,fill=BOTH)
       e=Entry(radio1, textvariable=self.delta, bg='white', width=6)
       e.bind('<FocusIn>',self.setradio1)
       e.pack(side=LEFT)
       Label(radio1, text="frames").pack(side=LEFT)
       radio1.pack(fill=BOTH)
       radio2 = Frame(frame)
-      Radiobutton(frame,text='Rocking curve from frame', variable=self.seriestype, value='startend',anchor=W).pack(side=LEFT,fill=BOTH)
+      Radiobutton(frame,
+                  text='Rocking curve from frame', 
+                  variable=self.seriestype, 
+                  value='startend',anchor=W).pack(side=LEFT,fill=BOTH)
       e=Entry(radio2, textvariable=self.startframe, bg='white', width=6)
       e.bind('<FocusIn>',self.setradio2)
       e.pack(side=LEFT)
@@ -554,17 +638,20 @@ class imageWin:
       self.startframe.set(startframe)
       self.endframe.set(endframe)
     from Fabian import rocker
-    rockdata = rocker.rocker(filename_sample=self.filename.get(), coord=self.corners, startnumber=startframe, endnumber=endframe)
+    rockdata = rocker.rocker(filename_sample=self.filename.get(),
+                             coord=self.corners,
+                             startnumber=startframe,
+                             endnumber=endframe)
     rockdata.run()
     w=Toplevel(self.master)
     linewin = imagePlot(w,title='Rocking curve',x=rockdata.imagenumber,y=rockdata.getdata())
     return linewin
   
-  def setradio1(self,event=None): # Sets the radiobuttom to make fileseries from -x to +x images from current
-      self.seriestype.set('delta')
+  def setradio1(self,event=None):     # Sets the radiobuttom to make fileseries from
+      self.seriestype.set('delta')    #  -x to +x images from current
 
-  def setradio2(self,event=None):  # Sets the radiobuttom to make fileseries from No.X to No Y.
-      self.seriestype.set('startend')
+  def setradio2(self,event=None):     # Sets the radiobuttom to make fileseries
+      self.seriestype.set('startend') # from No.X to No Y.
 
   def get_img_stats(self, image):
     #this is a hack _while thinking of a better solution
@@ -612,11 +699,20 @@ class imageWin:
         continue
       # If so update obj.
       if w['wintype'] in ('Zoom'):
-        w['zoomwin'].update(scaled_min,scaled_max,newimage=self.im,showpeaks=showpeaks)
+        w['zoomwin'].update(scaled_min,
+                            scaled_max,
+                            newimage=self.im,
+                            showpeaks=showpeaks)
       if w['wintype'] in ('IntProfile'):
-        w['zoomwin'].update(coord=w['coords'],zoomarea=self.zoomarea,zoomfactor=self.zoomfactor,newimage=self.im)
+        w['zoomwin'].update(coord=w['coords'],
+                            zoomarea=self.zoomarea,
+                            zoomfactor=self.zoomfactor,
+                            newimage=self.im)
       if w['wintype'] in ('LineProfile'):
-        w['zoomwin'].update(coord=w['coords'],zoomarea=self.zoomarea,zoomfactor=self.zoomfactor,newimage=self.im)
+        w['zoomwin'].update(coord=w['coords'],
+                            zoomarea=self.zoomarea,
+                            zoomfactor=self.zoomfactor,
+                            newimage=self.im)
       if w['wintype'] in ('Relief'):
         w['zoomwin'].update(newimage=self.im)
       #check for invalid aois, i.e. remove those outside an image
@@ -701,7 +797,16 @@ class imageWin:
     self.master.destroy()
 
 class appWin(imageWin):
-  def __init__(self,master,filenumber=0,filename=None,filetype=None,zoomfactor=1,mainwin='no',zoomable='yes',coords=[0,0,0,0],image=None):
+  def __init__(self,
+               master,
+               filenumber=0,
+               filename=None,
+               filetype=None,
+               zoomfactor=1,
+               mainwin='no',
+               zoomable='yes',
+               coords=[0,0,0,0],
+               image=None):
     #initialize var
     self.master=master
     #these keep track of the AOIs
@@ -729,6 +834,7 @@ class appWin(imageWin):
     self.peak_colour.set("blue")
     self.peak_radius = IntVar()
     self.peak_radius.set(8)
+    self.newpeaks = False
     self.FlipHorz = BooleanVar()
     self.FlipHorz.set(False)
     self.FlipVert = BooleanVar()
@@ -773,6 +879,8 @@ class appWin(imageWin):
     master.bind('x',self.rezoom)
     master.bind('c',self.clear_peaks)
     master.bind('p',self.show_peaks)
+    master.bind('p',self.show_peaks)
+    master.bind('r',self.read_newpeaks)
     master.bind('f',self.autonextimage)
     master.bind('<Up>',self.updatetime)
     master.bind('<Down>',self.updatetime)
@@ -801,7 +909,8 @@ class appWin(imageWin):
     #set the image dimensions and zoom out if it is big
     screen_width = master.winfo_screenwidth()
     screen_height = master.winfo_screenheight()
-    self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10, round(screen_height/(2.*self.ysize)*10)/10)
+    self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10,
+                           round(screen_height/(2.*self.ysize)*10)/10)
     self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
     self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
 
@@ -813,7 +922,12 @@ class appWin(imageWin):
     
     #call __init__ in the parent class
     self.make_scaling_ctls(self.page1)
-    self.frameScroll = Pmw.ScrolledFrame(self.page1, hull_width=self.canvas_xsize+30, hull_height=self.canvas_ysize+30, usehullsize=1,hscrollmode='static',vscrollmode='static')
+    self.frameScroll = Pmw.ScrolledFrame(self.page1, 
+                                         hull_width=self.canvas_xsize+30, 
+                                         hull_height=self.canvas_ysize+30,
+                                         usehullsize=1,
+                                         hscrollmode='static',
+                                         vscrollmode='static')
     self.frameScroll.pack()
     self.make_image_canvas(self.frameScroll.interior())
     
@@ -826,8 +940,20 @@ class appWin(imageWin):
     hc.pack(fill=BOTH,side=TOP,anchor=W)
 
 
-    r=Radiobutton(hc.interior(),text='Original', command=(lambda:self.update_header_page(True)), variable=self.header_sort_type, value='original',anchor=W, width=20).pack(side=LEFT,anchor=W)
-    r=Radiobutton(hc.interior(),text='Alphabetical', command=(lambda:self.update_header_page(True)), variable=self.header_sort_type, value='alphabetical', anchor=W, width=20).pack(side=LEFT,anchor=W)
+    r=Radiobutton(hc.interior(),
+                  text='Original',
+                  command=(lambda:self.update_header_page(True)),
+                  variable=self.header_sort_type,
+                  value='original',
+                  anchor=W,
+                  width=20).pack(side=LEFT,anchor=W)
+    r=Radiobutton(hc.interior(),
+                  text='Alphabetical',
+                  command=(lambda:self.update_header_page(True)),
+                  variable=self.header_sort_type,
+                  value='alphabetical',
+                  anchor=W,
+                  width=20).pack(side=LEFT,anchor=W)
     self.HeaderFrame = Pmw.ScrolledFrame(self.page2, labelpos=N)
     self.HeaderFrame.pack(fill=BOTH, expand=YES)
     self.HeaderInterior = self.HeaderFrame.interior()
@@ -857,10 +983,18 @@ class appWin(imageWin):
       for item in header_sorted:
         fm = Frame(self.HeaderInterior)
         self.newitem[item]=StringVar()
-        c=Checkbutton(fm,text='%s' %(item), command=self.update_header_label,variable=self.newitem[item], bg='white',anchor=W,width=20).pack(side=LEFT,anchor=W)
+        c=Checkbutton(fm,text='%s' %(item),
+                      command=self.update_header_label,
+                      variable=self.newitem[item],
+                      bg='white',
+                      anchor=W,
+                      width=20).pack(side=LEFT,anchor=W)
         self.headcheck.append(c)
-        #self.headcheck.append(Checkbutton(fm,tag='headercheck',text='%s' %(item), command=self.update_header_label,variable=self.newitem[item], bg='white',anchor=W,width=20).pack(side=LEFT,anchor=W))
-        self.headtext[item]= Label(fm,text='%s' %(self.im.header[item]), bg='white',anchor=W,width=100)
+        self.headtext[item]= Label(fm,
+                                   text='%s' %(self.im.header[item]),
+                                   bg='white',
+                                   anchor=W,
+                                   width=100)
         self.headtext[item].pack(side=LEFT,fill=X,expand='yes')
         fm.pack(side=TOP,anchor=W)
 
@@ -873,7 +1007,8 @@ class appWin(imageWin):
       child.destroy()
 
   def update_header_page(self,newsorting=False):
-    #check if the set of (possibly newly read from disk) header items is identical to the one displayed
+    # check if the set of (possibly newly read from disk) header items
+    # is identical to the one displayed
     if newsorting == True:
       self.clear_header_page()
       self.make_header_page()
@@ -944,7 +1079,10 @@ class appWin(imageWin):
     self.efilen.bind('<Return>',self.gotoimage)
     self.efilen.bind('<KP_Enter>',self.gotoimage)
     self.efilen.pack(side=RIGHT,padx=8)
-    Button(frameScale,text='go to number:', bg='white', command=self.gotoimage).pack(side=RIGHT,padx=2)
+    Button(frameScale,
+           text='go to number:', 
+           bg='white', 
+           command=self.gotoimage).pack(side=RIGHT,padx=2)
     frameScale.pack(side=TOP,expand=1, pady=10, fill=X)
      
   def make_command_menu(self,master):
@@ -954,18 +1092,37 @@ class appWin(imageWin):
     FileMenu.pack(side=LEFT, padx="2m")
     FileMenu.menu =Menu(FileMenu)
     FileMenu.menu.add_command(label='Open', underline=0, command=self.OpenFile)
-    FileMenu.menu.add_checkbutton(label='Auto file update',command=self.autonextimage,onvalue=True,offvalue=False,variable=self.autofileupdate)
+    FileMenu.menu.add_checkbutton(label='Auto file update',
+                                  command=self.autonextimage,
+                                  onvalue=True,
+                                  offvalue=False,
+                                  variable=self.autofileupdate)
     FileMenu.menu.add_command(label='Quit', underline=0, command=self.quit)
     FileMenu['menu']=FileMenu.menu
 
     ToolMenu = Menubutton(frameMenubar, text='Tools',underline=0)
     ToolMenu.pack(side=LEFT, padx="2m")
     ToolMenu.menu =Menu(ToolMenu)
-    ToolMenu.menu.add_radiobutton(label='Zoom%15s%2s' %('','F1') ,command=self.setbindings,variable=self.ToolType,value='Zoom')
-    ToolMenu.menu.add_radiobutton(label='Line profile%7s%2s' %('','F2') ,command=self.setbindings,variable=self.ToolType,value='LineProfile')
-    ToolMenu.menu.add_radiobutton(label='Integr. profile%3s%2s' %('','F3') ,command=self.setbindings,variable=self.ToolType,value='IntProfile')
-    ToolMenu.menu.add_radiobutton(label='Relief plot%8s%2s' %('','F4') ,command=self.setbindings,variable=self.ToolType,value='Relief')
-    ToolMenu.menu.add_radiobutton(label='Rocking curve%2s%2s' %('','F5'),command=self.setbindings,variable=self.ToolType,value='Rocker')
+    ToolMenu.menu.add_radiobutton(label='Zoom%15s%2s' %('','F1'),
+                                  command=self.setbindings,
+                                  variable=self.ToolType,
+                                  value='Zoom')
+    ToolMenu.menu.add_radiobutton(label='Line profile%7s%2s' %('','F2') ,
+                                  command=self.setbindings,
+                                  variable=self.ToolType,
+                                  value='LineProfile')
+    ToolMenu.menu.add_radiobutton(label='Integr. profile%3s%2s' %('','F3'),
+                                  command=self.setbindings,
+                                  variable=self.ToolType,
+                                  value='IntProfile')
+    ToolMenu.menu.add_radiobutton(label='Relief plot%8s%2s' %('','F4'),
+                                  command=self.setbindings,
+                                  variable=self.ToolType,
+                                  value='Relief')
+    ToolMenu.menu.add_radiobutton(label='Rocking curve%2s%2s' %('','F5'),
+                                  command=self.setbindings,
+                                  variable=self.ToolType,
+                                  value='Rocker')
     ToolMenu['menu']=ToolMenu.menu
 
     ImageMenu = Menubutton(frameMenubar, text='Image',underline=0)
@@ -973,23 +1130,49 @@ class appWin(imageWin):
     ImageMenu.menu =Menu(ImageMenu)
     ImageMenu.menu.transform =Menu(ImageMenu.menu)
     ImageMenu.menu.add_cascade(label='Transform',menu=ImageMenu.menu.transform)
-    ImageMenu.menu.transform.add_checkbutton(label='Flip horizontal',command=(lambda:self.transform(0,self.FlipHorz.get())),onvalue=True,offvalue=False,variable=self.FlipHorz)
-    ImageMenu.menu.transform.add_checkbutton(label='Flip vertical',command=(lambda:self.transform(1,self.FlipVert.get())),onvalue=True,offvalue=False,variable=self.FlipVert)
-    ImageMenu.menu.transform.add_checkbutton(label='Rotate 90',command=(lambda:self.transform(4,self.Rot90.get())),onvalue=True,offvalue=False,variable=self.Rot90)
-    ImageMenu.menu.transform.add_checkbutton(label='Rotate 180',command=(lambda:self.transform(3,self.Rot180.get())),onvalue=True,offvalue=False,variable=self.Rot180)
-    ImageMenu.menu.transform.add_checkbutton(label='Rotate 270',command=(lambda:self.transform(2,self.Rot270.get())),onvalue=True,offvalue=False,variable=self.Rot270)
-    ImageMenu.menu.transform.add_command(label='Reset all',command=(lambda:self.transform(5)))
+    ImageMenu.menu.transform.add_checkbutton(label='Flip horizontal',
+                                             command=(lambda:self.transform(0,self.FlipHorz.get())),
+                                             onvalue=True,
+                                             offvalue=False,
+                                             variable=self.FlipHorz)
+    ImageMenu.menu.transform.add_checkbutton(label='Flip vertical',
+                                             command=(lambda:self.transform(1,self.FlipVert.get())),
+                                             onvalue=True,
+                                             offvalue=False,
+                                             variable=self.FlipVert)
+    ImageMenu.menu.transform.add_checkbutton(label='Rotate 90',
+                                             command=(lambda:self.transform(4,self.Rot90.get())),
+                                             onvalue=True,
+                                             offvalue=False,
+                                             variable=self.Rot90)
+    ImageMenu.menu.transform.add_checkbutton(label='Rotate 180',
+                                             command=(lambda:self.transform(3,self.Rot180.get())),
+                                             onvalue=True,
+                                             offvalue=False,
+                                             variable=self.Rot180)
+    ImageMenu.menu.transform.add_checkbutton(label='Rotate 270',
+                                             command=(lambda:self.transform(2,self.Rot270.get())),
+                                             onvalue=True,
+                                             offvalue=False,
+                                             variable=self.Rot270)
+    ImageMenu.menu.transform.add_command(label='Reset all',
+                                         command=(lambda:self.transform(5)))
     ImageMenu['menu']=ImageMenu.menu
 
     CrystMenu = Menubutton(frameMenubar, text='CrystTools',underline=0)
     CrystMenu.pack(side=LEFT, padx="2m")
     CrystMenu.menu =Menu(CrystMenu)
     CrystMenu.menu.peaks =Menu(CrystMenu.menu)
-    #CrystMenu.menu.add_checkbutton(label='Show peaks..',command=self.show_peaks,onvalue=True,offvalue=False,variable=self.ShowPeaks)
     CrystMenu.menu.add_cascade(label='Peaks..',menu=CrystMenu.menu.peaks)
-    CrystMenu.menu.peaks.add_checkbutton(label='Show',command=self.show_peaks,onvalue=True,offvalue=False,variable=self.ShowPeaks)
-    CrystMenu.menu.peaks.add_command(label='Read peaks',command=self.read_peaks)
-    CrystMenu.menu.peaks.add_command(label='Options',command=self.peak_options)
+    CrystMenu.menu.peaks.add_checkbutton(label='Show',
+                                         command=self.show_peaks,
+                                         onvalue=True,
+                                         offvalue=False,
+                                         variable=self.ShowPeaks)
+    CrystMenu.menu.peaks.add_command(label='Read peaks',
+                                     command=self.read_newpeaks)
+    CrystMenu.menu.peaks.add_command(label='Options',
+                                     command=self.peak_options)
     CrystMenu['menu']=CrystMenu.menu
 
     self.HistMenu  = Menubutton(frameMenubar, text='History',underline=0)
@@ -1052,19 +1235,34 @@ class appWin(imageWin):
     Entry(framepixel, textvariable=self.min_pixel, bg='white', width=6).pack(side=LEFT)
     framepixelcolour = Frame(self.peakoptions, bd=0, bg="white")
     framepixelcolour.pack(fill=X,expand='yes')
-    PeakColourSelect = Pmw.ComboBox(framepixelcolour,label_text="Colour of peak outline ", labelpos='wn',dropdown = 2, listheight=100, selectioncommand=self.PeakColour,scrolledlist_items=("red","blue","green","orange","purple"))
+    PeakColourSelect = Pmw.ComboBox(framepixelcolour,
+                                    label_text="Colour of peak outline ",
+                                    labelpos='wn',
+                                    dropdown = 2,
+                                    listheight=100,
+                                    selectioncommand=self.PeakColour,
+                                    scrolledlist_items=("red","blue","green","orange","purple"))
     PeakColourSelect.pack()
     PeakColourSelect.selectitem(colour['peak_colour'])
 
     framepeaksize = Frame(self.peakoptions, bd=0, bg="white")
     framepeaksize.pack(fill=X,expand='yes')
     Label(framepeaksize, text="Radius of peak outline ").pack(side=LEFT)
-    Entry(framepeaksize, textvariable=self.peak_radius, bg='white', width=6).pack(side=LEFT,fill=X,expand='yes')
+    Entry(framepeaksize,
+          textvariable=self.peak_radius,
+          bg='white',
+          width=6).pack(side=LEFT,fill=X,expand='yes')
+
+    #peakfile = Frame(self.peakoptions, bd=0, bg="white")
+    #peakfile.pack(fill=X,expand='yes')
+    #Label(peakfile,
+    #      text=self.peakfilename,
+    #      bg='white').pack(side=LEFT,fill=X,expand='yes')
+    #Button(peakfile, text='Read peaks', command=self.read_newpeaks).pack(side=LEFT,fill=X,expand='yes')
 
     but = Frame(self.peakoptions, bd=0, bg="white")
     but.pack(side=BOTTOM,fill=X,expand='yes')
     Button(but, text='Update', command=self.update_peak_options).pack(side=LEFT,fill=X,expand='yes')
-    Button(but, text='Read peaks', command=self.read_peaks).pack(side=LEFT,fill=X,expand='yes')
     Button(but, text='Close', command=self.setminpixel).pack(side=LEFT,fill=X,expand='yes')
 
 
@@ -1114,7 +1312,8 @@ class appWin(imageWin):
         screen_height = self.master.winfo_screenheight()
         self.xsize = globals()["image_xsize"]
         self.ysize = globals()["image_ysize"]
-        self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10, round(screen_height/(2.*self.ysize)*10)/10)
+        self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10,
+                               round(screen_height/(2.*self.ysize)*10)/10)
     
         self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
         self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
@@ -1132,14 +1331,19 @@ class appWin(imageWin):
     return True
 
   def update(self,newimage=None,filename=None):
-    #this function is supposed to intercept any unnecessary calls to update
-    #there is no possibility of forcing a scaling through the call - this will always pick it from the GUI
+    # this function is supposed to intercept any unnecessary calls to update
+    # there is no possibility of forcing a scaling through the call - 
+    # this will always pick it from the GUI
     s_min=float(self.minval.get())
     s_max=float(self.maxval.get())
     if (self.scaled_min,self.scaled_max,newimage)==(s_min,s_max,None):
       #no need to rescale or redraw
       return
-    imageWin.update(self,scaled_min=s_min,scaled_max=s_max,newimage=newimage,filename=filename)
+    imageWin.update(self,
+                    scaled_min=s_min,
+                    scaled_max=s_max,
+                    newimage=newimage,
+                    filename=filename)
     self.noteb1.setnaturalsize()
     #store scaling vals for later reference
     self.scaled_min,self.scaled_max=s_min,s_max
@@ -1196,7 +1400,8 @@ class appWin(imageWin):
         screen_height = self.master.winfo_screenheight()
         self.xsize = globals()["image_xsize"]
         self.ysize = globals()["image_ysize"]
-        self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10, round(screen_height/(2.*self.ysize)*10)/10)
+        self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10,
+                               round(screen_height/(2.*self.ysize)*10)/10)
         self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
         self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
         self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
@@ -1377,7 +1582,10 @@ class appWin(imageWin):
         self.histlength = self.histlength + 1
         self.HistMenuItems.append(filename)
 
-      self.HistMenu.menu.add_radiobutton(label=filename ,command=self.gotohist,variable=self.histfile,value=filename)
+      self.HistMenu.menu.add_radiobutton(label=filename,
+                                         command=self.gotohist,
+                                         variable=self.histfile,
+                                         value=filename)
       self.histfile.set(filename)
     
       
