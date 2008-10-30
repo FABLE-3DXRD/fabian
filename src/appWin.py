@@ -215,7 +215,7 @@ class imageWin:
       #self.clear_peaks()
       self.canvas.delete('peaks')
       for ipeaks in peaks[os.path.split(self.filename.get())[-1]]:
-        if int(ipeaks[0]) > globals()["min_pixel"]:
+        if int(ipeaks[0]) > 0: # globals()["min_pixel"]:
           circ_center=[(ipeaks[1]-self.zoomarea[0])*self.zoomfactor,
                        (ipeaks[2]-self.zoomarea[1])*self.zoomfactor]
           rad = globals()["peak_radius"]*self.zoomfactor
@@ -255,7 +255,8 @@ class imageWin:
     for k in ks:
       for i in range(len(peaks[k])):
         mx = float(peaks[k][i][2])
-        my = image_ysize-float(peaks[k][i][1])
+        #my = image_ysize-float(peaks[k][i][1])
+        my = float(peaks[k][i][1])
         peaks[k][i][0] = int(peaks[k][i][0])
         peaks[k][i][1] = mx
         peaks[k][i][2] = my
@@ -902,7 +903,8 @@ class appWin(imageWin):
     self.zoomfactor=zoomfactor
     #display image and reset scale if scaling is not given
     self.openimage()
-    self.displaynumber.set(fabio.extract_filenumber(self.filename.get()))
+    #HOS self.displaynumber.set(fabio.extract_filenumber(self.filename.get()))
+    self.displaynumber.set(fabio.getnum(self.filename.get()))
     self.reset_scale()
 
     self.zoomarea = [0,0,self.xsize,self.ysize]
@@ -1301,7 +1303,8 @@ class appWin(imageWin):
     globals()["opendir"] = presentdir
     self.filename.set(fname)
     # (newfilenumber,filetype)=deconstruct_filename(self.filename.get())
-    self.displaynumber.set(fabio.extract_filenumber(self.filename.get()))
+    #HOS self.displaynumber.set(fabio.extract_filenumber(self.filename.get()))
+    self.displaynumber.set(fabio.getnum(self.filename.get()))
     if filename == None: # No image has been opened before
       return 
     else:
@@ -1378,7 +1381,8 @@ class appWin(imageWin):
         e.Er(msg)
         self.master.config(cursor='left_ptr')
          #Reset filenumber entry
-        self.displaynumber.set(fabio.extract_filenumber(self.filename.get()))
+        #HOS self.displaynumber.set(fabio.extract_filenumber(self.filename.get()))
+        self.displaynumber.set(fabio.getnum(self.filename.get()))
         return False
     #image loaded ok
     self.filename.set(newfilename)
@@ -1418,7 +1422,9 @@ class appWin(imageWin):
       return False
     #image loaded ok
     self.filename.set(newfilename)
-    self.displaynumber.set(fabio.extract_filenumber(self.filename.get()))
+    #HOS self.displaynumber.set(fabio.extract_filenumber(self.filename.get()))
+    self.displaynumber.set(fabio.getnum(self.filename.get()))
+
     self.update(newimage=self.im, filename=newfilename)
     self.update_header_page()
     self.update_header_label()
@@ -1543,7 +1549,7 @@ class appWin(imageWin):
       self.im = img.toPIL16()
       # We have earlier on used a flip making a PIL image
       # to keep images in the same direction we do the same here
-      self.im = self.im.transpose(1)
+      #self.im = self.im.transpose(1)
       
       (self.xsize, self.ysize)=(img.dim1, img.dim2)
     except IOError:
