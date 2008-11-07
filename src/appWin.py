@@ -19,11 +19,20 @@ import tkFont
 import re,os,sys,time,thread,glob
 from sets import Set as set
 
+
+
+
 #local fabian imports
 import About
 import Error
 from ReliefPlot import ReliefPlot
-from ImagePlot import imagePlot, imagePlot2
+
+imageplot_state='normal'
+try:
+  from ImagePlot import imagePlot, imagePlot2
+except:
+  imageplot_state='disabled'
+
 
 # fabio imports
 import fabio 
@@ -769,13 +778,13 @@ class imageWin:
       except:
         self.tool = 'Zoom'
       self.setbindings()
-    if event.keysym=='F2':
+    if event.keysym=='F2' and imageplot_state!='disabled':
       try:
         self.ToolType.set('LineProfile')
       except:
         self.tool='LineProfile'
       self.setbindings()
-    if event.keysym=='F3':
+    if event.keysym=='F3' and imageplot_state!='disabled':
       try:
         self.ToolType.set('IntProfile')
       except:
@@ -787,7 +796,7 @@ class imageWin:
       except:
         self.tool='Relief'
       self.setbindings()
-    if event.keysym=='F5':
+    if event.keysym=='F5' and imageplot_state!='disabled':
       try:
         self.ToolType.set('Rocker')
       except:
@@ -1112,11 +1121,11 @@ class appWin(imageWin):
     ToolMenu.menu.add_radiobutton(label='Line profile%7s%2s' %('','F2') ,
                                   command=self.setbindings,
                                   variable=self.ToolType,
-                                  value='LineProfile')
+                                  value='LineProfile',state=imageplot_state)
     ToolMenu.menu.add_radiobutton(label='Integr. profile%3s%2s' %('','F3'),
                                   command=self.setbindings,
                                   variable=self.ToolType,
-                                  value='IntProfile')
+                                  value='IntProfile',state=imageplot_state)
     ToolMenu.menu.add_radiobutton(label='Relief plot%8s%2s' %('','F4'),
                                   command=self.setbindings,
                                   variable=self.ToolType,
@@ -1124,7 +1133,7 @@ class appWin(imageWin):
     ToolMenu.menu.add_radiobutton(label='Rocking curve%2s%2s' %('','F5'),
                                   command=self.setbindings,
                                   variable=self.ToolType,
-                                  value='Rocker')
+                                  value='Rocker',state=imageplot_state)
     ToolMenu['menu']=ToolMenu.menu
 
     ImageMenu = Menubutton(frameMenubar, text='Image',underline=0)
