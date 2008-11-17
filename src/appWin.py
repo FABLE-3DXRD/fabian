@@ -209,7 +209,7 @@ class imageWin:
       self.clear_peaks()
       self.master.config(cursor='left_ptr')
       return
-    elif peaks == {} or self.newpeaks == True:   # If empty peak database
+    elif peaks == {} :# or self.newpeaks == True:   # If empty peak database
       if self.read_peaks() == False: # Read peaks, 
                                      #but if no peak file is given 
                                      # reset variables and return
