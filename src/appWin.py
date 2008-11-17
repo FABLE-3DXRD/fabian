@@ -245,8 +245,9 @@ class imageWin:
     return
 
   def read_newpeaks(self,event=None):
-    self.newpeaks = True
+    # self.newpeaks = True
     #globals()["peaks"] = {}
+    self.read_peaks()
     self.ShowPeaks.set(True)
     self.showpeaks = True
     self.show_peaks()
