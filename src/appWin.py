@@ -13,7 +13,7 @@ import Pmw
 import math
 from Fabian import insert_peaks
 #from string import *
-from PIL import Image, ImageTk, ImageFile, ImageStat
+import Image, ImageTk, ImageFile, ImageStat
 from tkFileDialog import *
 import tkFont
 import re,os,sys,time,thread,glob
