@@ -7,27 +7,28 @@ from Fabian import image_file_series
 class median_file_series:
 
   def __init__(self,filename,startnumber, filterlength, delta=1, debug=1):
-    self.filterlength=filterlength
-    self.files=[]
-    self.series=image_file_series.image_file_series(filename)
+    self.filterlength = filterlength
+    self.files = []
+    self.debug = debug
+    self.series = image_file_series.image_file_series(filename)
     self.series.jump(startnumber)
     self.files.append(self.series.current(toPIL=False))
-    if debug: print self.series.filename
+    if self.debug: print self.series.filename
     for i in range(filterlength-1):
       self.series.next(steps=delta)
       self.files.append(self.series.current(toPIL=False))
-      if debug: print self.series.filename
+      if self.debug: print self.series.filename
     d1,d2=self.files[0].dim1,self.files[0].dim2
     self.median=N.zeros((d2,d1)).astype(N.float)
   
   def reset(self,number,delta=1):
     self.files=[]
-    print 'i want to jump to',number
+    if self.debug: print 'i want to jump to',number
     self.series.jump(number)
     for i in range(self.filterlength):
       self.series.next(steps=delta)
       self.files.append(self.series.current(toPIL=False))
-      print self.series.filename
+      if self.debug: print self.series.filename
     
   def run(self):
       flen=self.filterlength
@@ -46,7 +47,6 @@ class median_file_series:
           self.median[i,:]=sorted[flen/2-1,...]
 
   def slide(self,steps=1,delta=1):
-    print 'slide', steps, self.filterlength 
     if steps+1000<self.filterlength:
       for i in range(steps):
         #pop the first element of the filelist
@@ -58,15 +58,19 @@ class median_file_series:
         #reevaluate median
       self.run()
     else:
-      print 'sliding would be inefficient - doing a jump instead'
+      if self.debug: print 'sliding would be inefficient - doing a jump instead'
       self.reset(self.series.number+(steps-self.filterlength)*delta,delta=delta)
       self.run()
     
-  def write(self,fname):
+  def write(self,fname,header = None):
+    if self.debug: print 'write median image to', fname
     e=edfimage.edfimage()
     e.data=self.median
     e.header=edfimage.DEFAULT_VALUES
     e.header['col_end']=e.dim1-1
     e.header['row_end']=e.dim2-1
     e.header['DataType']='UnsignedShort'
+    if header != None:
+      for arg in header:
+        e.header[arg] = header[arg]
     e.write(fname)

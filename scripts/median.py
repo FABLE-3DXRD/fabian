@@ -11,9 +11,9 @@ if __name__=='__main__':
                       dest="filename", type="string",
                       help="Name of an image file")
     parser.add_option("-o", "--output", action="store",
-                      dest="median_filename", type="string",
-                      default='median_image.edf',
-                      help="Name of median file")
+                      dest="median_filestem", type="string",
+                      default='median_image',
+                      help="Stem of median file")
     parser.add_option("-f", "--first", action="store",
                       dest="first", type="int",
                       default = None,
@@ -26,6 +26,10 @@ if __name__=='__main__':
                       dest="delta", type="int",
                       default = 1,
                       help="step in between number of files to be used")
+    parser.add_option("-S", "--slide", action="store",
+                      dest="slide", type="int",
+                      default = 0,
+                      help="no of median images")
     parser.add_option("-d", "--debug", action="store_true",
                       dest="debug",default =False,
                       help="Run in debug mode")
@@ -59,12 +63,19 @@ if __name__=='__main__':
                           options.delta,
                           options.debug)
     mf.run()
-    mf.write(options.median_filename);
-    mf.slide(2,
-             options.delta)
+    if options.slide > 0:
+      mf.write(options.median_filestem+'0000.edf');
+      for i in range(1,options.slide):
+        out = options.median_filestem+ '%04d' %i + '.edf'
+        mf.slide(options.filterlength,
+                 options.delta)
+        mf.write(out)
+    else:
+      mf.write(options.median_filestem+'.edf');
+
+
 
     #mf.slide(int(sys.argv[3]),int(sys.argv[4]))
-    #mf.write('med2.edf');
     #mf.slide(int(sys.argv[3]),int(sys.argv[4]))
     #mf.write('med3.edf');
     if options.debug:print 'process time (sec): ',(time.clock()-b)
