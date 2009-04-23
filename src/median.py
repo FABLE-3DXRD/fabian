@@ -6,17 +6,17 @@ from Fabian import image_file_series
 
 class median_file_series:
 
-  def __init__(self,filename,startnumber, filterlength, delta=1, quiet=1):
+  def __init__(self,filename,startnumber, filterlength, delta=1, debug=1):
     self.filterlength=filterlength
     self.files=[]
     self.series=image_file_series.image_file_series(filename)
     self.series.jump(startnumber)
     self.files.append(self.series.current(toPIL=False))
-    if not quiet: print self.series.filename
+    if debug: print self.series.filename
     for i in range(filterlength-1):
       self.series.next(steps=delta)
       self.files.append(self.series.current(toPIL=False))
-      if not quiet: print self.series.filename
+      if debug: print self.series.filename
     d1,d2=self.files[0].dim1,self.files[0].dim2
     self.median=N.zeros((d2,d1)).astype(N.float)
   
