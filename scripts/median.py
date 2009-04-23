@@ -60,6 +60,9 @@ if __name__=='__main__':
                           options.debug)
     mf.run()
     mf.write(options.median_filename);
+    mf.slide(2,
+             options.delta)
+
     #mf.slide(int(sys.argv[3]),int(sys.argv[4]))
     #mf.write('med2.edf');
     #mf.slide(int(sys.argv[3]),int(sys.argv[4]))
