@@ -11,27 +11,46 @@ class median_file_series:
     self.files = []
     self.debug = debug
     self.series = image_file_series.image_file_series(filename)
-    self.series.jump(startnumber)
-    self.files.append(self.series.current(toPIL=False))
-    if self.debug: print self.series.filename
-    for i in range(filterlength-1):
-      self.series.next(steps=delta)
+    try:
+      self.series.jump(startnumber)
       self.files.append(self.series.current(toPIL=False))
+      skipping = 0
+    except:
+      skipping = 1
+      print 'warning file does not exist'
+
+    if self.debug: print self.series.filename
+    
+    for i in range(filterlength-1):
+      try:
+        self.series.next(steps=delta+skipping)
+        self.files.append(self.series.current(toPIL=False))
+        skipping = 0
+      except:
+        print 'warning file does not'
+        skipping += 1
       if self.debug: print self.series.filename
     d1,d2=self.files[0].dim1,self.files[0].dim2
+    print len(self.files)
     self.median=N.zeros((d2,d1)).astype(N.float)
   
   def reset(self,number,delta=1):
     self.files=[]
     if self.debug: print 'i want to jump to',number
     self.series.jump(number)
+    skipping = 0
     for i in range(self.filterlength):
-      self.series.next(steps=delta)
-      self.files.append(self.series.current(toPIL=False))
+      try:
+        self.series.next(steps=delta+skipping)
+        self.files.append(self.series.current(toPIL=False))
+        skipping = 0
+      except:
+        skipping += 1
       if self.debug: print self.series.filename
     
   def run(self):
-      flen=self.filterlength
+      flen=len(self.files)
+      print flen
       d1,d2=self.files[0].dim1,self.files[0].dim2
       sorted=N.zeros((flen,d1))
       for i in range(d2):
@@ -59,13 +78,15 @@ class median_file_series:
       self.run()
     else:
       if self.debug: print 'sliding would be inefficient - doing a jump instead'
+      print 'NO: ',self.series.number+(steps-self.filterlength)*delta
+      print self.filterlength,delta,self.series.number
       self.reset(self.series.number+(steps-self.filterlength)*delta,delta=delta)
       self.run()
     
   def write(self,fname,header = None):
     if self.debug: print 'write median image to', fname
     e=edfimage.edfimage()
-    e.data=self.median
+    e.data=N.clip(self.median,0, 2**16-1)
     e.header=edfimage.DEFAULT_VALUES
     e.header['col_end']=e.dim1-1
     e.header['row_end']=e.dim2-1
