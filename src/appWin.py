@@ -189,6 +189,10 @@ class imageWin:
                           width =6, bg ='white',bd=1, relief=RIDGE, anchor=W)
     self.ShowZoom.pack(side=RIGHT, padx = 2)
 
+    self.ShowError = Label(frameInfo, text="" ,width = 20,
+                           anchor=W)
+    self.ShowError.pack(side=RIGHT, padx = 2)
+
   def show_peaks(self,event=None):
     # Using <p> to toggle between show and don't show peaks 
     if event !=None:
@@ -685,15 +689,25 @@ class imageWin:
     else:
       self.scale = 255.0 / (scaled_max - scaled_min)
     self.offset = - scaled_min * self.scale
-    if newimage: self.im=newimage
+    if newimage: 
+      self.im=newimage
+      print "IS NEW"
     imcrop = self.im.crop(self.zoomarea)
     im8c = imcrop.point(lambda i: i * self.scale + self.offset).convert('L')
+    ###>
+#    self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
+#    self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
+    ###<
     self.img = ImageTk.PhotoImage(im8c.resize((self.canvas_xsize,self.canvas_ysize)))
     self.im_min,self.im_max,self.im_mean = self.get_img_stats(imcrop)
     self.ShowMin.config(text="Min %10g" %(self.im_min))
     self.ShowMax.config(text="Max %10g" %(self.im_max))
     self.ShowMean.config(text="Mean %10g" %(self.im_mean))
     self.canvas.lower(self.canvas.create_image(0,0,anchor=NW, image=self.img))
+    ###>
+#    self.canvas.config(width=self.canvas_xsize, height=self.canvas_ysize)
+#    self.canvas.scale('all',0,0,1/self.zoomfactor,1/self.zoomfactor)
+    ###<
     try:
       showpeaks = self.ShowPeaks.get()
     except:
@@ -1011,8 +1025,21 @@ class appWin(imageWin):
         fm.pack(side=TOP,anchor=W)
 
   def make_header_info(self):
-    self.HeaderInfo = Label(self.page1, text='', anchor=W)
-    self.HeaderInfo.pack(side=TOP,fill=BOTH)
+    
+    self.TextInfo = Frame(self.page1, bd=0)
+    self.TextInfo.pack(side=TOP,fill=X)
+
+    self.HeaderInfo = Label(self.TextInfo, text='', anchor=W)
+    self.HeaderInfo.pack(side=LEFT,fill=BOTH)
+
+    self.ErrorInfo = Label(self.TextInfo, text='',anchor=W)
+    self.ErrorInfo.pack(side=RIGHT,fill=BOTH)
+
+#    self.HeaderInfo = Label(self.page1, text='', anchor=W)
+#    self.HeaderInfo.pack(side=TOP,fill=BOTH)
+
+#    self.ErrorInfo = Label(self.page1, text='fdfdfd', anchor=W)
+#    self.ErrorInfo.pack(side=TOP,fill=BOTH)
     
   def clear_header_page(self):
     for child in self.HeaderInterior.winfo_children():
@@ -1094,7 +1121,7 @@ class appWin(imageWin):
     Button(frameScale,
            text='go to number:', 
            bg='white', 
-           command=self.gotoimage).pack(side=RIGHT,padx=2)
+           command=self.gotoimage).pack(side=RIGHT, padx=2)
     frameScale.pack(side=TOP,expand=1, pady=10, fill=X)
      
   def make_command_menu(self,master):
@@ -1380,21 +1407,43 @@ class appWin(imageWin):
     #  newfilename=construct_filename(self.filename.get(),newfilenumber)
     try:
       self.openimage(newfilename)#try to open that file
+      self.ErrorInfo.config(text='' , bg='grey85')
     except IOError:
       try:
         #that didn't work - so try the unpadded version
         newfilename=fabio.jump_filename(self.filename.get(),newfilenumber,padding=False)
         self.openimage(newfilename)
+        self.ErrorInfo.config(text='' , bg='grey85')
       except IOError:
-        e=Error.Error()
-        msg="No such file: %s " %(newfilename)
-        e.Er(msg)
+        #e=Error.Error()
+        #msg="No such file: %s " %(newfilename)
+        #e.Er(msg)
+        self.ErrorInfo.config(text='Missing file: %s ' %(newfilename), bg='red')
         self.master.config(cursor='left_ptr')
          #Reset filenumber entry
         #HOS self.displaynumber.set(fabio.extract_filenumber(self.filename.get()))
         self.displaynumber.set(fabio.getnum(self.filename.get()))
         return False
     #image loaded ok
+
+  ###### COPIED FROM OPENFILE
+    #set the image dimensions and zoom out if it is big
+    screen_width = self.master.winfo_screenwidth()
+    screen_height = self.master.winfo_screenheight()
+    self.xsize = globals()["image_xsize"]
+    self.ysize = globals()["image_ysize"]
+    self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10,
+                           round(screen_height/(2.*self.ysize)*10)/10)
+    
+    self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
+    self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
+    self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
+    self.frameScroll.config(width=self.canvas_xsize+30, height=self.canvas_ysize+30)
+    self.noteb1.setnaturalsize() # update size of notebook page
+    #self.update(newimage=self.im)
+    ######### SEEMS TO WORK
+
+
     self.filename.set(newfilename)
     self.displaynumber.set(newfilenumber)
     self.update(newimage=self.im,filename=newfilename)
@@ -1499,13 +1548,39 @@ class appWin(imageWin):
     newfilename = fabio.jump_filename(self.filename.get(), newfilenumber)
     try:
       self.openimage(newfilename)#try to open that file
-    except IOError:
-      e=Error.Error()
-      msg="No such file: %s " %(newfilename)
-      e.Er(msg)
+      self.ErrorInfo.config(text='' , bg='grey85')
+    #except IOError:
+    except:
+      self.ErrorInfo.config(text='Missing file: %s ' %(newfilename), bg='red')
       self.master.config(cursor='left_ptr')
+      
+      #e=Error.Error()
+      #msg="No such file: %s " %(newfilename)
+      #e.Er(msg)
+      #e.sleep(5)
+      #e.quit()
       return False
     #image loaded ok
+    #HOS NEW 051009
+  ###### COPIED FROM OPENFILE
+    #set the image dimensions and zoom out if it is big
+    screen_width = self.master.winfo_screenwidth()
+    screen_height = self.master.winfo_screenheight()
+    self.xsize = globals()["image_xsize"]
+    self.ysize = globals()["image_ysize"]
+    self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10,
+                           round(screen_height/(2.*self.ysize)*10)/10)
+    
+    self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
+    self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
+    self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
+    self.frameScroll.config(width=self.canvas_xsize+30, height=self.canvas_ysize+30)
+    self.noteb1.setnaturalsize() # update size of notebook page
+    #self.update(newimage=self.im)
+    ######### SEEMS TO WORK
+
+
+
     self.filename.set(newfilename)
     self.displaynumber.set(newfilenumber)
     self.update(newimage=self.im,filename=newfilename)
@@ -1525,19 +1600,42 @@ class appWin(imageWin):
     try:
       # newfilename=construct_filename(self.filename.get(),newfilenumber)
       self.openimage(newfilename)#try to open that file
+      self.ErrorInfo.config(text='' , bg='grey85')
     except IOError:
       try:
-        #that didn't work - so try the unpadded version
         newfilename = fabio.jump_filename(self.filename.get(), newfilenumber, padding=False)
+        #that didn't work - so try the unpadded version
         # newfilename=construct_filename(self.filename.get(),newfilenumber,padding=False)
         self.openimage(newfilename)
-      except IOError:
-        e=Error.Error()
-        msg="No such file: %s " %(newfilename)
-        e.Er(msg)
+        self.ErrorInfo.config(text='' , bg='grey85')
+
+      except:
+        #e=Error.Error()
+        #msg="No such file: %s " %(newfilename)
+        #e.Er(msg)
+        self.ErrorInfo.config(text='Missing file: %s ' %(newfilename), bg='red')
+
         self.master.config(cursor='left_ptr')
         return False
     #image loaded ok
+    #HOS NEW 051009
+  ###### COPIED FROM OPENFILE
+    #set the image dimensions and zoom out if it is big
+    screen_width = self.master.winfo_screenwidth()
+    screen_height = self.master.winfo_screenheight()
+    self.xsize = globals()["image_xsize"]
+    self.ysize = globals()["image_ysize"]
+    self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10,
+                           round(screen_height/(2.*self.ysize)*10)/10)
+    
+    self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
+    self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
+    self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
+    self.frameScroll.config(width=self.canvas_xsize+30, height=self.canvas_ysize+30)
+    self.noteb1.setnaturalsize() # update size of notebook page
+    #self.update(newimage=self.im)
+    ######### SEEMS TO WORK
+
     self.filename.set(newfilename)
     self.displaynumber.set(newfilenumber)
     self.update(newimage=self.im,filename=newfilename)
