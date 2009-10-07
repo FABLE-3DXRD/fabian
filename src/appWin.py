@@ -18,7 +18,7 @@ from tkFileDialog import *
 import tkFont
 import re,os,sys,time,thread,glob
 from sets import Set as set
-
+from numpy import float32
 
 
 
@@ -224,13 +224,26 @@ class imageWin:
           self.showpeaks = False
           self.ShowPeaks.set(False)
         return
+    from xfab.detector import xy_to_detyz
+
     try: # draw peaks on canvas
       #self.clear_peaks()
       self.canvas.delete('peaks')
+      myc = 0
       for ipeaks in peaks[os.path.split(self.filename.get())[-1]]:
+        myc += 1
         if int(ipeaks[0]) > 0: # globals()["min_pixel"]:
-          circ_center=[(ipeaks[1]-self.zoomarea[0])*self.zoomfactor,
-                       (ipeaks[2]-self.zoomarea[1])*self.zoomfactor]
+          (xp,yp) = xy_to_detyz([ipeaks[2],ipeaks[1]],
+                                self.orientation[0],
+                                self.orientation[1],
+                                self.orientation[2],
+                                self.orientation[3],
+                                self.xsize,
+                                self.ysize)
+          if myc < 10: 
+            print [ipeaks[1],ipeaks[2]],[xp,yp]
+          circ_center=[(xp-self.zoomarea[0])*self.zoomfactor,
+                       (yp-self.zoomarea[1])*self.zoomfactor]
           rad = globals()["peak_radius"]*self.zoomfactor
           corners=(circ_center[0]-rad,circ_center[1]-rad,
                    circ_center[0]+rad,circ_center[1]+rad)
@@ -691,7 +704,6 @@ class imageWin:
     self.offset = - scaled_min * self.scale
     if newimage: 
       self.im=newimage
-      print "IS NEW"
     imcrop = self.im.crop(self.zoomarea)
     im8c = imcrop.point(lambda i: i * self.scale + self.offset).convert('L')
     ###>
@@ -836,6 +848,7 @@ class appWin(imageWin):
     self.master=master
     #these keep track of the AOIs
     self.aoi=[]
+    self.orientation = [1,0,0,1]
     self.zoom_win = 0
     self.line_win = 0
     self.intprof_win = 0
@@ -886,6 +899,8 @@ class appWin(imageWin):
     self.ShowPeaks = BooleanVar()
     self.showpeaks = False
     self.ShowPeaks.set(False)
+    self.ImOrient = IntVar()
+    self.ImOrient.set(1)
     self.autofileupdate = BooleanVar()
     self.autofileupdate.set(False)
     self.sleeptime = 0
@@ -1166,7 +1181,8 @@ class appWin(imageWin):
 
     ImageMenu = Menubutton(frameMenubar, text='Image',underline=0)
     ImageMenu.pack(side=LEFT, padx="2m")
-    ImageMenu.menu =Menu(ImageMenu)
+    ImageMenu.menu = Menu(ImageMenu)
+
     ImageMenu.menu.transform =Menu(ImageMenu.menu)
     ImageMenu.menu.add_cascade(label='Transform',menu=ImageMenu.menu.transform)
     ImageMenu.menu.transform.add_checkbutton(label='Flip horizontal',
@@ -1196,7 +1212,63 @@ class appWin(imageWin):
                                              variable=self.Rot270)
     ImageMenu.menu.transform.add_command(label='Reset all',
                                          command=(lambda:self.transform(5)))
+#    ImageMenu['menu']=ImageMenu.menu
+
+###NEW ORIENTATIONS
+    ImageMenu.menu.orientation  = Menu(ImageMenu.menu)
+
+    ImageMenu.menu.add_cascade(label='Orientation',
+                               menu=ImageMenu.menu.orientation)
+    ImageMenu.menu.orientation.add_radiobutton(label='(1,0,0,1)',
+                                               command= self.set_orientation ,
+                                               value=1,
+                                               variable=self.ImOrient)
+
+
+    ImageMenu.menu.orientation.add_radiobutton(label='(1,0,0,-1)',
+                                               command= self.set_orientation ,
+                                               value=2,
+                                               variable=self.ImOrient)
+
+
+    ImageMenu.menu.orientation.add_radiobutton(label='(-1,0,0,1)',
+                                               command= self.set_orientation ,
+                                               value=3,
+                                               variable=self.ImOrient)
+
+
+    ImageMenu.menu.orientation.add_radiobutton(label='(-1,0,0,-1)',
+                                               command= self.set_orientation ,
+                                               value=4,
+                                               variable=self.ImOrient)
+
+
+    ImageMenu.menu.orientation.add_radiobutton(label='(0,1,1,0)',
+                                               command= self.set_orientation ,
+                                               value=5,
+                                               variable=self.ImOrient)
+
+    ImageMenu.menu.orientation.add_radiobutton(label='(0,1,-1,0)',
+                                               command= self.set_orientation ,
+                                               value=6,
+                                               variable=self.ImOrient)
+
+    ImageMenu.menu.orientation.add_radiobutton(label='(0,-1,1,0)',
+                                               command= self.set_orientation ,
+                                               value=7,
+                                               variable=self.ImOrient)
+
+    ImageMenu.menu.orientation.add_radiobutton(label='(0,-1,-1,0)',
+                                               command= self.set_orientation ,
+                                               value=8,
+                                               variable=self.ImOrient)
+
+
+
     ImageMenu['menu']=ImageMenu.menu
+
+
+###
 
     CrystMenu = Menubutton(frameMenubar, text='CrystTools',underline=0)
     CrystMenu.pack(side=LEFT, padx="2m")
@@ -1227,6 +1299,29 @@ class appWin(imageWin):
     HelpMenu['menu']=HelpMenu.menu
     frameMenubar.pack(fill=X,side=TOP)
     frameMenubar.tk_menuBar((FileMenu, ToolMenu, CrystMenu, HelpMenu))
+
+  def set_orientation(self,value=None):
+    from xfab.detector import image_flipping
+    type = self.ImOrient.get()
+    if type == 1:
+      self.orientation = [1,0,0,1]
+    if type == 2:
+      self.orientation = [1,0,0,-1]
+    if type == 3:
+      self.orientation = [-1,0,0,1]
+    if type == 4:
+      self.orientation = [-1,0,0,-1]
+    if type == 5:
+      self.orientation = [0,1,1,0]
+    if type == 6:
+      self.orientation = [0,1,-1,0]
+    if type == 7:
+      self.orientation = [0,-1,1,0]
+    if type == 8:
+      self.orientation = [0,-1,-1,0]
+    print self.orientation 
+    self.gotoimage()
+    
 
   def transform(self,type,value=None):
     if type == 5: # Reset image transformations
@@ -1339,32 +1434,11 @@ class appWin(imageWin):
     presentdir = os.path.split(fname)[0]
     globals()["opendir"] = presentdir
     self.filename.set(fname)
-    # (newfilenumber,filetype)=deconstruct_filename(self.filename.get())
-    #HOS self.displaynumber.set(fabio.extract_filenumber(self.filename.get()))
-    self.displaynumber.set(fabio.getnum(self.filename.get()))
+    self.displaynumber.set(fabio.getnum(os.path.split(self.filename.get())[-1]))
     if filename == None: # No image has been opened before
       return 
     else:
       self.gotoimage()
-      try:
-        #set the image dimensions and zoom out if it is big
-        screen_width = self.master.winfo_screenwidth()
-        screen_height = self.master.winfo_screenheight()
-        self.xsize = globals()["image_xsize"]
-        self.ysize = globals()["image_ysize"]
-        self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10,
-                               round(screen_height/(2.*self.ysize)*10)/10)
-    
-        self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
-        self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
-        self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
-        self.frameScroll.config(width=self.canvas_xsize+30, height=self.canvas_ysize+30)
-        self.noteb1.setnaturalsize() # update size of notebook page
-        self.update(newimage=self.im)
-        #print 'TRY'
-      except:
-        #print 'PASSED'
-        pass
  
   def rescale(self,event=None):
     self.update()
@@ -1404,14 +1478,15 @@ class appWin(imageWin):
       newfilenumber = None
       pass
     newfilename = fabio.jump_filename(self.filename.get(),newfilenumber)
-    #  newfilename=construct_filename(self.filename.get(),newfilenumber)
     try:
       self.openimage(newfilename)#try to open that file
       self.ErrorInfo.config(text='' , bg='grey85')
     except IOError:
       try:
         #that didn't work - so try the unpadded version
-        newfilename=fabio.jump_filename(self.filename.get(),newfilenumber,padding=False)
+        newfilename=fabio.jump_filename(self.filename.get(),
+                                        newfilenumber,
+                                        padding=False)
         self.openimage(newfilename)
         self.ErrorInfo.config(text='' , bg='grey85')
       except IOError:
@@ -1420,8 +1495,7 @@ class appWin(imageWin):
         #e.Er(msg)
         self.ErrorInfo.config(text='Missing file: %s ' %(newfilename), bg='red')
         self.master.config(cursor='left_ptr')
-         #Reset filenumber entry
-        #HOS self.displaynumber.set(fabio.extract_filenumber(self.filename.get()))
+        #Reset filenumber entry
         self.displaynumber.set(fabio.getnum(self.filename.get()))
         return False
     #image loaded ok
@@ -1434,13 +1508,13 @@ class appWin(imageWin):
     self.ysize = globals()["image_ysize"]
     self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10,
                            round(screen_height/(2.*self.ysize)*10)/10)
-    
     self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
     self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
     self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
-    self.frameScroll.config(width=self.canvas_xsize+30, height=self.canvas_ysize+30)
+    self.frameScroll.config(width=self.canvas_xsize+30,
+                            height=self.canvas_ysize+30)
     self.noteb1.setnaturalsize() # update size of notebook page
-    #self.update(newimage=self.im)
+
     ######### SEEMS TO WORK
 
 
@@ -1465,10 +1539,14 @@ class appWin(imageWin):
         self.ysize = globals()["image_ysize"]
         self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10,
                                round(screen_height/(2.*self.ysize)*10)/10)
-        self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
-        self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
-        self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
-        self.frameScroll.config(width=self.canvas_xsize+30, height=self.canvas_ysize+30)
+        self.canvas_xsize = \
+            int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
+        self.canvas_ysize = \
+            int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
+        self.canvas.config(width=self.canvas_xsize,
+                           height=self.canvas_ysize)
+        self.frameScroll.config(width=self.canvas_xsize+30,
+                                height=self.canvas_ysize+30)
         self.noteb1.setnaturalsize() # update size of notebook page
       except:
         pass
@@ -1495,11 +1573,17 @@ class appWin(imageWin):
     if event !=None:
       if event.keysym == 'Up':
         self.sleeptime =self.sleeptime + 0.5
+        msg = 'Delay time: %3.1f' %self.sleeptime
+        msg_color = 'yellow'
       elif event.keysym == 'Down':
         if self.sleeptime > 0: 
           self.sleeptime=self.sleeptime - 0.5
+          msg = 'Delay time: %3.1f' %self.sleeptime
+          msg_color = 'yellow'
         else:
-          print 'Can\'t go any quicker!'
+          msg = 'Can\'t go any quicker!'
+          msg_color = 'red'
+      self.ErrorInfo.config(text=msg, bg=msg_color)
          
     
   def autonextimage(self,event=None):
@@ -1508,12 +1592,22 @@ class appWin(imageWin):
       if event.keysym == 'f':
         if self.autofileupdate.get() == False:
           self.autofileupdate.set(True)
+          print 'IN TRUE'
         else:
           self.autofileupdate.set(False)
+    # Set Info
+    if self.autofileupdate.get():
+      msg = 'Delay time: %3.1f' %self.sleeptime
+      msg_color = 'yellow'
+    else:
+      msg = ''
+      msg_color = 'grey85'
+    self.ErrorInfo.config(text=msg, bg=msg_color)
 
     #update filename, prefix and number
     self.newfilenumber = int(self.displaynumber.get())+1
-    self.newfilename = fabio.jump_filename(self.filename.get(),self.newfilenumber)
+    self.newfilename = fabio.jump_filename(self.filename.get(),
+                                           self.newfilenumber)
     thread.start_new_thread(self.run,())
 
   # run thread until autofileupdate is set to False 
@@ -1530,12 +1624,13 @@ class appWin(imageWin):
           self.update_header_label()
           self.master.config(cursor='left_ptr')
           self.newfilenumber=int(self.displaynumber.get())+1
-          self.newfilename=fabio.jump_filename(self.filename.get(),self.newfilenumber)
+          self.newfilename=fabio.jump_filename(self.filename.get(),
+                                               self.newfilenumber)
           self.master.config(cursor='left_ptr')
           time.sleep(self.sleeptime)
         except:
           pass
-
+    self.master.config(cursor='left_ptr')
 
   def nextimage(self,event=None):
     #update filename, prefix and number
@@ -1545,49 +1640,9 @@ class appWin(imageWin):
     except:
         self.master.config(cursor='left_ptr')
         return True 
-    newfilename = fabio.jump_filename(self.filename.get(), newfilenumber)
-    try:
-      self.openimage(newfilename)#try to open that file
-      self.ErrorInfo.config(text='' , bg='grey85')
-    #except IOError:
-    except:
-      self.ErrorInfo.config(text='Missing file: %s ' %(newfilename), bg='red')
-      self.master.config(cursor='left_ptr')
-      
-      #e=Error.Error()
-      #msg="No such file: %s " %(newfilename)
-      #e.Er(msg)
-      #e.sleep(5)
-      #e.quit()
-      return False
-    #image loaded ok
-    #HOS NEW 051009
-  ###### COPIED FROM OPENFILE
-    #set the image dimensions and zoom out if it is big
-    screen_width = self.master.winfo_screenwidth()
-    screen_height = self.master.winfo_screenheight()
-    self.xsize = globals()["image_xsize"]
-    self.ysize = globals()["image_ysize"]
-    self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10,
-                           round(screen_height/(2.*self.ysize)*10)/10)
-    
-    self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
-    self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
-    self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
-    self.frameScroll.config(width=self.canvas_xsize+30, height=self.canvas_ysize+30)
-    self.noteb1.setnaturalsize() # update size of notebook page
-    #self.update(newimage=self.im)
-    ######### SEEMS TO WORK
-
-
-
-    self.filename.set(newfilename)
     self.displaynumber.set(newfilenumber)
-    self.update(newimage=self.im,filename=newfilename)
-    self.update_header_page()
-    self.update_header_label()
-    self.master.config(cursor='left_ptr')
-    return True
+    self.gotoimage()
+    return
 
   def previousimage(self,event=None):
     self.master.config(cursor='watch')
@@ -1596,64 +1651,29 @@ class appWin(imageWin):
     except:
         self.master.config(cursor='left_ptr')
         return True 
-    newfilename = fabio.jump_filename(self.filename.get(), newfilenumber)
-    try:
-      # newfilename=construct_filename(self.filename.get(),newfilenumber)
-      self.openimage(newfilename)#try to open that file
-      self.ErrorInfo.config(text='' , bg='grey85')
-    except IOError:
-      try:
-        newfilename = fabio.jump_filename(self.filename.get(), newfilenumber, padding=False)
-        #that didn't work - so try the unpadded version
-        # newfilename=construct_filename(self.filename.get(),newfilenumber,padding=False)
-        self.openimage(newfilename)
-        self.ErrorInfo.config(text='' , bg='grey85')
-
-      except:
-        #e=Error.Error()
-        #msg="No such file: %s " %(newfilename)
-        #e.Er(msg)
-        self.ErrorInfo.config(text='Missing file: %s ' %(newfilename), bg='red')
-
-        self.master.config(cursor='left_ptr')
-        return False
-    #image loaded ok
-    #HOS NEW 051009
-  ###### COPIED FROM OPENFILE
-    #set the image dimensions and zoom out if it is big
-    screen_width = self.master.winfo_screenwidth()
-    screen_height = self.master.winfo_screenheight()
-    self.xsize = globals()["image_xsize"]
-    self.ysize = globals()["image_ysize"]
-    self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10,
-                           round(screen_height/(2.*self.ysize)*10)/10)
-    
-    self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
-    self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
-    self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
-    self.frameScroll.config(width=self.canvas_xsize+30, height=self.canvas_ysize+30)
-    self.noteb1.setnaturalsize() # update size of notebook page
-    #self.update(newimage=self.im)
-    ######### SEEMS TO WORK
-
-    self.filename.set(newfilename)
     self.displaynumber.set(newfilenumber)
-    self.update(newimage=self.im,filename=newfilename)
-    self.update_header_page()
-    self.update_header_label()
-    self.master.config(cursor='left_ptr')
-    return True
+    self.gotoimage()
+
   
   def openimage(self,filename=None):
     #if a filename is supplied use that - otherwise get it from the GUI
     # Import fabio 
     from fabio import openimage
+    from xfab.detector import image_flipping
 
     if filename==None:
       filename=self.filename.get()
 
     try:
       img = openimage.openimage(filename)
+#      bg_corr = openimage.openimage('median_image.edf')
+#      img.data = img.data.astype(float32)-bg_corr.data.astype(float32)
+      img.data = image_flipping(img.data,
+                                self.orientation[0],
+                                self.orientation[1],
+                                self.orientation[2],
+                                self.orientation[3])
+      (img.dim2, img.dim1) = img.data.shape
       self.im = img.toPIL16()
       # We have earlier on used a flip making a PIL image
       # to keep images in the same direction we do the same here
@@ -1677,7 +1697,9 @@ class appWin(imageWin):
 	self.im=self.im.transpose(2)
 	(self.xsize, self.ysize)=(self.ysize, self.xsize)
         
-    (self.im.minval,self.im.maxval,self.im.meanval)=(img.getmin(),img.getmax(),img.getmean())
+    (self.im.minval,self.im.maxval,self.im.meanval)=(img.getmin(),
+                                                     img.getmax(),
+                                                     img.getmean())
     self.im.header=img.getheader()
     self.zoomarea=[0,0,self.xsize,self.ysize]
     self.master.title("fabian - %s" %(filename))
