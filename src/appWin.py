@@ -85,6 +85,7 @@ class imageWin:
     master.bind('<F3>',self.updatebindings)
     master.bind('<F4>',self.updatebindings)
     master.bind('<F5>',self.updatebindings)
+    master.bind('C',self.quit_children)
     master.bind('q',self.quit)
     master.bind('<FocusIn>',self.MouseEntry)
     master.bind('z',self.rezoom)
@@ -829,6 +830,15 @@ class imageWin:
         self.tool='Rocker'
       self.setbindings()
 
+  def quit_children(self,event=None):
+    #update children
+    for w in self.aoi:
+      # Firstly check if object is inside image area
+      w['zoomwin'].quit()
+    self.MouseEntry(None)
+    return True
+
+
   def quit(self,event=None):
     self.master.destroy()
 
@@ -910,6 +920,7 @@ class appWin(imageWin):
     master.bind('<F4>',self.updatebindings)
     master.bind('<F5>',self.updatebindings)
     master.bind('o',self.OpenFile)
+    master.bind('C',self.quit_children)
     master.bind('q',self.quit)
     master.bind('a',self.about)
     master.bind('h',self.help)
@@ -917,7 +928,6 @@ class appWin(imageWin):
     master.bind('z',self.rezoom)
     master.bind('x',self.rezoom)
     master.bind('c',self.clear_peaks)
-    master.bind('p',self.show_peaks)
     master.bind('p',self.show_peaks)
     master.bind('r',self.read_newpeaks)
     master.bind('f',self.autonextimage)
@@ -1150,7 +1160,7 @@ class appWin(imageWin):
                                   onvalue=True,
                                   offvalue=False,
                                   variable=self.autofileupdate)
-    FileMenu.menu.add_command(label='Quit', underline=0, command=self.quit)
+    FileMenu.menu.add_command(label='quit', underline=0, command=self.quit)
     FileMenu['menu']=FileMenu.menu
 
     ToolMenu = Menubutton(frameMenubar, text='Tools',underline=0)
@@ -1176,6 +1186,7 @@ class appWin(imageWin):
                                   command=self.setbindings,
                                   variable=self.ToolType,
                                   value='Rocker',state=imageplot_state)
+    ToolMenu.menu.add_command(label='Close subwindows', underline=0, command=self.quit_children)
     ToolMenu['menu']=ToolMenu.menu
 
     ImageMenu = Menubutton(frameMenubar, text='Image',underline=0)
@@ -1318,7 +1329,6 @@ class appWin(imageWin):
       self.orientation = [0,-1,1,0]
     if type == 8:
       self.orientation = [0,-1,-1,0]
-    print self.orientation 
     self.gotoimage()
     
 
