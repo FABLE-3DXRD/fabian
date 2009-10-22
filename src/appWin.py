@@ -11,25 +11,24 @@ Authors: Henning O. Sorensen & Erik Knudsen
 from Tkinter import *
 import Pmw
 import math
-from Fabian import insert_peaks
 #from string import *
 import Image, ImageTk, ImageFile, ImageStat
 from tkFileDialog import *
 import tkFont
 import re,os,sys,time,thread,glob
-from sets import Set as set
 from numpy import float32
 
 
 
 #local fabian imports
-import About
-import Error
-from ReliefPlot import ReliefPlot
+from Fabian import insert_peaks
+from Fabian import About
+from Fabian import Error
+from Fabian.ReliefPlot import ReliefPlot
 
 imageplot_state='normal'
 try:
-  from ImagePlot import imagePlot, imagePlot2
+  from Fabian.ImagePlot import imagePlot, imagePlot2
 except:
   imageplot_state='disabled'
 

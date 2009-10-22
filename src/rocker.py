@@ -8,7 +8,7 @@ Authors: Henning O. Sorensen & Erik Knudsen
          DK-4000 Roskilde
          email:henning.sorensen@risoe.dk
 """
-import image_file_series
+from Fabian import image_file_series
 
 class rocker:
   #class to perform a rocking curve over a set of coordinates and a file sequence"
