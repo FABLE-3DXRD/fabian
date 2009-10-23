@@ -10,15 +10,12 @@ Authors: Henning O. Sorensen & Erik Knudsen
 """
 from Tkinter import *
 import Pmw
-import math
-#from string import *
 import Image, ImageTk, ImageFile, ImageStat
 from tkFileDialog import *
 import tkFont
-import re,os,sys,time,thread,glob
+import re,os,sys,time,thread
+import math
 from numpy import float32
-
-
 
 #local fabian imports
 from Fabian import insert_peaks
@@ -50,7 +47,8 @@ class imageWin:
   globals()["peaks"] = {}
   def __init__(self,master,filename=None,filenumber=0,title=None,
                zoomfactor=1,scaled_min=None,scaled_max=None,
-               scale=None, mainwin='no',zoomable='yes',coords=[0,0,0,0],
+               scale=None,orientation=[1,0,0,1],
+               mainwin='no',zoomable='yes',coords=[0,0,0,0],
                image=None,tool=None,showpeaks=None):
     #initialize var
     self.master=master
@@ -65,8 +63,10 @@ class imageWin:
     self.maxval=StringVar()
     self.minval=StringVar()
     self.showpeaks = showpeaks
+    self.ShowPeaks = BooleanVar()
+    self.ShowPeaks.set(showpeaks)
+    self.orientation = orientation
     self.peakfilename=None
-    #self.peaks={}
     if scaled_min: self.minval.set(scaled_min)
     if scaled_max: self.maxval.set(scaled_max)
     if scale:
@@ -87,6 +87,7 @@ class imageWin:
     master.bind('<F5>',self.updatebindings)
     master.bind('C',self.quit_children)
     master.bind('q',self.quit)
+    master.bind('p',self.show_peaks)
     master.bind('<FocusIn>',self.MouseEntry)
     master.bind('z',self.rezoom)
     master.bind('x',self.rezoom)
@@ -118,8 +119,6 @@ class imageWin:
     #run update to set scalings and actually display the images
     #change this to draw/redraw set of functions at some point?
     self.update()
-    if self.showpeaks == True: self.show_peaks()
-
     
 
   def make_image_canvas(self,container):
@@ -195,20 +194,26 @@ class imageWin:
 
   def show_peaks(self,event=None):
     # Using <p> to toggle between show and don't show peaks 
+
+    #print 'IN SHOW_PEAKS',self.master.title(),self.showpeaks
     if event !=None:
       if event.keysym == 'p':
-        if self.ShowPeaks.get() == False:
+        if self.showpeaks == False:
+          self.showpeaks = True
           self.ShowPeaks.set(True)
         else:
+          self.showpeaks = False
           self.ShowPeaks.set(False)
     self.master.config(cursor='watch') 
     # The next two lines is a hack to have the configure done imidiately
     self.canvas.create_oval((0,0,0,0),tag='hack',outline='red')
     self.canvas.delete('hack')
+
     try:
       self.showpeaks = self.ShowPeaks.get()
     except:
       pass
+
     if self.showpeaks == False:     # Remove peaks from canvas  
       self.clear_peaks()
       self.master.config(cursor='left_ptr')
@@ -222,26 +227,30 @@ class imageWin:
           self.newpeaks = False
         else:
           self.showpeaks = False
-          self.ShowPeaks.set(False)
+#          self.ShowPeaks.set(False)
         return
     from xfab.detector import xy_to_detyz
 
+
+      
     try: # draw peaks on canvas
-      #self.clear_peaks()
       self.canvas.delete('peaks')
-      myc = 0
+      #myc = 0
       for ipeaks in peaks[os.path.split(self.filename.get())[-1]]:
-        myc += 1
-        if int(ipeaks[0]) > 0: # globals()["min_pixel"]:
-          (xp,yp) = xy_to_detyz([ipeaks[2],ipeaks[1]],
-                                self.orientation[0],
-                                self.orientation[1],
-                                self.orientation[2],
-                                self.orientation[3],
-                                self.xsize,
-                                self.ysize)
-          if myc < 10: 
-            print [ipeaks[1],ipeaks[2]],[xp,yp]
+        #myc += 1
+        if int(ipeaks[0]) > globals()["min_pixel"]:
+          # The -1 in front of o11,o12 etc is accomodate for
+          # Rot180 made on the screen
+          (xp, yp) = xy_to_detyz([ipeaks[2],ipeaks[1]],
+                                 -1*self.orientation[0],
+                                 -1*self.orientation[1],
+                                 -1*self.orientation[2],
+                                 -1*self.orientation[3],
+                                 globals()["image_xsize"],
+                                 globals()["image_ysize"])
+
+          #if myc < 10: 
+          #  print [ipeaks[1],ipeaks[2]],[xp,yp]
           circ_center=[(xp-self.zoomarea[0])*self.zoomfactor,
                        (yp-self.zoomarea[1])*self.zoomfactor]
           rad = globals()["peak_radius"]*self.zoomfactor
@@ -254,16 +263,16 @@ class imageWin:
             %(os.path.split(self.filename.get())[-1])
         e.Er(msg)
         self.master.config(cursor='left_ptr')
-        self.ShowPeaks.set(False)
-        
+        #self.ShowPeaks.set(False)
+        self.showpeaks = False
+
+
     # Reset parameters
     self.master.config(cursor='left_ptr')
     self.newpeaks = False
     return
 
   def read_newpeaks(self,event=None):
-    # self.newpeaks = True
-    #globals()["peaks"] = {}
     self.read_peaks()
     self.ShowPeaks.set(True)
     self.showpeaks = True
@@ -292,7 +301,7 @@ class imageWin:
 
   def clear_peaks(self,event=None):
     self.showpeaks = False
-    self.ShowPeaks.set(self.showpeaks)
+#    self.ShowPeaks.set(self.showpeaks)
     self.canvas.delete('peaks')
 
 
@@ -427,7 +436,8 @@ class imageWin:
           self.canvas.delete('transientaoi')
           return
         if 'zoom' in self.master.wm_title():
-          t= 'Integrated profile %d of ' %self.intprof_win + self.master.wm_title()
+          t= 'Integrated profile %d of ' \
+              %self.intprof_win + self.master.wm_title()
           self.intprof_win = self.intprof_win + 1
         else:
           t='Integrated profile %d' % self.intprof_win
@@ -493,6 +503,7 @@ class imageWin:
                       scaled_max=self.maxval.get(),
                       scale=self.scale,coords=corners,
                       image=self.im,
+                      orientation=self.orientation,
                       tool=self.tool,
                       showpeaks=self.showpeaks)
       newwin.tool=self.tool
@@ -502,6 +513,7 @@ class imageWin:
                       filename=self.filename,
                       zoomfactor=self.zoomfactor*4,
                       coords=corners,
+                      orientation=self.orientation,
                       image=self.im,
                       tool=None)
     return newwin
@@ -688,7 +700,14 @@ class imageWin:
     imean=sum(l)/len(l)
     return (imin,imax,imean)
    
-  def update(self,scaled_min=0,scaled_max=0,newimage=None,filename=None,showpeaks=False):
+  def update(self,scaled_min=0,scaled_max=0,
+             newimage=None,
+             filename=None,
+             orientation=None,
+             showpeaks=False):
+    if  orientation != None:
+      self.orientation = orientation
+
     if self.scale==0:
       self.reset_scale()
     if (scaled_min==scaled_max==0):
@@ -716,22 +735,23 @@ class imageWin:
     self.ShowMax.config(text="Max %10g" %(self.im_max))
     self.ShowMean.config(text="Mean %10g" %(self.im_mean))
     self.canvas.lower(self.canvas.create_image(0,0,anchor=NW, image=self.img))
-    ###>
-#    self.canvas.config(width=self.canvas_xsize, height=self.canvas_ysize)
-#    self.canvas.scale('all',0,0,1/self.zoomfactor,1/self.zoomfactor)
-    ###<
+
     try:
       showpeaks = self.ShowPeaks.get()
     except:
-      pass
+      showpeaks = self.showpeaks
+
+    #print 'HHH peaks', self.master.title(), showpeaks
+
     if showpeaks == True:
       self.update_peaks()
-        
-
+      
+    #print 'HHH', self.master.title(), self.orientation
     #update children
     for w in self.aoi:
       # Firstly check if object is inside image area
-      if w['zoomwin'].zoomarea[2]>self.zoomarea[2] or  w['zoomwin'].zoomarea[3]>self.zoomarea[3]:
+      if w['zoomwin'].zoomarea[2]>self.zoomarea[2] or  \
+            w['zoomwin'].zoomarea[3]>self.zoomarea[3]:
         w['zoomwin'].quit()
         continue
       # If so update obj.
@@ -739,6 +759,7 @@ class imageWin:
         w['zoomwin'].update(scaled_min,
                             scaled_max,
                             newimage=self.im,
+                            orientation=self.orientation,
                             showpeaks=showpeaks)
       if w['wintype'] in ('IntProfile'):
         w['zoomwin'].update(coord=w['coords'],
@@ -944,14 +965,12 @@ class appWin(imageWin):
 
     if filename:
       self.filename.set(filename)
-      #self.displaynumber.set(fabio.extract_filenumber(self.filename.get()))
     else:
       self.OpenFile(filename=None)
 
     self.zoomfactor=zoomfactor
     #display image and reset scale if scaling is not given
     self.openimage()
-    #HOS self.displaynumber.set(fabio.extract_filenumber(self.filename.get()))
     self.displaynumber.set(fabio.getnum(self.filename.get()))
     self.reset_scale()
 
@@ -961,8 +980,10 @@ class appWin(imageWin):
     screen_height = master.winfo_screenheight()
     self.zoomfactor = min( round(screen_width/(1.*self.xsize)*10)/10,
                            round(screen_height/(2.*self.ysize)*10)/10)
-    self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
-    self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
+    self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*\
+                              self.zoomfactor)
+    self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*\
+                              self.zoomfactor)
 
     #Add Notebook tabs
     self.noteb1 = Pmw.NoteBook(frame)
@@ -1013,8 +1034,10 @@ class appWin(imageWin):
     #change this to draw/redraw set of functions at some point?
     self.update()
     self.setbindings()
-    self.page1.focus_force() # In Windows the focus seemingly need to enforced otherwise
-                             # the entries can not be edited unless one moves focus to a
+    self.page1.focus_force() # In Windows the focus seemingly
+                             # need to enforced otherwise
+                             # the entries can not be edited 
+                             # unless one moves focus to a
                              # different window and back 
 
 
@@ -1077,12 +1100,14 @@ class appWin(imageWin):
       self.make_header_page()
     else:      
       if set(self.im.header.keys())==set(self.headtext.keys()):
-          #they seem to be compatible, note - this keeps the checked checkboxes alive
+          # they seem to be compatible, note - this
+          # keeps the checked checkboxes alive
           for item,value in self.im.header.iteritems():
             self.headtext[item].config(text='%s' % value)
       else:
-          #they differ - make a new header page from scratch
-          #first remember the checked items to keep them checked if the exist in the new header
+          # they differ - make a new header page from scratch
+          # first remember the checked items to keep them 
+          # checked if the exist in the new header
           checkeditems=[]
           for item,value in self.newitem.iteritems():
             if value.get()=='1':
@@ -1104,7 +1129,8 @@ class appWin(imageWin):
             headertext = headertext+item+': '+'%s' %(self.im.header[item]) +'; '
     self.HeaderInfo.config(text='%s' %(headertext))
 
-  def rebind(self,e): # Hack to unbind the image change stuff when focus is in an entry
+  def rebind(self,e): # Hack to unbind the image change 
+                      # stuff when focus is in an entry
     if self.master.focus_get() == self.master:
       self.master.bind('<Left>',self.previousimage)
       self.master.bind('<Right>',self.nextimage)
@@ -1132,11 +1158,22 @@ class appWin(imageWin):
     self.emax.bind('<FocusIn>', self.rebind)
     self.emax.bind('<FocusOut>',self.rebind)
     self.emax.pack(side=LEFT,padx=4)
-    Button(frameScale,text='update', bg='white', command=self.update).pack(side=LEFT,padx=2)
-    Button(frameScale,text='reset', bg='white', command=self.reset_scale).pack(side=LEFT,padx=2)
-    Button(frameScale,text='next', bg='white', command=self.nextimage).pack(side=RIGHT)
-    Button(frameScale,text='previous', bg='white', command=self.previousimage).pack(side=RIGHT)
-    self.efilen=Entry(frameScale, textvariable=self.displaynumber, bg='white', width=6)
+    Button(frameScale,text='update', 
+           bg='white', 
+           command=self.update).pack(side=LEFT,padx=2)
+    Button(frameScale,text='reset', 
+           bg='white', 
+           command=self.reset_scale).pack(side=LEFT,padx=2)
+    Button(frameScale,text='next',
+           bg='white', 
+           command=self.nextimage).pack(side=RIGHT)
+    Button(frameScale,text='previous', 
+           bg='white', 
+           command=self.previousimage).pack(side=RIGHT)
+    self.efilen=Entry(frameScale, 
+                      textvariable=self.displaynumber, 
+                      bg='white', 
+                      width=6)
     self.efilen.bind('<FocusOut>',self.rebind)
     self.efilen.bind('<FocusIn>',self.rebind)
     self.efilen.bind('<Return>',self.gotoimage)
@@ -1186,7 +1223,8 @@ class appWin(imageWin):
                                   command=self.setbindings,
                                   variable=self.ToolType,
                                   value='Rocker',state=imageplot_state)
-    ToolMenu.menu.add_command(label='Close subwindows', underline=0, command=self.quit_children)
+    ToolMenu.menu.add_command(label='Close all windows', underline=0,
+                              command=self.quit_children)
     ToolMenu['menu']=ToolMenu.menu
 
     ImageMenu = Menubutton(frameMenubar, text='Image',underline=0)
@@ -1222,7 +1260,6 @@ class appWin(imageWin):
                                              variable=self.Rot270)
     ImageMenu.menu.transform.add_command(label='Reset all',
                                          command=(lambda:self.transform(5)))
-#    ImageMenu['menu']=ImageMenu.menu
 
 ###NEW ORIENTATIONS
     ImageMenu.menu.orientation  = Menu(ImageMenu.menu)
@@ -1273,6 +1310,20 @@ class appWin(imageWin):
                                                value=8,
                                                variable=self.ImOrient)
 
+
+#### NEW IMAGE CORRECTION 
+#     ImageMenu.menu.correction =Menu(ImageMenu.menu)
+#     ImageMenu.menu.add_cascade(label='Correction..',
+#                                menu=ImageMenu.menu.correction)
+#     ImageMenu.menu.correction.add_checkbutton(label='Subtract background',
+#                                          command=self.show_peaks,
+#                                          onvalue=True,
+#                                          offvalue=False,
+#                                          variable=self.ShowPeaks)
+#     ImageMenu.menu.correction.add_command(label='Background image',
+#                                           command=self.read_newpeaks)
+#     ImageMenu.menu.correction.add_command(label='Flood field image',
+#                                      command=self.peak_options)
 
 
     ImageMenu['menu']=ImageMenu.menu
@@ -1357,10 +1408,13 @@ class appWin(imageWin):
       if value == False:
         type = 2
     ##### Make sure canvas has the right size
-    self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*self.zoomfactor)
-    self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*self.zoomfactor)
+    self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*\
+                              self.zoomfactor)
+    self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*\
+                              self.zoomfactor)
     self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
-    self.frameScroll.config(width=self.canvas_xsize+30, height=self.canvas_ysize+30)
+    self.frameScroll.config(width=self.canvas_xsize+30, 
+                            height=self.canvas_ysize+30)
     self.noteb1.setnaturalsize() # update size of notebook page
 
     imean = self.im.meanval # hack to make get_img_stats hack work
@@ -1374,8 +1428,10 @@ class appWin(imageWin):
     framepixel = Frame(self.peakoptions, bd=0, bg="white")
     framepixel.pack()
     self.min_pixel.set(globals()["min_pixel"])
-    Label(framepixel, text="Show only peaks with more pixels than ").pack(side=LEFT)
-    Entry(framepixel, textvariable=self.min_pixel, bg='white', width=6).pack(side=LEFT)
+    Label(framepixel, 
+          text="Show only peaks with more pixels than ").pack(side=LEFT)
+    Entry(framepixel, textvariable=self.min_pixel, 
+          bg='white', width=6).pack(side=LEFT)
     framepixelcolour = Frame(self.peakoptions, bd=0, bg="white")
     framepixelcolour.pack(fill=X,expand='yes')
     PeakColourSelect = Pmw.ComboBox(framepixelcolour,
@@ -1384,7 +1440,11 @@ class appWin(imageWin):
                                     dropdown = 2,
                                     listheight=100,
                                     selectioncommand=self.PeakColour,
-                                    scrolledlist_items=("red","blue","green","orange","purple"))
+                                    scrolledlist_items=("red",
+                                                        "blue",
+                                                        "green",
+                                                        "orange",
+                                                        "purple"))
     PeakColourSelect.pack()
     PeakColourSelect.selectitem(colour['peak_colour'])
 
@@ -1396,17 +1456,16 @@ class appWin(imageWin):
           bg='white',
           width=6).pack(side=LEFT,fill=X,expand='yes')
 
-    #peakfile = Frame(self.peakoptions, bd=0, bg="white")
-    #peakfile.pack(fill=X,expand='yes')
-    #Label(peakfile,
-    #      text=self.peakfilename,
-    #      bg='white').pack(side=LEFT,fill=X,expand='yes')
-    #Button(peakfile, text='Read peaks', command=self.read_newpeaks).pack(side=LEFT,fill=X,expand='yes')
-
     but = Frame(self.peakoptions, bd=0, bg="white")
     but.pack(side=BOTTOM,fill=X,expand='yes')
-    Button(but, text='Update', command=self.update_peak_options).pack(side=LEFT,fill=X,expand='yes')
-    Button(but, text='Close', command=self.setminpixel).pack(side=LEFT,fill=X,expand='yes')
+    Button(but, text='Update', 
+           command=self.update_peak_options).pack(side=LEFT,
+                                                  fill=X,
+                                                  expand='yes')
+    Button(but, text='Close', 
+           command=self.setminpixel).pack(side=LEFT,
+                                          fill=X,
+                                          expand='yes')
 
 
   def update_peak_options(self):
@@ -1462,10 +1521,12 @@ class appWin(imageWin):
     if (self.scaled_min,self.scaled_max,newimage)==(s_min,s_max,None):
       #no need to rescale or redraw
       return
+
     imageWin.update(self,
                     scaled_min=s_min,
                     scaled_max=s_max,
                     newimage=newimage,
+                    orientation=self.orientation,
                     filename=filename)
     self.noteb1.setnaturalsize()
     #store scaling vals for later reference
@@ -1509,7 +1570,6 @@ class appWin(imageWin):
         return False
     #image loaded ok
 
-  ###### COPIED FROM OPENFILE
     #set the image dimensions and zoom out if it is big
     screen_width = self.master.winfo_screenwidth()
     screen_height = self.master.winfo_screenheight()
@@ -1526,10 +1586,10 @@ class appWin(imageWin):
 
     ######### SEEMS TO WORK
 
-
     self.filename.set(newfilename)
     self.displaynumber.set(newfilenumber)
-    self.update(newimage=self.im,filename=newfilename)
+    self.update(newimage=self.im,
+                filename=newfilename)
     self.update_header_page()
     self.update_header_label()
     self.master.config(cursor='left_ptr')
@@ -1601,7 +1661,6 @@ class appWin(imageWin):
       if event.keysym == 'f':
         if self.autofileupdate.get() == False:
           self.autofileupdate.set(True)
-          print 'IN TRUE'
         else:
           self.autofileupdate.set(False)
     # Set Info
@@ -1622,7 +1681,6 @@ class appWin(imageWin):
   # run thread until autofileupdate is set to False 
   def run(self):
     while(self.autofileupdate.get()==True):
-      #if self.newfilename in glob.glob('*'):
         try:
           self.master.config(cursor='watch')
           self.openimage(self.newfilename)#try to open that file
@@ -1677,11 +1735,13 @@ class appWin(imageWin):
       img = openimage.openimage(filename)
 #      bg_corr = openimage.openimage('median_image.edf')
 #      img.data = img.data.astype(float32)-bg_corr.data.astype(float32)
+      # The -1 in front of o11,o12 etc is accomodate for
+      # Rot180 made on the screen
       img.data = image_flipping(img.data,
-                                self.orientation[0],
-                                self.orientation[1],
-                                self.orientation[2],
-                                self.orientation[3])
+                                -1*self.orientation[0],
+                                -1*self.orientation[1],
+                                -1*self.orientation[2],
+                                -1*self.orientation[3])
       (img.dim2, img.dim1) = img.data.shape
       self.im = img.toPIL16()
       # We have earlier on used a flip making a PIL image
@@ -1739,6 +1799,6 @@ class appWin(imageWin):
 
   def help(self,event=None):
     import webbrowser
-    webbrowser.open('http://fable.sourceforge.net/index.php/Fabian')
+    webbrowser.open('http://sourceforge.net/apps/trac/fable/wiki/fabian')
 
 
