@@ -913,6 +913,7 @@ class appWin(imageWin):
     self.Rot180.set(False)
     self.Rot270 = BooleanVar()
     self.Rot270.set(False)
+    self.TransformOrder = []
     self.header_sort_type = StringVar()
     self.header_sort_type.set('original')
     #self.header_sort_type.set('alphabetical')
@@ -1384,15 +1385,23 @@ class appWin(imageWin):
     
 
   def transform(self,type,value=None):
+
     if type == 5: # Reset image transformations
       self.FlipHorz.set(False)
       self.FlipVert.set(False)
       self.Rot90.set(False)
       self.Rot180.set(False)
       self.Rot270.set(False)
+      self.TransformOrder = []
       self.gotoimage()
       return
-
+    
+    if value == True:
+      self.TransformOrder.append(type)
+    else:
+      element = self.TransformOrder.index(type)
+      dump = self.TransformOrder.pop(element)
+      
     if type == 2:
       (self.xsize, self.ysize)=(self.ysize, self.xsize)
       self.zoomarea=[0,0,self.xsize,self.ysize]
@@ -1753,18 +1762,23 @@ class appWin(imageWin):
       raise
 
     # Check image oriention
-    if self.FlipHorz.get() == True:
-	self.im=self.im.transpose(0)
-    if self.FlipVert.get() == True:
-	self.im=self.im.transpose(1)
-    if self.Rot90.get() == True:
-	self.im=self.im.transpose(4)
-	(self.xsize, self.ysize)=(self.ysize, self.xsize)
-    if self.Rot180.get() == True:
-	self.im=self.im.transpose(3)
-    if self.Rot270.get() == True:
-	self.im=self.im.transpose(2)
-	(self.xsize, self.ysize)=(self.ysize, self.xsize)
+    for type in self.TransformOrder:
+	self.im=self.im.transpose(type)
+        if type == 4 or type == 2:
+          (self.xsize, self.ysize)=(self.ysize, self.xsize)
+
+#     if self.FlipHorz.get() == True:
+# 	self.im=self.im.transpose(0)
+#     if self.FlipVert.get() == True:
+# 	self.im=self.im.transpose(1)
+#     if self.Rot90.get() == True:
+# 	self.im=self.im.transpose(4)
+# 	(self.xsize, self.ysize)=(self.ysize, self.xsize)
+#     if self.Rot180.get() == True:
+# 	self.im=self.im.transpose(3)
+#     if self.Rot270.get() == True:
+# 	self.im=self.im.transpose(2)
+# 	(self.xsize, self.ysize)=(self.ysize, self.xsize)
         
     (self.im.minval,self.im.maxval,self.im.meanval)=(img.getmin(),
                                                      img.getmax(),
