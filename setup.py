@@ -12,6 +12,6 @@ setup(
   maintainer_email='henning.sorensen@risoe.dk or erik.knudsen@risoe.dk',
   url='http://fable.sourceforge.net',
   packages=['Fabian'],
-  package_dir={"Fabian": "src"},
+  package_dir={"Fabian": "Fabian"},
   scripts=["scripts/fabian.py", "scripts/collapse.py", "scripts/median.py"]
 )
