@@ -1543,13 +1543,11 @@ class appWin(imageWin):
     self.ffimage = openimage.openimage(fname)
 
   def bgcorrection(self):
-    print self.BgCorrect.get()
     if self.bgimage == None:
       self.OpenBackground()
     self.gotoimage()
  
   def ffcorrection(self):
-    print self.FfCorrect.get()
     if self.ffimage == None:
       self.OpenFloodfield()
     self.gotoimage()
