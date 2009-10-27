@@ -32,6 +32,7 @@ except:
 
 # fabio imports
 import fabio 
+from fabio import openimage
 
 colour={'transientaoi' :'RoyalBlue',
         'Zoom'         :'red',
@@ -936,6 +937,13 @@ class appWin(imageWin):
     self.autofileupdate.set(False)
     self.sleeptime = 0
     self.peaks = {}
+    self.BgCorrect = BooleanVar()
+    self.BgCorrect.set(False)
+    self.FfCorrect = BooleanVar()
+    self.FfCorrect.set(False)
+    self.bgimage = None
+    self.ffimage = None
+
     master.bind('<F1>',self.updatebindings)
     master.bind('<F2>',self.updatebindings)
     master.bind('<F3>',self.updatebindings)
@@ -1313,18 +1321,23 @@ class appWin(imageWin):
 
 
 #### NEW IMAGE CORRECTION 
-#     ImageMenu.menu.correction =Menu(ImageMenu.menu)
-#     ImageMenu.menu.add_cascade(label='Correction..',
-#                                menu=ImageMenu.menu.correction)
-#     ImageMenu.menu.correction.add_checkbutton(label='Subtract background',
-#                                          command=self.show_peaks,
-#                                          onvalue=True,
-#                                          offvalue=False,
-#                                          variable=self.ShowPeaks)
-#     ImageMenu.menu.correction.add_command(label='Background image',
-#                                           command=self.read_newpeaks)
-#     ImageMenu.menu.correction.add_command(label='Flood field image',
-#                                      command=self.peak_options)
+    ImageMenu.menu.correction =Menu(ImageMenu.menu)
+    ImageMenu.menu.add_cascade(label='Correction..',
+                               menu=ImageMenu.menu.correction)
+    ImageMenu.menu.correction.add_checkbutton(label='Subtract background',
+                                         command=self.bgcorrection,
+                                         onvalue=True,
+                                         offvalue=False,
+                                         variable=self.BgCorrect)
+    ImageMenu.menu.correction.add_command(label='Background image',
+                                          command=self.OpenBackground)
+    ImageMenu.menu.correction.add_checkbutton(label='Flood field correction',
+                                         command=self.ffcorrection,
+                                         onvalue=True,
+                                         offvalue=False,
+                                         variable=self.FfCorrect)
+    ImageMenu.menu.correction.add_command(label='Flood field image',
+                                     command=self.OpenFloodfield)
 
 
     ImageMenu['menu']=ImageMenu.menu
@@ -1490,8 +1503,8 @@ class appWin(imageWin):
   def setminpixel(self):
     self.update_peaks()
     self.peakoptions.destroy()
-  
-  def OpenFile(self,filename=True):
+
+  def OpenDialogue(self):
     presentdir = globals()["opendir"]
     fname = askopenfilename(initialdir=presentdir,filetypes=[
       ("EDF files", "*.edf"),
@@ -1510,12 +1523,36 @@ class appWin(imageWin):
     
     presentdir = os.path.split(fname)[0]
     globals()["opendir"] = presentdir
+    return fname
+  
+  def OpenFile(self,filename=True):
+    fname = self.OpenDialogue()
     self.filename.set(fname)
     self.displaynumber.set(fabio.getnum(os.path.split(self.filename.get())[-1]))
     if filename == None: # No image has been opened before
       return 
     else:
       self.gotoimage()
+
+  def OpenBackground(self):
+    fname = self.OpenDialogue()
+    self.bgimage = openimage.openimage(fname)
+
+  def OpenFloodfield(self):
+    fname = self.OpenDialogue()
+    self.ffimage = openimage.openimage(fname)
+
+  def bgcorrection(self):
+    print self.BgCorrect.get()
+    if self.bgimage == None:
+      self.OpenBackground()
+    self.gotoimage()
+ 
+  def ffcorrection(self):
+    print self.FfCorrect.get()
+    if self.ffimage == None:
+      self.OpenFloodfield()
+    self.gotoimage()
  
   def rescale(self,event=None):
     self.update()
@@ -1734,7 +1771,6 @@ class appWin(imageWin):
   def openimage(self,filename=None):
     #if a filename is supplied use that - otherwise get it from the GUI
     # Import fabio 
-    from fabio import openimage
     from xfab.detector import image_flipping
 
     if filename==None:
@@ -1742,8 +1778,11 @@ class appWin(imageWin):
 
     try:
       img = openimage.openimage(filename)
-#      bg_corr = openimage.openimage('median_image.edf')
-#      img.data = img.data.astype(float32)-bg_corr.data.astype(float32)
+      if self.BgCorrect.get():
+        img.data = img.data.astype(float32)-self.bgimage.data.astype(float32)
+      if self.FfCorrect.get():
+        img.data = img.data.astype(float32)/self.ffimage.data.astype(float32)
+
       # The -1 in front of o11,o12 etc is accomodate for
       # Rot180 made on the screen
       img.data = image_flipping(img.data,
