@@ -228,7 +228,7 @@ class imageWin:
           self.newpeaks = False
         else:
           self.showpeaks = False
-#          self.ShowPeaks.set(False)
+          self.ShowPeaks.set(False)
         return
     from xfab.detector import xy_to_detyz
 
