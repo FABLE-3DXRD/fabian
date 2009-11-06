@@ -19,7 +19,7 @@ from numpy import float32
 
 #local fabian imports
 from Fabian import insert_peaks
-from Fabian import About
+from Fabian import About, Shortcuts
 from Fabian import Error
 from Fabian.ReliefPlot import ReliefPlot
 from Fabian.detector import image_flipping
@@ -1367,6 +1367,8 @@ class appWin(imageWin):
     HelpMenu.pack(side=LEFT, padx="2m")
     HelpMenu.menu =Menu(HelpMenu)
     HelpMenu.menu.add_command(label='Help', underline=0, command=self.help)
+    HelpMenu.menu.add_command(label='keybord shortcuts', underline=0,
+                              command=self.shortcuts)
     HelpMenu.menu.add_command(label='About', underline=0, command=self.about)
     HelpMenu['menu']=HelpMenu.menu
     frameMenubar.pack(fill=X,side=TOP)
@@ -1837,6 +1839,8 @@ class appWin(imageWin):
       
   def about(self,event=None):
     About.About()
+  def shortcuts(self,event=None):
+    Shortcuts.show()
 
   def help(self,event=None):
     import webbrowser
