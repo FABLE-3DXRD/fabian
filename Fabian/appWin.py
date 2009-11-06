@@ -189,9 +189,6 @@ class imageWin:
                           width =6, bg ='white',bd=1, relief=RIDGE, anchor=W)
     self.ShowZoom.pack(side=RIGHT, padx = 2)
 
-    self.ShowError = Label(frameInfo, text="" ,width = 20,
-                           anchor=W)
-    self.ShowError.pack(side=RIGHT, padx = 2)
 
   def show_peaks(self,event=None):
     # Using <p> to toggle between show and don't show peaks 
@@ -259,14 +256,13 @@ class imageWin:
                    circ_center[0]+rad,circ_center[1]+rad)
           self.canvas.create_oval(corners,tag='peaks',outline=colour['peak_colour'])
     except: # no peaks for the present image was found in the peaks database
-        e=Error.Error()
-        msg="No peak information about %s is found in peaksearch file" \
-            %(os.path.split(self.filename.get())[-1])
-        e.Er(msg)
+      try:
+        self.ErrorInfo.config(text='No peaks for this image', bg='red')
         self.master.config(cursor='left_ptr')
         #self.ShowPeaks.set(False)
-        self.showpeaks = False
-
+        #self.showpeaks = False
+      except:
+        pass
 
     # Reset parameters
     self.master.config(cursor='left_ptr')
@@ -1604,9 +1600,6 @@ class appWin(imageWin):
         self.openimage(newfilename)
         self.ErrorInfo.config(text='' , bg='grey85')
       except IOError:
-        #e=Error.Error()
-        #msg="No such file: %s " %(newfilename)
-        #e.Er(msg)
         self.ErrorInfo.config(text='Missing file: %s ' %(newfilename), bg='red')
         self.master.config(cursor='left_ptr')
         #Reset filenumber entry
@@ -1665,9 +1658,7 @@ class appWin(imageWin):
         pass
 
     except IOError:
-      e=Error.Error()
-      msg="No such file: %s " %(newfilename)
-      e.Er(msg)
+      self.ErrorInfo.config(text='Missing file: %s ' %(newfilename), bg='red')
       self.master.config(cursor='left_ptr')
       return False
     #image loaded ok
