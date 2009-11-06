@@ -22,6 +22,7 @@ from Fabian import insert_peaks
 from Fabian import About
 from Fabian import Error
 from Fabian.ReliefPlot import ReliefPlot
+from Fabian.detector import image_flipping
 
 imageplot_state='normal'
 try:
@@ -1372,7 +1373,6 @@ class appWin(imageWin):
     frameMenubar.tk_menuBar((FileMenu, ToolMenu, CrystMenu, HelpMenu))
 
   def set_orientation(self,value=None):
-    from xfab.detector import image_flipping
     type = self.ImOrient.get()
     if type == 1:
       self.orientation = [1,0,0,1]
@@ -1760,7 +1760,6 @@ class appWin(imageWin):
   def openimage(self,filename=None):
     #if a filename is supplied use that - otherwise get it from the GUI
     # Import fabio 
-    from xfab.detector import image_flipping
 
     if filename==None:
       filename=self.filename.get()
