@@ -6,7 +6,7 @@ import sys
 
 setup(
   name='fabian',
-  version='0.6.1',
+  version='0.7.0',
   description='Image viewer for file series of diffraction images',
   license='GPL', maintainer='Henning Osholm Soerensen and Erik Knudsen',
   maintainer_email='henning.sorensen@risoe.dk or erik.knudsen@risoe.dk',
