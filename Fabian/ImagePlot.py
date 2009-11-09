@@ -4,10 +4,6 @@ from numpy import sort,array
 from tkFileDialog import asksaveasfilename
 import matplotlib
 matplotlib.use('TkAgg')
-try:
-    matplotlib.rcParams['numerix'] = 'numpy'
-except:
-    print "Might have a problem with matplotlib configuration"
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import matplotlib.patches as patches
