@@ -144,6 +144,9 @@ class imageWin:
     self.canvas.bind('<Button-3>', self.Mouse3Press)
     self.canvas.bind('<Button3-Motion>', self.Mouse3PressMotion)
     self.canvas.bind('<Button3-ButtonRelease>', self.Mouse3Release)
+    #bind scroll to rezoom tool
+    self.canvas.bind('<Button-4>', self.rezoom)
+    self.canvas.bind('<Button-5>', self.rezoom)
 
   def centerImg(self):
     left, right = self.frameScroll.xview()
@@ -153,10 +156,10 @@ class imageWin:
     self.frameScroll.xview('moveto',  0.5 - sizex / 2.)
     self.frameScroll.yview('moveto',  0.5 - sizey / 2.)
 
-  def rezoom(self,e):
-    if e.keysym=='z':
+  def rezoom(self,e=None):
+    if e.keysym=='z' or e.num == 4:
       newzoomfactor=self.zoomfactor*2
-    elif e.keysym=='x':
+    elif e.keysym=='x' or e.num == 5:
       newzoomfactor=self.zoomfactor/2.
     self.canvas_xsize = int(abs(self.zoomarea[2]-self.zoomarea[0])*newzoomfactor)
     self.canvas_ysize = int(abs(self.zoomarea[3]-self.zoomarea[1])*newzoomfactor)
@@ -337,6 +340,7 @@ class imageWin:
     y=self.canvas.canvasy(event.y)
     x,y=self.val_canvas_coord((x,y))
     self.transientcorners=[x,y,x,y]
+
   def Mouse3PressMotion(self, event):
     x=self.canvas.canvasx(event.x)
     y=self.canvas.canvasy(event.y)
