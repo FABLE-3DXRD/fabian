@@ -1,14 +1,16 @@
 fabian
 version RELEASE
 Henning Osholm Sørensen & Erik Knudsen
-Materials Research Department, Riso National Laboratory, DTU
+Materials Research Divisiont, 
+Riso National Laboratory for Sustainable Energy, 
+Technical University of Denmark
 
-fabian is designed for the purpose of viewing image files series. In particular
-such image files obtained when doing experiments at the ESRF.
+fabian is designed for the purpose of viewing image file series. In particular
+such diffraction image files obtained from synchrotron experiments.
 
 To use this you need (besides a python interpreter) the python extensions:
 PIL (python imaging library) -  http://www.pythonware.com
-Numeric -  http://numeric.scipy.org
+Numpy -  http://www.numpy.org
 pyopengl - http://pyopengl.sourceforge.net
 Pmw - Python Mega Widgets -  http://pmw.sourceforge.net
 Matplotlib - http://matplotlib.sourceforge.net
@@ -38,7 +40,8 @@ You can also provide an image file to be opened as an argument:
 fabian.py lyzo0013.edf
 
 MANUAL:
-the manual written as a wiki page: http://fable.sourceforge.net/index.php/Fabian
+the manual written as a wiki page:
+http://sourceforge.net/apps/trac/fable/wiki/fabian
 
 BUGS: 
 
