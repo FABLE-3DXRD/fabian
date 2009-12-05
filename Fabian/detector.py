@@ -174,7 +174,7 @@ def image_flipping(img, o11, o12, o21, o22, flipdir='forward'):
     inverse: 3DXRD standard -> raw image
 
     """
-
+    print 'will flip image', o11,o12,o21,o22
     if abs(o11) == 1:
         if (abs(o22) != 1) or (o12 != 0) or (o21 != 0):
             raise ValueError, 'detector orientation makes no sense 1'

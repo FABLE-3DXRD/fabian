@@ -1779,13 +1779,19 @@ class appWin(imageWin):
 
       # The -1 in front of o11,o12 etc is accomodate for
       # Rot180 made on the screen
+      print img.data[500:505,500:505]
       img.data = image_flipping(img.data,
                                 -1*self.orientation[0],
                                 -1*self.orientation[1],
                                 -1*self.orientation[2],
                                 -1*self.orientation[3])
+      print img.data[500:505,500:505]
       (img.dim2, img.dim1) = img.data.shape
+      # PIL is used to load an image, thereis already a pilimage 
+      # present. Hence it will not make a new, so remove pilimage first
+      img.pilimage = None
       self.im = img.toPIL16()
+      print self.im.getpixel((500,500))
       # We have earlier on used a flip making a PIL image
       # to keep images in the same direction we do the same here
       #self.im = self.im.transpose(1)
