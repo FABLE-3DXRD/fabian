@@ -63,9 +63,8 @@ if __name__=='__main__':
                           options.delta,
                           options.debug)
     mf.run()
-    print 'OYT'
+
     if options.slide > 0:
-      'HERE'
       mf.write(options.median_filestem+'0000.edf');
       for i in range(1,options.slide):
         out = options.median_filestem+ '%04d' %i + '.edf'
