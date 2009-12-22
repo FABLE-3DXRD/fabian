@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from Fabian.median import median_file_series
 from optparse import OptionParser
+import sys
 
 if __name__=='__main__':
 
