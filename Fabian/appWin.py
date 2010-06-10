@@ -288,8 +288,17 @@ class imageWin:
     rpeaks.readallpeaks(self.peakfilename)
     peaks = rpeaks.images
     ks = [ os.path.split(name)[-1] for name in peaks.keys() ]
+    
     # convert coordinates to "fabian" coordinates
     for k in ks:
+      test = k.find('$')
+      if test > -1:
+        test2 = k.find('.$')
+        if test2 > -1:
+          k = k[:test2]
+        else:
+          k = k[:test]
+
       for i in range(len(peaks[k])):
         mx = float(peaks[k][i][2])
         #my = image_ysize-float(peaks[k][i][1])
@@ -981,7 +990,7 @@ class appWin(imageWin):
     self.zoomfactor=zoomfactor
     #display image and reset scale if scaling is not given
     self.openimage()
-    self.displaynumber.set(fabio.getnum(self.filename.get()))
+    self.displaynumber.set(fabio.extract_filenumber(self.filename.get()))
     self.reset_scale()
 
     self.zoomarea = [0,0,self.xsize,self.ysize]
