@@ -232,33 +232,49 @@ class imageWin:
           self.ShowPeaks.set(False)
         return
     from xfab.detector import xy_to_detyz
-
-
-      
+        
     try: # draw peaks on canvas
-      self.canvas.delete('peaks')
-      #myc = 0
-      for ipeaks in peaks[os.path.split(self.filename.get())[-1]]:
-        #myc += 1
-        if int(ipeaks[0]) > globals()["min_pixel"]:
-          # The -1 in front of o11,o12 etc is accomodate for
-          # Rot180 made on the screen
-          (xp, yp) = xy_to_detyz([ipeaks[2],ipeaks[1]],
-                                 -1*self.orientation[0],
-                                 -1*self.orientation[1],
-                                 -1*self.orientation[2],
-                                 -1*self.orientation[3],
-                                 globals()["image_xsize"],
-                                 globals()["image_ysize"])
+        self.canvas.delete('peaks')
+        if peaks_type == 'flt':
+            # this is an flt file
+            omega = float(self.im.header['Omega'])
+            mask = ( peaks.Min_o <= omega ) & ( omega >= peaks.Max_o )
+            mpeaks = peaks.copy()
+            mask = ( mpeaks.Min_o <= omega ) & ( omega <= mpeaks.Max_o )
+            mpeaks.filter(mask)
+            for i in range(mpeaks.nrows):
+                (xp, yp) = xy_to_detyz([mpeaks.s_raw[i],mpeaks.f_raw[i]],
+                                        -1*self.orientation[0],
+                                        -1*self.orientation[1],
+                                        -1*self.orientation[2],
+                                        -1*self.orientation[3],
+                                        globals()["image_xsize"],
+                                        globals()["image_ysize"])
+                circ_center=[(xp-self.zoomarea[0])*self.zoomfactor,
+                            (yp-self.zoomarea[1])*self.zoomfactor]
+                rad = globals()["peak_radius"]*self.zoomfactor
+                corners=(circ_center[0]-rad,circ_center[1]-rad,
+                        circ_center[0]+rad,circ_center[1]+rad)
+                self.canvas.create_oval(corners,tag='peaks',outline=colour['peak_colour'])
+        else:
+            for ipeaks in peaks[fabio.extract_filenumber(os.path.split(self.filename.get())[-1])]:
+                if int(ipeaks[0]) > globals()["min_pixel"]:
+                    # The -1 in front of o11,o12 etc is accomodate for
+                    # Rot180 made on the screen
+                    (xp, yp) = xy_to_detyz([ipeaks[2],ipeaks[1]],
+                                        -1*self.orientation[0],
+                                        -1*self.orientation[1],
+                                        -1*self.orientation[2],
+                                        -1*self.orientation[3],
+                                        globals()["image_xsize"],
+                                        globals()["image_ysize"])
 
-          #if myc < 10: 
-          #  print [ipeaks[1],ipeaks[2]],[xp,yp]
-          circ_center=[(xp-self.zoomarea[0])*self.zoomfactor,
-                       (yp-self.zoomarea[1])*self.zoomfactor]
-          rad = globals()["peak_radius"]*self.zoomfactor
-          corners=(circ_center[0]-rad,circ_center[1]-rad,
-                   circ_center[0]+rad,circ_center[1]+rad)
-          self.canvas.create_oval(corners,tag='peaks',outline=colour['peak_colour'])
+                    circ_center=[(xp-self.zoomarea[0])*self.zoomfactor,
+                                 (yp-self.zoomarea[1])*self.zoomfactor]
+                    rad = globals()["peak_radius"]*self.zoomfactor
+                    corners=(circ_center[0]-rad,circ_center[1]-rad,
+                             circ_center[0]+rad,circ_center[1]+rad)
+                    self.canvas.create_oval(corners,tag='peaks',outline=colour['peak_colour'])
     except: # no peaks for the present image was found in the peaks database
       try:
         self.ErrorInfo.config(text='No peaks for this image', bg='red')
@@ -282,23 +298,36 @@ class imageWin:
       
   def read_peaks(self):
     rpeaks = insert_peaks.readpeaksearch()
-    self.peakfilename = askopenfilename(filetypes=[("spt files", "*.spt"),("All Files", "*")])
+    self.peakfilename = askopenfilename(filetypes=[("spt files", "*.spt"),
+                                                   ("flt files", "*.flt"),
+                                                   ("All Files", "*")])
     if len(self.peakfilename) == 0:
         return False
-    rpeaks.readallpeaks(self.peakfilename)
+    elif self.peakfilename[-3:] == 'flt':
+        rpeaks.readallpeaks_flt(self.peakfilename)
+        globals()["peaks"] = rpeaks.images
+        globals()["peaks_type"] = 'flt'
+        return
+    else:
+        rpeaks.readallpeaks(self.peakfilename)
+        globals()["peaks_type"] = 'spt'
+
     peaks = rpeaks.images
-    ks = [ os.path.split(name)[-1] for name in peaks.keys() ]
-    
+    ks = peaks.keys()
+    #ks = [ os.path.split(name)[-1] for name in peaks.keys() ]
+    #print ks
     # convert coordinates to "fabian" coordinates
     for k in ks:
-      test = k.find('$')
-      if test > -1:
-        test2 = k.find('.$')
-        if test2 > -1:
-          k = k[:test2]
-        else:
-          k = k[:test]
-
+      try:  # STUFF TO HANDLE MULTI GE_FILES
+        test = k.find('$')
+        if test > -1:
+           test2 = k.find('.$')
+           if test2 > -1:
+              k = k[:test2]
+           else:
+              k = k[:test]
+      except:
+        pass
       for i in range(len(peaks[k])):
         mx = float(peaks[k][i][2])
         #my = image_ysize-float(peaks[k][i][1])

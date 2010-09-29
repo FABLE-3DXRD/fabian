@@ -52,7 +52,7 @@ class readpeaksearch:
         """
         read in peaks found with peaksearch (ImageD11)
         """
-        import os
+        import os,fabio
         self.lines = open(peaksfilename,"r").readlines()
         self.images={}
         name = 'None'
@@ -60,15 +60,27 @@ class readpeaksearch:
             if line[0:6] =="# File":
                 if name != 'None': self.images[name]=self.peaks
                 self.peaks = []
-                name =  os.path.split(line.split()[-1])[-1] 
+                name =  fabio.extract_filenumber(os.path.split(line.split()[-1])[-1])
             elif line[0]!='#' and len(line)>10:
                     [npixels, yt, ypos, zpos] =  line.split()[0:4]
-                    if npixels > 20:
+                    if npixels > 0:
                         self.peaks.append([npixels, ypos, zpos])               
         self.images[name]=self.peaks
-                
-
         
+    def readallpeaks_flt(self,peaksfilename):
+        """
+        read in flt peaks found with peaksearch (ImageD11)
+        """
+        import os,fabio
+        self.lines = open(peaksfilename,"r").readlines()
+        try:
+            from ImageD11 import columnfile
+        except:
+            return False
+        cf = columnfile.columnfile(peaksfilename)
+        self.images = cf
+        return 
+
 if __name__=="__main__":
     import sys
     peaksearchfile = sys.argv[1]
