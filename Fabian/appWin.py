@@ -15,7 +15,7 @@ from tkFileDialog import *
 import tkFont
 import re,os,sys,time,thread
 import math
-from numpy import float32
+from numpy import float32, NaN
 
 #local fabian imports
 from Fabian import insert_peaks
@@ -232,12 +232,15 @@ class imageWin:
           self.ShowPeaks.set(False)
         return
     from xfab.detector import xy_to_detyz
-        
+    
     try: # draw peaks on canvas
         self.canvas.delete('peaks')
-        if peaks_type == 'flt':
-            # this is an flt file
-            omega = float(self.im.header['Omega'])
+        if peaks_type == 'flt':   # this is an flt file
+            # Check if user has own Omega setttings
+            if OmegaStep != 0.0:
+                omega = Omega + OmegaStep*(fabio.extract_filenumber(self.filename.get()) - OmegaImage) 
+            else:
+                omega = float(self.im.header['Omega'])
             mask = ( peaks.Min_o <= omega ) & ( omega >= peaks.Max_o )
             mpeaks = peaks.copy()
             mask = ( mpeaks.Min_o <= omega ) & ( omega <= mpeaks.Max_o )
@@ -289,6 +292,43 @@ class imageWin:
     self.newpeaks = False
     return
 
+  def omega_image(self):
+    self.omegaimage=Toplevel(self.master)
+    self.omegaimage.title('Rotation values')
+    frameOmega = Frame(self.omegaimage, bd=0, bg="white")
+    frameOmega.pack()
+    #self.min_pixel.set(globals()["min_pixel"])
+    Label(frameOmega, 
+          text="Omega(center value)of this image ").pack(side=LEFT)
+    Entry(frameOmega, textvariable=self.Omega, 
+          bg='white', width=6).pack(side=LEFT)
+
+    frameOmegaStep = Frame(self.omegaimage, bd=0, bg="white")
+    frameOmegaStep.pack(fill=X,expand='yes')
+    Label(frameOmegaStep, text="Omega step size between images").pack(side=LEFT)
+    Entry(frameOmegaStep,
+          textvariable=self.OmegaStep,
+          bg='white',
+          width=6).pack(side=LEFT,fill=X,expand='yes')
+
+    but = Frame(self.omegaimage, bd=0, bg="white")
+    but.pack(side=BOTTOM,fill=X,expand='yes')
+    Button(but, text='OK', 
+           command=self.set_omega_values).pack(side=LEFT,
+                                                  fill=X,
+                                                  expand='yes')
+
+  def set_omega_values(self):
+    self.omegaimage.destroy()
+    print self.OmegaStep.get()
+    print self.Omega.get()
+    return 
+    
+#    globals()["min_pixel"] = self.min_pixel.get()
+#    globals()["peak_radius"] = self.peak_radius.get()
+#    self.update_peaks()
+#    self.update(newimage=self.im)
+
   def read_newpeaks(self,event=None):
     self.read_peaks()
     self.ShowPeaks.set(True)
@@ -304,8 +344,11 @@ class imageWin:
     if len(self.peakfilename) == 0:
         return False
     elif self.peakfilename[-3:] == 'flt':
+        #ff = self.omega_image()
+        #print ff
         rpeaks.readallpeaks_flt(self.peakfilename)
         globals()["peaks"] = rpeaks.images
+        self.ImNoFLT = int(self.displaynumber.get())
         globals()["peaks_type"] = 'flt'
         return
     else:
@@ -942,6 +985,12 @@ class appWin(imageWin):
     self.peak_colour.set("blue")
     self.peak_radius = IntVar()
     self.peak_radius.set(8)
+    self.OmegaImage = IntVar()
+    self.OmegaImage.set(0)
+    self.Omega = DoubleVar()
+    self.Omega.set(0.0)
+    self.OmegaStep = DoubleVar()
+    self.OmegaStep.set(0.0)
     self.newpeaks = False
     self.FlipHorz = BooleanVar()
     self.FlipHorz.set(False)
@@ -957,6 +1006,10 @@ class appWin(imageWin):
     self.header_sort_type = StringVar()
     self.header_sort_type.set('original')
     #self.header_sort_type.set('alphabetical')
+
+    globals()["OmegaImage"] = 0.0
+    globals()["Omega"] = 0.0
+    globals()["OmegaStep"] = 0.0
 
     globals()["opendir"] = "."
     globals()["min_pixel"] = 4
@@ -1488,9 +1541,9 @@ class appWin(imageWin):
     self.peakoptions=Toplevel(self.master)
     self.peakoptions.title('Peak options')
     framepixel = Frame(self.peakoptions, bd=0, bg="white")
-    framepixel.pack()
+    framepixel.pack(fill=X,expand='yes')
     self.min_pixel.set(globals()["min_pixel"])
-    Label(framepixel, 
+    Label(framepixel, width= 35, anchor=W,
           text="Show only peaks with more pixels than ").pack(side=LEFT)
     Entry(framepixel, textvariable=self.min_pixel, 
           bg='white', width=6).pack(side=LEFT)
@@ -1512,11 +1565,39 @@ class appWin(imageWin):
 
     framepeaksize = Frame(self.peakoptions, bd=0, bg="white")
     framepeaksize.pack(fill=X,expand='yes')
-    Label(framepeaksize, text="Radius of peak outline ").pack(side=LEFT)
+    Label(framepeaksize, width=35 , anchor=W, text="Radius of peak outline ").pack(fill=X,side=LEFT)
     Entry(framepeaksize,
           textvariable=self.peak_radius,
-          bg='white',
+          bg='white',justify=RIGHT,
           width=6).pack(side=LEFT,fill=X,expand='yes')
+
+    Label(self.peakoptions, anchor=W, text="Sample rotation parameters:").pack(fill=X)
+
+       
+       
+    frameOmegaImage = Frame(self.peakoptions, bd=0, bg="white")
+    frameOmegaImage.pack(fill=X,expand='yes')
+    Label(frameOmegaImage, width=35, anchor=W,
+          text="Number of reference image ").pack(side=LEFT)
+    Entry(frameOmegaImage, textvariable=self.OmegaImage, justify=RIGHT,
+          bg='white',width=6).pack(expand='yes',fill=X,side=LEFT)
+
+ 
+    frameOmega = Frame(self.peakoptions, bd=0, bg="white", width=6)
+    frameOmega.pack(fill=X,expand='yes')
+    Label(frameOmega, width=35, anchor=W,
+          text="Omega (center value) of this image ").pack(side=LEFT)
+    Entry(frameOmega, textvariable=self.Omega, justify=RIGHT,
+          bg='white',width=6).pack(expand='yes',fill=X,side=LEFT)
+
+    frameOmegaStep = Frame(self.peakoptions, bd=0, bg="white")
+    frameOmegaStep.pack(fill=X,expand='yes')
+    Label(frameOmegaStep, width=35, anchor=W, text="Omega step size between images").pack(side=LEFT)
+    Entry(frameOmegaStep,
+          textvariable=self.OmegaStep,
+          bg='white',justify=RIGHT,
+          width=6).pack(side=LEFT,fill=X,expand='yes')
+          
 
     but = Frame(self.peakoptions, bd=0, bg="white")
     but.pack(side=BOTTOM,fill=X,expand='yes')
@@ -1533,6 +1614,9 @@ class appWin(imageWin):
   def update_peak_options(self):
     globals()["min_pixel"] = self.min_pixel.get()
     globals()["peak_radius"] = self.peak_radius.get()
+    globals()["OmegaImage"] = self.OmegaImage.get()
+    globals()["Omega"] = self.Omega.get()
+    globals()["OmegaStep"] = self.OmegaStep.get()
     self.update_peaks()
     self.update(newimage=self.im)
     
@@ -1541,6 +1625,7 @@ class appWin(imageWin):
     
     
   def setminpixel(self):
+    self.update_peak_options()
     self.update_peaks()
     self.peakoptions.destroy()
 
