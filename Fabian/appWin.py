@@ -15,7 +15,7 @@ from tkFileDialog import *
 import tkFont
 import re,os,sys,time,thread
 import math
-from numpy import float32, NaN
+from numpy import float32, NaN, zeros, concatenate,argsort
 
 #local fabian imports
 from Fabian import insert_peaks
@@ -245,6 +245,7 @@ class imageWin:
             mpeaks = peaks.copy()
             mask = ( mpeaks.Min_o <= omega ) & ( omega <= mpeaks.Max_o )
             mpeaks.filter(mask)
+            self.impeaks = zeros((0,3))
             for i in range(mpeaks.nrows):
                 (xp, yp) = xy_to_detyz([mpeaks.s_raw[i],mpeaks.f_raw[i]],
                                         -1*self.orientation[0],
@@ -259,6 +260,7 @@ class imageWin:
                 corners=(circ_center[0]-rad,circ_center[1]-rad,
                         circ_center[0]+rad,circ_center[1]+rad)
                 self.canvas.create_oval(corners,tag='peaks',outline=colour['peak_colour'])
+                self.impeaks = concatenate((self.impeaks, [[circ_center[0], circ_center[1], mpeaks.spot3d_id[i]]]))
         else:
             for ipeaks in peaks[fabio.extract_filenumber(os.path.split(self.filename.get())[-1])]:
                 if int(ipeaks[0]) > globals()["min_pixel"]:
@@ -348,7 +350,6 @@ class imageWin:
         #print ff
         rpeaks.readallpeaks_flt(self.peakfilename)
         globals()["peaks"] = rpeaks.images
-        self.ImNoFLT = int(self.displaynumber.get())
         globals()["peaks_type"] = 'flt'
         return
     else:
@@ -389,9 +390,6 @@ class imageWin:
 
   def update_peaks(self,event=None):
     self.canvas.delete('peaks')
-    #globals()["min_pixel"] = self.min_pixel.get()
-    #globals()["peak_radius"] = self.peak_radius.get()
-    #colour['peak_colour'] = self.peak_colour.get()
     self.show_peaks()
 
 
@@ -414,7 +412,16 @@ class imageWin:
  
   def Mouse2Press(self, event):
     self.canvas.delete()
+    x=self.canvas.canvasx(event.x)
     y=self.canvas.canvasx(event.y)
+    try:
+        if globals()["peaks_type"] == 'flt':
+            dist = ((self.impeaks[:,0:2]-[x,y])**2).sum(axis=1)
+            print 'spot_id : ', int(self.impeaks[argsort(dist)][0][2])
+            #print self.impeaks
+    except:
+        pass
+        #globals()["peaks"]
     
   def Mouse3Press(self, event):
     x=self.canvas.canvasx(event.x)
