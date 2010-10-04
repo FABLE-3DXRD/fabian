@@ -259,7 +259,7 @@ class imageWin:
                 rad = globals()["peak_radius"]*self.zoomfactor
                 corners=(circ_center[0]-rad,circ_center[1]-rad,
                         circ_center[0]+rad,circ_center[1]+rad)
-                self.canvas.create_oval(corners,tag='peaks',outline=colour['peak_colour'])
+                self.canvas.create_oval(corners,tag='peaks',outline=colour['peak_colour']) 
                 self.impeaks = concatenate((self.impeaks, [[circ_center[0], circ_center[1], mpeaks.spot3d_id[i]]]))
         else:
             for ipeaks in peaks[fabio.extract_filenumber(os.path.split(self.filename.get())[-1])]:
@@ -401,8 +401,6 @@ class imageWin:
                        y/self.zoomfactor +self.zoomarea[1])
       self.xsize = globals()["image_xsize"]
       self.ysize = globals()["image_ysize"]
-#      xy =  "%5i,%5i"%(self.xsize-1-(x/self.zoomfactor +self.zoomarea[0]),
-#                       self.ysize-1-(y/self.zoomfactor +self.zoomarea[1]))
       xy =  "%5i,%5i"%(self.xsize-1-math.floor(x/self.zoomfactor +self.zoomarea[0]),
                        self.ysize-1-math.floor(y/self.zoomfactor +self.zoomarea[1]))
       self.ShowCoor.config(text=xy)
@@ -418,10 +416,8 @@ class imageWin:
         if globals()["peaks_type"] == 'flt':
             dist = ((self.impeaks[:,0:2]-[x,y])**2).sum(axis=1)
             print 'spot_id : ', int(self.impeaks[argsort(dist)][0][2])
-            #print self.impeaks
     except:
         pass
-        #globals()["peaks"]
     
   def Mouse3Press(self, event):
     x=self.canvas.canvasx(event.x)
