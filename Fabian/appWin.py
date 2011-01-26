@@ -238,12 +238,14 @@ class imageWin:
         if peaks_type == 'flt':   # this is an flt file
             # Check if user has own Omega setttings
             if OmegaStep != 0.0:
-                omega = Omega + OmegaStep*(fabio.extract_filenumber(self.filename.get()) - OmegaImage) 
+                omega = Omega + OmegaStep*(fabio.extract_filenumber(self.filename.get()) - OmegaImage)
+                omegastep = OmegaStep
             else:
                 omega = float(self.im.header['Omega'])
-            mask = ( peaks.Min_o <= omega ) & ( omega >= peaks.Max_o )
+                omegastep = float(self.im.header['OmegaStep'])
             mpeaks = peaks.copy()
-            mask = ( mpeaks.Min_o <= omega ) & ( omega <= mpeaks.Max_o )
+            # Making a mask for the reflections present on this image (the 1/4 step addition is to avoid rounding problems)
+            mask = ( mpeaks.Min_o <= omega+omegastep/4. ) & ( omega-omegastep/4. <= mpeaks.Max_o )
             mpeaks.filter(mask)
             self.impeaks = zeros((0,3))
             for i in range(mpeaks.nrows):
