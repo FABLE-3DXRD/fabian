@@ -1658,7 +1658,8 @@ class appWin(imageWin):
   def OpenFile(self,filename=True):
     fname = self.OpenDialogue()
     self.filename.set(fname)
-    self.displaynumber.set(fabio.getnum(os.path.split(self.filename.get())[-1]))
+    self.displaynumber.set(fabio.extract_filenumber(os.path.split(self.filename.get())[-1]))
+
     if filename == None: # No image has been opened before
       return 
     else:
@@ -1737,7 +1738,7 @@ class appWin(imageWin):
         self.ErrorInfo.config(text='Missing file: %s ' %(newfilename), bg='red')
         self.master.config(cursor='left_ptr')
         #Reset filenumber entry
-        self.displaynumber.set(fabio.getnum(self.filename.get()))
+        self.displaynumber.set(fabio.extract_filenumber(self.filename.get()))
         return False
     #image loaded ok
 
@@ -1797,8 +1798,7 @@ class appWin(imageWin):
       return False
     #image loaded ok
     self.filename.set(newfilename)
-    #HOS self.displaynumber.set(fabio.extract_filenumber(self.filename.get()))
-    self.displaynumber.set(fabio.getnum(self.filename.get()))
+    #self.displaynumber.set(fabio.getnum(self.filename.get()))
 
     self.update(newimage=self.im, filename=newfilename)
     self.update_header_page()

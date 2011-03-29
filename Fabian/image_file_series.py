@@ -21,7 +21,7 @@ import re,os.path
 class image_file_series:
   def __init__(self,filename=None):
     self.filename=filename
-    self.number=fabio.getnum(filename)
+    self.number=fabio.extract_filenumber(filename)
     self.img=None
     self.noread=False
     
