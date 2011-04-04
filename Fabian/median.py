@@ -18,7 +18,7 @@ class median_file_series:
     except:
       skipping = 1
       print 'warning file does not exist'
-
+      raise
     if self.debug: print self.series.filename
     
     for i in range(filterlength-1):
@@ -26,9 +26,12 @@ class median_file_series:
         self.series.next(steps=delta+skipping)
         self.files.append(self.series.current(toPIL=False))
         skipping = 0
+      except KeyboardInterrupt:
+        raise
       except:
         print 'warning file does not'
         skipping += 1
+        raise
       if self.debug: print self.series.filename
     d1,d2=self.files[0].dim1,self.files[0].dim2
     print len(self.files)
@@ -94,4 +97,4 @@ class median_file_series:
     if header != None:
       for arg in header:
         e.header[arg] = header[arg]
-    e.write(fname)
+    e.write(fname,force_type=N.uint16)
