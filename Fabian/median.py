@@ -90,11 +90,15 @@ class median_file_series:
     if self.debug: print 'write median image to', fname
     e=edfimage.edfimage()
     e.data=N.clip(self.median,0, 2**16-1)
-    e.header=edfimage.DEFAULT_VALUES
-    e.header['col_end']=e.dim1-1
-    e.header['row_end']=e.dim2-1
-    e.header['DataType']='UnsignedShort'
+    e.data = e.data.astype(N.uint16)
+    #e.header=edfimage.DEFAULT_VALUES
+    #e.header['DIM_1']=e.dim1
+    #e.header['DIM_2']=e.dim2
+
+    #e.header['col_end']=e.dim1-1
+    #e.header['row_end']=e.dim2-1
+    #e.header['DataType']='UnsignedShort'
     if header != None:
       for arg in header:
-        e.header[arg] = header[arg]
-    e.write(fname,force_type=N.uint16)
+        e.header[arg] = header[arg]    
+    e.write(fname)
