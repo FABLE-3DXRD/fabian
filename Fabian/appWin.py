@@ -15,7 +15,7 @@ from tkFileDialog import *
 import tkFont
 import re,os,sys,time,thread
 import math
-from numpy import float32, NaN, zeros, concatenate,argsort
+from numpy import float32, NaN, zeros, concatenate,argsort,abs
 
 #local fabian imports
 from Fabian import insert_peaks
@@ -245,7 +245,7 @@ class imageWin:
                 omegastep = float(self.im.header['OmegaStep'])
             mpeaks = peaks.copy()
             # Making a mask for the reflections present on this image (the 1/4 step addition is to avoid rounding problems)
-            mask = ( mpeaks.Min_o <= omega+omegastep/4. ) & ( omega-omegastep/4. <= mpeaks.Max_o )
+            mask = ( mpeaks.Min_o <= omega+abs(omegastep)/4. ) & ( omega-abs(omegastep)/4. <= mpeaks.Max_o )
             mpeaks.filter(mask)
             self.impeaks = zeros((0,3))
             for i in range(mpeaks.nrows):
