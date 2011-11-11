@@ -1158,7 +1158,6 @@ class appWin(imageWin):
         header_sorted = self.im.header.keys()
         header_sorted.sort()
       #       
-      
       for item in header_sorted:
         fm = Frame(self.HeaderInterior)
         self.newitem[item]=StringVar()
@@ -1170,7 +1169,7 @@ class appWin(imageWin):
                       width=20).pack(side=LEFT,anchor=W)
         self.headcheck.append(c)
         self.headtext[item]= Label(fm,
-                                   text='%s' %(self.im.header[item]),
+                                   text='%s' %(self.im.header[item],),
                                    bg='white',
                                    anchor=W,
                                    width=100)
@@ -1209,7 +1208,7 @@ class appWin(imageWin):
           # they seem to be compatible, note - this
           # keeps the checked checkboxes alive
           for item,value in self.im.header.iteritems():
-            self.headtext[item].config(text='%s' % value)
+            self.headtext[item].config(text='%s' %(value,))
       else:
           # they differ - make a new header page from scratch
           # first remember the checked items to keep them 
@@ -1232,8 +1231,8 @@ class appWin(imageWin):
     keys.sort()
     for item in keys:
       if self.newitem[item].get() == '1':
-            headertext = headertext+item+': '+'%s' %(self.im.header[item]) +'; '
-    self.HeaderInfo.config(text='%s' %(headertext))
+            headertext = headertext+item+': '+'%s' %(self.im.header[item],) +'; '
+    self.HeaderInfo.config(text='%s' %(headertext,))
 
   def rebind(self,e): # Hack to unbind the image change 
                       # stuff when focus is in an entry
