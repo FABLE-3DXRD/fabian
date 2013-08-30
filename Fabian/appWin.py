@@ -8,12 +8,14 @@ Authors: Henning O. Sorensen & Erik Knudsen
          DK-4000 Roskilde
          email:henning.sorensen@risoe.dk
 """
+import sys,Tkinter
 from Tkinter import *
+sys.modules['tkinter']=Tkinter
 import Pmw
-import Image, ImageTk, ImageFile, ImageStat
+from PIL import Image, ImageTk, ImageFile, ImageStat
 from tkFileDialog import *
 import tkFont
-import re,os,sys,time,thread
+import re,os,time,thread
 import math
 from numpy import float32, NaN, zeros, concatenate,argsort,abs
 
