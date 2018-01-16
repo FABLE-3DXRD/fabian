@@ -8,6 +8,8 @@ Authors: Henning O. Sorensen & Erik Knudsen
          DK-4000 Roskilde
          email:henning.sorensen@risoe.dk
 """
+from __future__ import absolute_import
+from __future__ import print_function
 from Fabian import image_file_series
 
 class rocker:
@@ -26,8 +28,8 @@ class rocker:
     #jump to a new starting number
     try:
       self.series.jump(start)
-    except (ValueError,IOError), msg:
-      print msg, '-aborted'
+    except (ValueError,IOError) as msg:
+      print(msg, '-aborted')
       raise
     self.start=start
     
@@ -38,10 +40,10 @@ class rocker:
       self.imagenumber[i] = series.number
       if i < len(self.data)-1:
         try:
-          series.next()
+          next(series)
           #if there's an error opening the file just skip over it
-        except (ValueError,IOError), msg:
-          print msg, '- aborted!'
+        except (ValueError,IOError) as msg:
+          print(msg, '- aborted!')
           break
 	
   def getdata(self):
@@ -55,7 +57,7 @@ if __name__=='__main__':
   c=[atoi(sys.argv[4]),atoi(sys.argv[5]),atoi(sys.argv[6]),atoi(sys.argv[7])]
   R=rocker(filename_sample=sys.argv[1],coord=c,startnumber=atoi(sys.argv[2]),endnumber=atoi(sys.argv[3]))
   R.run()
-  print R.getdata()
+  print(R.getdata())
   e=time.clock()
-  print (e-b)
+  print((e-b))
 

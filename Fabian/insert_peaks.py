@@ -8,6 +8,8 @@ Authors: Henning O. Sorensen & Erik Knudsen
          DK-4000 Roskilde
          email:henning.sorensen@risoe.dk
 """
+from __future__ import absolute_import
+from __future__ import print_function
 from fabio.file_series import filename_series
 
 class readpeaksearch:
@@ -37,7 +39,7 @@ class readpeaksearch:
         fsobj =  filename_series(imagefile)
         start = self.images[imagefile]
         try:
-            end = self.images[fsobj.next()]
+            end = self.images[next(fsobj)]
         except:
             end = len(self.lines)
             
@@ -94,4 +96,4 @@ if __name__=="__main__":
 
 
     for k in pickles.keys():
-        print k
+        print(k)

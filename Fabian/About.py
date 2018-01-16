@@ -1,4 +1,8 @@
-from Tkinter import Tk, Frame, Message, X, Button, RIGHT
+from __future__ import absolute_import
+try:
+    from Tkinter import Tk, Frame, Message, X, Button, RIGHT
+except:
+    from tkinter import Tk, Frame, Message, X, Button, RIGHT
 import Fabian
 class About:
     def __init__(self):
