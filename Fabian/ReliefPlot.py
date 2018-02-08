@@ -1,10 +1,19 @@
+
 from __future__ import absolute_import
+
 import numpy as N
+from OpenGL import GL
+import sys
+if sys.version_info[0] < 3:
+    import Tkinter as oTk
+else:
+    import tkinter as oTk
+from pyopengltk import Opengl
+
+
 
 class ReliefPlot:
     def __init__(self,master,newimage=None,corners=[0,0,0,0]):
-        import OpenGL.GL as GL
-        import OpenGL.Tk as oTk
         self.master = master
         self.f=oTk.Frame(self.master)
         self.f.pack(side=oTk.BOTTOM,expand=oTk.NO,fill=oTk.X)
@@ -27,7 +36,7 @@ class ReliefPlot:
         else:
           self.scale = 0.75/self.sizey
         self.zcenter = -(extrema[1]+extrema[0])*self.zscale/2.0
-        self.reliefWin = oTk.Opengl(self.f,width = 500, height = 500, double = 1)
+        self.reliefWin = Opengl(self.f,width = 500, height = 500 )#, double = 1)
         self.reliefWin.redraw = self.redraw
         self.reliefWin.autospin_allowed = 1
         self.reliefWin.fovy=5
@@ -35,7 +44,6 @@ class ReliefPlot:
         self.reliefWin.far=1e-6
         import math
         self.reliefWin.pack(side = oTk.TOP, expand = oTk.YES, fill = oTk.BOTH)
-        GL.glEnableClientState(GL.GL_VERTEX_ARRAY)
         oTk.Button(self.f,text="Help",command=self.reliefWin.help).pack(side=oTk.LEFT)
         oTk.Button(self.f,text="Reset",command=self.reliefWin.reset).pack(side=oTk.LEFT)
         oTk.Button(self.f,text="Quit",command=self.quit).pack(side=oTk.RIGHT)
@@ -62,7 +70,6 @@ class ReliefPlot:
         self.reliefWin.tkRedraw() # Redraw canvas
         
     def redraw(self,reliefWin):
-         import OpenGL.GL as GL
          GL.glClearColor(0., 0., 0., 0)
          GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
          GL.glOrtho(-1,1,-1,1,-1,1)
