@@ -1,4 +1,8 @@
-from Tkinter import *
+from __future__ import absolute_import
+try:
+    from Tkinter import *
+except:
+    from tkinter import *
 import time
 
 class Error:

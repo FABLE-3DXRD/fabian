@@ -9,6 +9,8 @@ Authors: Henning O. Sorensen & Erik Knudsen
          DK-4000 Roskilde
          email:henning.sorensen@risoe.dk, erik.knudsen@risoe.dk
 """
+from __future__ import absolute_import
+from __future__ import print_function
 import numpy as N
 from Fabian import image_file_series
 from fabio import edfimage
@@ -36,8 +38,8 @@ class collapse:
     #jump to a new starting number
     try:
       self.series.jump(start)
-    except (ValueError,IOError), msg:
-      print msg, '-aborted'
+    except (ValueError,IOError) as msg:
+      print(msg, '-aborted')
       raise
     self.start=start
     
@@ -47,10 +49,10 @@ class collapse:
       #self.data[i]=series.current(toPIL=False).integrate_area(self.coord)
       if i < len(self.data)-1:
         try:
-          self.series.next()
+          next(self.series)
 	  #if theres an error opening the file just skip over it
-        except (ValueError,IOError), msg:
-          print msg, '- aborted!'
+        except (ValueError,IOError) as msg:
+          print(msg, '- aborted!')
           break
     if self.bgimage is not None: 
       self.total_image=self.total_image-len(self.data)*self.bgimage
@@ -94,5 +96,5 @@ if __name__=='__main__':
   R.write('pseudopowder2D.edf')
 #  print R.getdata()
   e=time.clock()
-  print (e-b)
+  print((e-b))
 

@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from __future__ import absolute_import
+from __future__ import print_function
 from Fabian.median import median_file_series
 from optparse import OptionParser
 import sys
@@ -42,13 +44,13 @@ if __name__=='__main__':
     do_exit = False
 
     if options.filename == None:
-      print "\nNo file name supplied [-i filename]\n"
+      print("\nNo file name supplied [-i filename]\n")
       do_exit = True
     if options.first == None:
-      print "\nThe number of the first image is missing [-f filenumber]\n"
+      print("\nThe number of the first image is missing [-f filenumber]\n")
       do_exit = True
     if options.filterlength == None:
-      print "\nThe length of the file seris is missing [-l filelength]\n"
+      print("\nThe length of the file seris is missing [-l filelength]\n")
       do_exit = True
     if do_exit:
         parser.print_help()
@@ -80,7 +82,7 @@ if __name__=='__main__':
     #mf.slide(int(sys.argv[3]),int(sys.argv[4]))
     #mf.slide(int(sys.argv[3]),int(sys.argv[4]))
     #mf.write('med3.edf');
-    if options.debug:print 'process time (sec): ',(time.clock()-b)
+    if options.debug:print('process time (sec): ',(time.clock()-b))
 
   options = get_options()
   start()

@@ -9,6 +9,8 @@ Authors: Henning O. Sorensen & Erik Knudsen
          email:erik.knudsen@risoe.dk
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import string
 
 # fabio imports
@@ -44,7 +46,7 @@ class image_file_series:
     try:
       if self.noread:
         if not os.path.exists(filename):
-          raise IOError, 'No such file or directory %s' % filename
+          raise IOError('No such file or directory %s' % filename)
       else:
         self.img = openimage.openimage(filename)
     except IOError:
@@ -62,12 +64,12 @@ class image_file_series:
     newnum=self.number+steps
     newfilename=fabio.jump_filename(self.filename,newnum)
     if newfilename==self.filename:
-      raise ValueError,"new filename == old filename"
+      raise ValueError("new filename == old filename")
     try:
       self.__openimage(newfilename)#try to open that file
     except IOError:
       msg="No such file: %s " %(newfilename)
-      raise IOError, msg
+      raise IOError(msg)
     #image loaded ok
     self.filename=newfilename
     self.number=newnum
@@ -77,19 +79,19 @@ class image_file_series:
     newnum=self.number-steps
     newfilename=fabio.jump_filename(self.filename,newnum)
     if newfilename==self.filename:
-      raise ValueError,"new filename == old filename"
+      raise ValueError("new filename == old filename")
     try:
       self.__openimage(newfilename)#try to open that file
     except IOError:
       newfilename=fabio.jump_filename(self.filename,newnum,padding=False)
       if newfilename==self.filename:
-	raise ValueError,"new filename == old filename"
+        raise ValueError("new filename == old filename")
       try:
-	#that didn't work - so try the unpadded version
-	self.openimage(newfilename)
+        #that didn't work - so try the unpadded version
+        self.openimage(newfilename)
       except IOError:
         msg="No such file: %s " %(newfilename)
-	raise IOError, msg
+        raise IOError(msg)
     #image loaded ok
     self.filename=newfilename
     self.number=newnum
@@ -103,7 +105,7 @@ class image_file_series:
       self.__openimage(newfilename)#try to open that file
     except IOError:
       msg="No such file: %s " %(newfilename)
-      raise IOError,msg
+      raise IOError(msg)
     #image loaded ok
     self.filename=newfilename
     self.number=newnum
@@ -115,18 +117,18 @@ class image_file_series:
     while num<endnum:
       yield(self.img)
       try:
-	self.next()
+        next(self)
       except IOError:
-	break
+        break
       num=num+1
-	
+
 
 if __name__=='__main__':
   import sys,time
   b=time.clock()
   fs=image_file_series(sys.argv[1])
-  print fs.filename,fs.current(toPIL=False)
-  while fs.next() and fs.number<20:
-    print fs.filename,fs.current(toPIL=False)
+  print(fs.filename,fs.current(toPIL=False))
+  while next(fs) and fs.number<20:
+    print(fs.filename,fs.current(toPIL=False))
   e=time.clock()
-  print (e-b)
+  print((e-b))

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-from distutils.core import setup,Extension
+from __future__ import absolute_import
+from setuptools import setup,Extension
 import sys
 
 #mar345_backend=Extension('mar345_io',sources = ['src/mar345_iomodule.c','src/ccp4_pack.c'])

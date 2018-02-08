@@ -8,14 +8,27 @@ Authors: Henning O. Sorensen & Erik Knudsen
          DK-4000 Roskilde
          email:henning.sorensen@risoe.dk
 """
-import sys,Tkinter
-from Tkinter import *
-sys.modules['tkinter']=Tkinter
+from __future__ import absolute_import
+from __future__ import print_function
+import sys
+try:
+  import Tkinter
+  from Tkinter import *
+  sys.modules['tkinter']=Tkinter
+  from tkFileDialog import *
+  import tkFont
+except:
+  import tkinter
+  from tkinter import *
+  from tkinter.filedialog import *
+  import tkinter.font as tkFont
+  
 import Pmw
 from PIL import Image, ImageTk, ImageFile, ImageStat
-from tkFileDialog import *
-import tkFont
-import re,os,time,thread
+
+
+
+import re,os,time,threading
 import math
 from numpy import float32, NaN, zeros, concatenate,argsort,abs
 
@@ -326,8 +339,8 @@ class imageWin:
 
   def set_omega_values(self):
     self.omegaimage.destroy()
-    print self.OmegaStep.get()
-    print self.Omega.get()
+    print(self.OmegaStep.get())
+    print(self.Omega.get())
     return 
     
 #    globals()["min_pixel"] = self.min_pixel.get()
@@ -419,7 +432,7 @@ class imageWin:
     try:
         if globals()["peaks_type"] == 'flt':
             dist = ((self.impeaks[:,0:2]-[x,y])**2).sum(axis=1)
-            print 'spot_id : ', int(self.impeaks[argsort(dist)][0][2])
+            print('spot_id : ', int(self.impeaks[argsort(dist)][0][2]))
     except:
         pass
     
@@ -474,7 +487,7 @@ class imageWin:
     removechild = []
     for w in self.aoi:
       if not w['zoomwin'].master in children:
-	for l in w['aoi']:
+        for l in w['aoi']:
           self.canvas.delete(l)
         removechild.append(w)
     for w in removechild:
@@ -506,11 +519,11 @@ class imageWin:
         if corners[0]==corners[2] or corners[1]==corners[3]:
           self.canvas.delete('transientaoi')
           return
-	if 'zoom' in self.master.wm_title():
+        if 'zoom' in self.master.wm_title():
           t= 'relief of ' + self.master.wm_title()
         else:
           t='relief of main'
-	opensubwin=self.openrelief
+        opensubwin=self.openrelief
     elif 'Zoom' in tool:
         if corners[0]==corners[2] or corners[1]==corners[3]:
           self.canvas.delete('transientaoi')
@@ -534,8 +547,8 @@ class imageWin:
           self.intprof_win = self.intprof_win + 1
         opensubwin=self.openintprofile
     elif 'Rock' in tool:
-	t = 'rock'
-	opensubwin=self.openrocker
+      t = 'rock'
+      opensubwin=self.openrocker
     elif 'Line' in tool:
       if corners[:2]==corners[2:]:
         self.canvas.delete('transientline')
@@ -906,8 +919,8 @@ class imageWin:
     #update children
     for w in self.aoi:
       if w['wintype']=='Zoom':
-	w['zoomwin'].tool=self.tool
-	w['zoomwin'].setbindings()
+        w['zoomwin'].tool=self.tool
+        w['zoomwin'].setbindings()
 
   def updatebindings(self,event=None,tool=None):
     if event.keysym=='F1':
@@ -1294,6 +1307,7 @@ class appWin(imageWin):
      
   def make_command_menu(self,master):
     frameMenubar = Frame(master,relief=RAISED, borderwidth=2)
+
     
     FileMenu = Menubutton(frameMenubar, text='File',underline=0)
     FileMenu.pack(side=LEFT, padx="2m")
@@ -1473,7 +1487,8 @@ class appWin(imageWin):
     HelpMenu.menu.add_command(label='About', underline=0, command=self.about)
     HelpMenu['menu']=HelpMenu.menu
     frameMenubar.pack(fill=X,side=TOP)
-    frameMenubar.tk_menuBar((FileMenu, ToolMenu, CrystMenu, HelpMenu))
+#    for m in (FileMenu, ToolMenu, CrystMenu, HelpMenu):
+#          frameMenubar.add_cascade(menu=m)
 
   def set_orientation(self,value=None):
     type = self.ImOrient.get()
@@ -1846,7 +1861,7 @@ class appWin(imageWin):
     self.newfilenumber = int(self.displaynumber.get())+1
     self.newfilename = fabio.jump_filename(self.filename.get(),
                                            self.newfilenumber)
-    thread.start_new_thread(self.run,())
+    threading.Thread( target = self.run ).start()
 
   # run thread until autofileupdate is set to False 
   def run(self):
@@ -1928,22 +1943,10 @@ class appWin(imageWin):
 
     # Check image oriention
     for type in self.TransformOrder:
-	self.im=self.im.transpose(type)
-        if type == 4 or type == 2:
+      self.im=self.im.transpose(type)
+      if type == 4 or type == 2:
           (self.xsize, self.ysize)=(self.ysize, self.xsize)
 
-#     if self.FlipHorz.get() == True:
-# 	self.im=self.im.transpose(0)
-#     if self.FlipVert.get() == True:
-# 	self.im=self.im.transpose(1)
-#     if self.Rot90.get() == True:
-# 	self.im=self.im.transpose(4)
-# 	(self.xsize, self.ysize)=(self.ysize, self.xsize)
-#     if self.Rot180.get() == True:
-# 	self.im=self.im.transpose(3)
-#     if self.Rot270.get() == True:
-# 	self.im=self.im.transpose(2)
-# 	(self.xsize, self.ysize)=(self.ysize, self.xsize)
         
     (self.im.minval,self.im.maxval,self.im.meanval)=(img.getmin(),
                                                      img.getmax(),

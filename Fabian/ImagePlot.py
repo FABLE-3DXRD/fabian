@@ -1,7 +1,14 @@
-from Tkinter import *
+from __future__ import absolute_import
+try:
+  from Tkinter import *
+  from tkFileDialog import asksaveasfilename
+except:
+  # py3
+  from tkinter import *
+  from tkinter.filedialog import asksaveasfilename
 
 from numpy import sort,array
-from tkFileDialog import asksaveasfilename
+
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
