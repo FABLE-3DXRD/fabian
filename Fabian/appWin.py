@@ -1173,9 +1173,9 @@ class appWin(imageWin):
       self.newitem={}
       # To choose sorting type 
       if self.header_sort_type.get() == 'original':
-        header_sorted = self.im.header.keys()
+        header_sorted = list(self.im.header.keys())
       elif self.header_sort_type.get() == 'alphabetical':
-        header_sorted = self.im.header.keys()
+        header_sorted = list(self.im.header.keys())
         header_sorted.sort()
       #       
       for item in header_sorted:
