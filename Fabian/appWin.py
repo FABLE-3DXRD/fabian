@@ -17,9 +17,11 @@ if sys.version_info[0] < 3:
   sys.modules['tkinter']=Tkinter
   from tkFileDialog import *
   import tkFont
+  import ttk
 else:
   import tkinter
   from tkinter import *
+  from tkinter import ttk
   from tkinter.filedialog import *
   import tkinter.font as tkFont
   
@@ -1107,10 +1109,13 @@ class appWin(imageWin):
                               self.zoomfactor)
 
     #Add Notebook tabs
-    self.noteb1 = Pmw.NoteBook(frame)
+    #    self.noteb1 = Pmw.NoteBook(frame)
+    self.noteb1 = ttk.Notebook(frame)
     self.noteb1.pack(side=BOTTOM,fill='both')
-    self.page1 = self.noteb1.add('Image')
-    self.page2 = self.noteb1.add('Info')
+    self.page1 = Frame(self.noteb1)
+    self.noteb1.add(self.page1 ,text = 'Image')
+    self.page2 = Frame(self.noteb1) 
+    self.noteb1.add(self.page2 ,text = 'Info')
     
     #call __init__ in the parent class
     self.make_scaling_ctls(self.page1)
@@ -1125,7 +1130,7 @@ class appWin(imageWin):
     
     self.make_header_info()
     self.make_status_bar(self.page1)
-    self.noteb1.setnaturalsize()
+#    self.noteb1.setnaturalsize()
     
     # Put header on page2 Info
     hc = Pmw.Group(self.page2,tag_text='Order of header items')
@@ -1551,7 +1556,7 @@ class appWin(imageWin):
     self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
     self.frameScroll.config(width=self.canvas_xsize+30, 
                             height=self.canvas_ysize+30)
-    self.noteb1.setnaturalsize() # update size of notebook page
+#    self.noteb1.setnaturalsize() # update size of notebook page
 
     imean = self.im.meanval # hack to make get_img_stats hack work
     self.im = self.im.transpose(type)
@@ -1719,7 +1724,7 @@ class appWin(imageWin):
                     newimage=newimage,
                     orientation=self.orientation,
                     filename=filename)
-    self.noteb1.setnaturalsize()
+#    self.noteb1.setnaturalsize()
     #store scaling vals for later reference
     self.scaled_min,self.scaled_max=s_min,s_max
 
@@ -1770,7 +1775,7 @@ class appWin(imageWin):
     self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
     self.frameScroll.config(width=self.canvas_xsize+30,
                             height=self.canvas_ysize+30)
-    self.noteb1.setnaturalsize() # update size of notebook page
+#    self.noteb1.setnaturalsize() # update size of notebook page
 
     ######### SEEMS TO WORK
 
@@ -1804,7 +1809,7 @@ class appWin(imageWin):
                            height=self.canvas_ysize)
         self.frameScroll.config(width=self.canvas_xsize+30,
                                 height=self.canvas_ysize+30)
-        self.noteb1.setnaturalsize() # update size of notebook page
+#        self.noteb1.setnaturalsize() # update size of notebook page
       except:
         pass
 
