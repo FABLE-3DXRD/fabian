@@ -11,13 +11,13 @@ Authors: Henning O. Sorensen & Erik Knudsen
 from __future__ import absolute_import
 from __future__ import print_function
 import sys
-try:
+if sys.version_info[0] < 3:
   import Tkinter
   from Tkinter import *
   sys.modules['tkinter']=Tkinter
   from tkFileDialog import *
   import tkFont
-except:
+else:
   import tkinter
   from tkinter import *
   from tkinter.filedialog import *
