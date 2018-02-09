@@ -149,8 +149,8 @@ class imageWin:
                          width=self.canvas_xsize, 
                          height=self.canvas_ysize,
                          bg='black')
-    self.canvas.pack(side=TOP,anchor='center', expand=1, fill=X)
-    self.frameImage.pack(side=TOP,expand=1)
+    self.canvas.pack(side=TOP,anchor='center', expand=1, fill=BOTH)
+    self.frameImage.pack(side=TOP,expand=1,fill=BOTH)
     #bind events
     self.canvas.bind('<Button-1>', self.Mouse1Press)
     self.canvas.bind('<Button1-Motion>', self.Mouse1PressMotion)
@@ -1227,14 +1227,14 @@ class appWin(imageWin):
       if set(self.im.header.keys())==set(self.headtext.keys()):
           # they seem to be compatible, note - this
           # keeps the checked checkboxes alive
-          for item,value in self.im.header.iteritems():
+          for item,value in self.im.header.items():
             self.headtext[item].config(text='%s' %(value,))
       else:
           # they differ - make a new header page from scratch
           # first remember the checked items to keep them 
           # checked if the exist in the new header
           checkeditems=[]
-          for item,value in self.newitem.iteritems():
+          for item,value in self.newitem.items():
             if value.get()=='1':
               checkeditems.append(item)
           self.clear_header_page()
@@ -1246,8 +1246,7 @@ class appWin(imageWin):
 
   def update_header_label(self):
     headertext = ''
-    self.newitem.keys().sort()
-    keys=self.newitem.keys()
+    keys=list(self.newitem.keys())
     keys.sort()
     for item in keys:
       if self.newitem[item].get() == '1':
