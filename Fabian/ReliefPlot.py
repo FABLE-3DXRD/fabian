@@ -37,7 +37,7 @@ class ReliefPlot:
           self.scale = 0.75/self.sizey
         self.zcenter = -(extrema[1]+extrema[0])*self.zscale/2.0
         self.reliefWin = Opengl(self.f,width = 500, height = 500 )#, double = 1)
-        self.reliefWin.redraw = self.redraw
+        self.reliefWin.redraw = self.array_redraw
         self.reliefWin.autospin_allowed = 1
         self.reliefWin.fovy=5
         self.reliefWin.near=1e2
@@ -60,8 +60,10 @@ class ReliefPlot:
         data = N.reshape( data,[self.corners[3]-self.corners[1], self.corners[2]-self.corners[0]])
         self.map = data.copy()
         self.map = N.transpose(self.map)
-        self.zscale = self.size/(extrema[1]-extrema[0])
-        self.map = self.map*self.zscale
+        h = extrema[1]-extrema[0]
+        if h != 0:
+            self.zscale = self.size/(extrema[1]-extrema[0])
+            self.map = self.map*self.zscale
         if self.sizex > self.sizey:
           self.scale = 0.75/self.sizex
         else:
@@ -91,6 +93,38 @@ class ReliefPlot:
              for j in range(self.sizex):
                  GL.glVertex3f(j,i,self.map[j][i])
              GL.glEnd()
+         GL.glEnable(GL.GL_LIGHTING)
+         GL.glPopMatrix()
+
+
+    def array_redraw(self,reliefWin):
+         # go a bit faster ? 
+         GL.glClearColor(0., 0., 0., 0)
+         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+         GL.glOrtho(-1,1,-1,1,-1,1)
+         GL.glDisable(GL.GL_LIGHTING)
+         GL.glColor3f(1.0, 1.0, 1.0) # white
+         GL.glPointSize(self.pointsize)
+         GL.glPushMatrix()
+         GL.glScalef(self.scale,self.scale,self.scale)
+         GL.glRotate(-20,0,0,1)
+         GL.glRotate(-110,1,0,0)
+         GL.glTranslatef(-self.sizex/2.0,-self.sizey/2.0,self.zcenter)
+         GL.glEnableClientState(GL.GL_VERTEX_ARRAY)
+         xyz = N.zeros( (self.sizey,3), N.float32)
+         xyz[:,0] = range(self.sizey)
+         for i in range(self.sizex):
+             xyz[:,1] = i
+             xyz[:,2] = self.map[i]
+             GL.glVertexPointer( 3, GL.GL_FLOAT, 0, xyz.tostring() )
+             GL.glDrawArrays( GL.GL_LINE_STRIP, 0, self.sizey )
+         xyz = N.zeros( (self.sizex, 3), N.float32)
+         xyz[:,1] = range(self.sizex)
+         for i in range(self.sizey):
+             xyz[:,0] = i
+             xyz[:,2] = self.map[:,i]
+             GL.glVertexPointer( 3, GL.GL_FLOAT, 0, xyz.tostring() )
+             GL.glDrawArrays( GL.GL_LINE_STRIP, 0, self.sizex )
          GL.glEnable(GL.GL_LIGHTING)
          GL.glPopMatrix()
 
