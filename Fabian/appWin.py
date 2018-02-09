@@ -11,15 +11,17 @@ Authors: Henning O. Sorensen & Erik Knudsen
 from __future__ import absolute_import
 from __future__ import print_function
 import sys
-try:
+if sys.version_info[0] < 3:
   import Tkinter
   from Tkinter import *
   sys.modules['tkinter']=Tkinter
   from tkFileDialog import *
   import tkFont
-except:
+  import ttk
+else:
   import tkinter
   from tkinter import *
+  from tkinter import ttk
   from tkinter.filedialog import *
   import tkinter.font as tkFont
   
@@ -147,8 +149,8 @@ class imageWin:
                          width=self.canvas_xsize, 
                          height=self.canvas_ysize,
                          bg='black')
-    self.canvas.pack(side=TOP,anchor='center', expand=1, fill=X)
-    self.frameImage.pack(side=TOP,expand=1)
+    self.canvas.pack(side=TOP,anchor='center', expand=1, fill=BOTH)
+    self.frameImage.pack(side=TOP,expand=1,fill=BOTH)
     #bind events
     self.canvas.bind('<Button-1>', self.Mouse1Press)
     self.canvas.bind('<Button1-Motion>', self.Mouse1PressMotion)
@@ -1079,7 +1081,7 @@ class appWin(imageWin):
     master.bind('<Left>',self.previousimage)
 
     frame = Frame(master, bd=0, bg="white")
-    frame.pack(fill=X)
+    frame.pack(fill=BOTH, expand=1)
 
     #add menubar
     self.make_command_menu(frame)
@@ -1107,10 +1109,13 @@ class appWin(imageWin):
                               self.zoomfactor)
 
     #Add Notebook tabs
-    self.noteb1 = Pmw.NoteBook(frame)
-    self.noteb1.pack(side=BOTTOM,fill='both')
-    self.page1 = self.noteb1.add('Image')
-    self.page2 = self.noteb1.add('Info')
+    #    self.noteb1 = Pmw.NoteBook(frame)
+    self.noteb1 = ttk.Notebook(frame)
+    self.noteb1.pack(side=BOTTOM,fill=BOTH, expand=1)
+    self.page1 = Frame(self.noteb1)
+    self.noteb1.add(self.page1 ,text = 'Image')
+    self.page2 = Frame(self.noteb1) 
+    self.noteb1.add(self.page2 ,text = 'Info')
     
     #call __init__ in the parent class
     self.make_scaling_ctls(self.page1)
@@ -1125,7 +1130,7 @@ class appWin(imageWin):
     
     self.make_header_info()
     self.make_status_bar(self.page1)
-    self.noteb1.setnaturalsize()
+#    self.noteb1.setnaturalsize()
     
     # Put header on page2 Info
     hc = Pmw.Group(self.page2,tag_text='Order of header items')
@@ -1168,9 +1173,9 @@ class appWin(imageWin):
       self.newitem={}
       # To choose sorting type 
       if self.header_sort_type.get() == 'original':
-        header_sorted = self.im.header.keys()
+        header_sorted = list(self.im.header.keys())
       elif self.header_sort_type.get() == 'alphabetical':
-        header_sorted = self.im.header.keys()
+        header_sorted = list(self.im.header.keys())
         header_sorted.sort()
       #       
       for item in header_sorted:
@@ -1222,14 +1227,14 @@ class appWin(imageWin):
       if set(self.im.header.keys())==set(self.headtext.keys()):
           # they seem to be compatible, note - this
           # keeps the checked checkboxes alive
-          for item,value in self.im.header.iteritems():
+          for item,value in self.im.header.items():
             self.headtext[item].config(text='%s' %(value,))
       else:
           # they differ - make a new header page from scratch
           # first remember the checked items to keep them 
           # checked if the exist in the new header
           checkeditems=[]
-          for item,value in self.newitem.iteritems():
+          for item,value in self.newitem.items():
             if value.get()=='1':
               checkeditems.append(item)
           self.clear_header_page()
@@ -1241,8 +1246,7 @@ class appWin(imageWin):
 
   def update_header_label(self):
     headertext = ''
-    self.newitem.keys().sort()
-    keys=self.newitem.keys()
+    keys=list(self.newitem.keys())
     keys.sort()
     for item in keys:
       if self.newitem[item].get() == '1':
@@ -1551,7 +1555,7 @@ class appWin(imageWin):
     self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
     self.frameScroll.config(width=self.canvas_xsize+30, 
                             height=self.canvas_ysize+30)
-    self.noteb1.setnaturalsize() # update size of notebook page
+#    self.noteb1.setnaturalsize() # update size of notebook page
 
     imean = self.im.meanval # hack to make get_img_stats hack work
     self.im = self.im.transpose(type)
@@ -1719,7 +1723,7 @@ class appWin(imageWin):
                     newimage=newimage,
                     orientation=self.orientation,
                     filename=filename)
-    self.noteb1.setnaturalsize()
+#    self.noteb1.setnaturalsize()
     #store scaling vals for later reference
     self.scaled_min,self.scaled_max=s_min,s_max
 
@@ -1770,7 +1774,7 @@ class appWin(imageWin):
     self.canvas.config(width=self.canvas_xsize,height=self.canvas_ysize)
     self.frameScroll.config(width=self.canvas_xsize+30,
                             height=self.canvas_ysize+30)
-    self.noteb1.setnaturalsize() # update size of notebook page
+#    self.noteb1.setnaturalsize() # update size of notebook page
 
     ######### SEEMS TO WORK
 
@@ -1804,7 +1808,7 @@ class appWin(imageWin):
                            height=self.canvas_ysize)
         self.frameScroll.config(width=self.canvas_xsize+30,
                                 height=self.canvas_ysize+30)
-        self.noteb1.setnaturalsize() # update size of notebook page
+#        self.noteb1.setnaturalsize() # update size of notebook page
       except:
         pass
 
