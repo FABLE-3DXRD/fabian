@@ -1081,7 +1081,7 @@ class appWin(imageWin):
     master.bind('<Left>',self.previousimage)
 
     frame = Frame(master, bd=0, bg="white")
-    frame.pack(fill=X)
+    frame.pack(fill=BOTH, expand=1)
 
     #add menubar
     self.make_command_menu(frame)
@@ -1111,7 +1111,7 @@ class appWin(imageWin):
     #Add Notebook tabs
     #    self.noteb1 = Pmw.NoteBook(frame)
     self.noteb1 = ttk.Notebook(frame)
-    self.noteb1.pack(side=BOTTOM,fill='both')
+    self.noteb1.pack(side=BOTTOM,fill=BOTH, expand=1)
     self.page1 = Frame(self.noteb1)
     self.noteb1.add(self.page1 ,text = 'Image')
     self.page2 = Frame(self.noteb1) 
