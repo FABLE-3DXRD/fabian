@@ -16,7 +16,7 @@ class ReliefPlot:
     def __init__(self,master,newimage=None,corners=[0,0,0,0]):
         self.master = master
         self.f=oTk.Frame(self.master)
-        self.f.pack(side=oTk.BOTTOM,expand=oTk.NO,fill=oTk.X)
+        self.f.pack(side=oTk.BOTTOM,expand=oTk.YES,fill=oTk.BOTH)
         self.dataoff=0
         self.corners = corners
         data = list(newimage.crop(self.corners).getdata())
