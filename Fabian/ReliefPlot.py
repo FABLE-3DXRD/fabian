@@ -101,7 +101,7 @@ class ReliefPlot:
              xyz[:,2] = self.map[i]
              c[:,0] = (self.map[i]-l)/s
              c[:,1] = (self.map[i]-l)/s
-             c[:,2] = (h-self.map[i]-l)/s
+             c[:,2] = (h-self.map[i])/s
              GL.glVertexPointer( 3, GL.GL_FLOAT, 0, xyz.tostring() )
              GL.glColorPointer( 3,  GL.GL_FLOAT, 0, c.tostring() )
              GL.glDrawArrays( GL.GL_LINE_STRIP, 0, self.sizey )
@@ -113,7 +113,7 @@ class ReliefPlot:
              xyz[:,2] = self.map[:,i]
              c[:,0] = (self.map[:,i]-l)/s
              c[:,1] = (self.map[:,i]-l)/s
-             c[:,2] = (h-self.map[:,i]-l)/s
+             c[:,2] = (h-self.map[:,i])/s
              GL.glVertexPointer( 3, GL.GL_FLOAT, 0, xyz.tostring() )
              GL.glColorPointer( 3,  GL.GL_FLOAT, 0, c.tostring() )
              GL.glDrawArrays( GL.GL_LINE_STRIP, 0, self.sizex )
