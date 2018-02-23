@@ -1,6 +1,6 @@
 
 from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import print_function, division
 import numpy as N
 from fabio import edfimage
 #this will eventually come from fabio as well
@@ -57,18 +57,18 @@ class median_file_series:
       flen=len(self.files)
       print(flen)
       d1,d2=self.files[0].dim1,self.files[0].dim2
-      sorted=N.zeros((flen,d1))
+      ss=N.zeros((flen,d1))
       for i in range(d2):
         j=0
         for im in self.files:
-          sorted[j,:]=im.data[i,:]
+          ss[j,:]=im.data[i,:]
           j=j+1
-        sorted=N.sort(sorted,0)
+        ss=N.sort(ss,0)
         if flen%2==0:
           #filterlength is even - use the mean of the two central values
-          self.median[i,:]=0.5*(sorted[flen/2-1,...]+sorted[flen/2,...])
+          self.median[i,:]=0.5*(ss[flen//2-1,:]+ss[flen//2,:])
         else:
-          self.median[i,:]=sorted[flen/2-1,...]
+          self.median[i,:]=ss[flen//2-1,:]
 
   def slide(self,steps=1,delta=1):
     if steps+1000<self.filterlength:
