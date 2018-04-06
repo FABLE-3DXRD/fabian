@@ -47,8 +47,11 @@ class readpeaksearch:
         line=self.lines[i]
         for line in self.lines[start:end]:
             if line[0]!='#' and len(line)>10:
-                [npixels, yt, ypos, zpos] =  line.split()[0:4]
-                self.peaks.append([npixels, ypos, zpos])
+                try:
+                    [npixels, yt, ypos, zpos] =  line.split()[0:4]
+                    self.peaks.append([npixels, ypos, zpos])
+                except:
+                    pass
 
     def readallpeaks(self,peaksfilename):
         """
@@ -62,11 +65,17 @@ class readpeaksearch:
             if line[0:6] =="# File":
                 if name != 'None': self.images[name]=self.peaks
                 self.peaks = []
-                name =  fabio.extract_filenumber(os.path.split(line.split()[-1])[-1])
+                # key to name, not number
+                name =  os.path.split(line.split()[-1])[-1]
+                if name[-1] == "]": # frame number
+                    name = name.split("[")[0]
             elif line[0]!='#' and len(line)>10:
+                try:
                     [npixels, yt, ypos, zpos] =  line.split()[0:4]
                     if npixels > 0:
-                        self.peaks.append([npixels, ypos, zpos])               
+                        self.peaks.append([npixels, ypos, zpos])
+                except:
+                    pass
         self.images[name]=self.peaks
         
     def readallpeaks_flt(self,peaksfilename):
