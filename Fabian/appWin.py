@@ -281,7 +281,8 @@ class imageWin:
                 self.canvas.create_oval(corners,tag='peaks',outline=colour['peak_colour']) 
                 self.impeaks = concatenate((self.impeaks, [[circ_center[0], circ_center[1], mpeaks.spot3d_id[i]]]))
         else:
-            for ipeaks in peaks[fabio.extract_filenumber(os.path.split(self.filename.get())[-1])]:
+            # key to name, not number
+            for ipeaks in peaks[ os.path.split(self.filename.get())[-1] ]:
                 if int(ipeaks[0]) > globals()["min_pixel"]:
                     # The -1 in front of o11,o12 etc is accomodate for
                     # Rot180 made on the screen
