@@ -1933,10 +1933,7 @@ class appWin(imageWin):
                                 -1*self.orientation[1],
                                 -1*self.orientation[2],
                                 -1*self.orientation[3])
-      (img.dim2, img.dim1) = img.data.shape
-      # PIL is used to load an image, thereis already a pilimage 
-      # present. Hence it will not make a new, so remove pilimage first
-      img.pilimage = None
+      img = fabio.fabioimage.FabioImage(data=img.data)
       self.im = img.toPIL16()
       # We have earlier on used a flip making a PIL image
       # to keep images in the same direction we do the same here
