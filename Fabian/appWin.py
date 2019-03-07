@@ -1921,25 +1921,26 @@ class appWin(imageWin):
 
     try:
       img = openimage.openimage(filename)
+      data = img.data
       if self.BgCorrect.get():
-        img.data = img.data.astype(float32)-self.bgimage.data.astype(float32)
+        data = data.astype(float32)-self.bgimage.data.astype(float32)
       if self.FfCorrect.get():
-        img.data = img.data.astype(float32)/self.ffimage.data.astype(float32)
+        data = data.astype(float32)/self.ffimage.data.astype(float32)
 
       # The -1 in front of o11,o12 etc is accomodate for
       # Rot180 made on the screen
-      img.data = image_flipping(img.data,
-                                -1*self.orientation[0],
-                                -1*self.orientation[1],
-                                -1*self.orientation[2],
-                                -1*self.orientation[3])
-      img = fabio.fabioimage.FabioImage(data=img.data)
-      self.im = img.toPIL16()
+      data = image_flipping(data,
+                            -1*self.orientation[0],
+                            -1*self.orientation[1],
+                            -1*self.orientation[2],
+                            -1*self.orientation[3])
+      from fabio.utils improt pilutils
+      self.im = pilutils.create_pil_16(data)
       # We have earlier on used a flip making a PIL image
       # to keep images in the same direction we do the same here
       #self.im = self.im.transpose(1)
       
-      (self.xsize, self.ysize)=(img.dim1, img.dim2)
+      (self.xsize, self.ysize) = data.shape[-1], data.shape[-2]
     except IOError:
       raise
 
@@ -1950,9 +1951,9 @@ class appWin(imageWin):
           (self.xsize, self.ysize)=(self.ysize, self.xsize)
 
         
-    (self.im.minval,self.im.maxval,self.im.meanval)=(img.getmin(),
-                                                     img.getmax(),
-                                                     img.getmean())
+    (self.im.minval,self.im.maxval,self.im.meanval)=(data.min,
+                                                     data.max,
+                                                     data.mean)
     self.im.header=img.getheader()
     self.zoomarea=[0,0,self.xsize,self.ysize]
     self.master.title("fabian - %s" %(filename))
