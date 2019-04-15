@@ -1933,7 +1933,7 @@ class appWin(imageWin):
                                 -1*self.orientation[1],
                                 -1*self.orientation[2],
                                 -1*self.orientation[3])
-      (img.dim2, img.dim1) = img.data.shape
+#      (img.dim2, img.dim1) = img.data.shape
       # PIL is used to load an image, thereis already a pilimage 
       # present. Hence it will not make a new, so remove pilimage first
       img.pilimage = None
@@ -1942,7 +1942,9 @@ class appWin(imageWin):
       # to keep images in the same direction we do the same here
       #self.im = self.im.transpose(1)
       
-      (self.xsize, self.ysize)=(img.dim1, img.dim2)
+#      (self.xsize, self.ysize)=(img.dim1, img.dim2)
+      (self.ysize, self.xsize)=(img.data.shape)
+
     except IOError:
       raise
 
