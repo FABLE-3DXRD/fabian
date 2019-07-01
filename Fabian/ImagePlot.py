@@ -34,6 +34,9 @@ class common_plot:
       self.f = Figure(figsize=(8,5), dpi=100)
       #self.f.subplots_adjust(hspace = .2)
       self.plotcanvas = FigureCanvasTkAgg(self.f, master=self.master)
+      if not hasattr( self.plotcanvas, "show"):
+        # show went away in recent matplotlibs...
+        self.plotcanvas.show = self.plotcanvas.draw
       self.plotcanvas.show()
       self.plotcanvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
       frameInfo = Frame(self.master, bd=0)

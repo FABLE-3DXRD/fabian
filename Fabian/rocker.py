@@ -40,7 +40,7 @@ class rocker:
       self.imagenumber[i] = series.number
       if i < len(self.data)-1:
         try:
-          next(series)
+          series.next()
           #if there's an error opening the file just skip over it
         except (ValueError,IOError) as msg:
           print(msg, '- aborted!')
