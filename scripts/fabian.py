@@ -16,7 +16,7 @@ if __name__=='__main__':
     import sys
     def start():
         import time
-        t1=time.clock()
+        t1=time.time()
         if len(sys.argv) > 2:
             print("Only the first file will be opened")
         if len(sys.argv) >= 2:
@@ -27,7 +27,7 @@ if __name__=='__main__':
         root=Tk()
         mainwin = appWin.appWin(root,filename=f,zoomfactor=0.5,mainwin='yes')
     
-        t2=time.clock()
+        t2=time.time()
         print("time:",t2-t1)
         root.mainloop()
     start()
