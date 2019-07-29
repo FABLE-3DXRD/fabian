@@ -1,8 +1,7 @@
 fabian
 version RELEASE
 Henning Osholm Sørensen & Erik Knudsen
-Materials Research Divisiont, 
-Riso National Laboratory for Sustainable Energy, 
+Department of Physics, 
 Technical University of Denmark
 
 fabian is designed for the purpose of viewing image file series. In particular
@@ -41,7 +40,7 @@ fabian.py lyzo0013.edf
 
 MANUAL:
 the manual written as a wiki page:
-http://sourceforge.net/apps/trac/fable/wiki/fabian
+https://sourceforge.net/p/fable/wiki/fabian/
 
 BUGS: 
 
