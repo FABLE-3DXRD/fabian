@@ -49,6 +49,9 @@ class readpeaksearch:
             if line[0]!='#' and len(line)>10:
                 try:
                     [npixels, yt, ypos, zpos] =  line.split()[0:4]
+                    npixels = int(npixels)
+                    ypos = float(ypos)
+                    zpos = float(zpos)
                     self.peaks.append([npixels, ypos, zpos])
                 except:
                     pass
@@ -72,6 +75,9 @@ class readpeaksearch:
             elif line[0]!='#' and len(line)>10:
                 try:
                     [npixels, yt, ypos, zpos] =  line.split()[0:4]
+                    npixels = int(npixels)
+                    ypos = float(ypos)
+                    zpos = float(zpos)
                     if npixels > 0:
                         self.peaks.append([npixels, ypos, zpos])
                 except:
