@@ -59,7 +59,7 @@ if __name__=='__main__':
 
   def start():
     import sys,os,time
-    b=time.clock()
+    b=time.time()
     mf=median_file_series(options.filename,
                           options.first,
                           options.filterlength,
@@ -82,7 +82,7 @@ if __name__=='__main__':
     #mf.slide(int(sys.argv[3]),int(sys.argv[4]))
     #mf.slide(int(sys.argv[3]),int(sys.argv[4]))
     #mf.write('med3.edf');
-    if options.debug:print('process time (sec): ',(time.clock()-b))
+    if options.debug:print('process time (sec): ',(time.time()-b))
 
   options = get_options()
   start()
