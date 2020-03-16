@@ -85,7 +85,7 @@ class collapse:
 if __name__=='__main__':
   import sys,time
   from string import atoi
-  b=time.clock()
+  b=time.time()
   try:
     bgimage = openimage.openimage(sys.argv[4])
     bgim = bgimage.data
@@ -95,6 +95,6 @@ if __name__=='__main__':
   R.run()
   R.write('pseudopowder2D.edf')
 #  print R.getdata()
-  e=time.clock()
+  e=time.time()
   print((e-b))
 

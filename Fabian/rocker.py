@@ -53,11 +53,11 @@ class rocker:
 if __name__=='__main__':
   import sys,time
   from string import atoi
-  b=time.clock()
+  b=time.time()
   c=[atoi(sys.argv[4]),atoi(sys.argv[5]),atoi(sys.argv[6]),atoi(sys.argv[7])]
   R=rocker(filename_sample=sys.argv[1],coord=c,startnumber=atoi(sys.argv[2]),endnumber=atoi(sys.argv[3]))
   R.run()
   print(R.getdata())
-  e=time.clock()
+  e=time.time()
   print((e-b))
 
