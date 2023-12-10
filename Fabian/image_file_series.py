@@ -125,10 +125,10 @@ class image_file_series:
 
 if __name__=='__main__':
   import sys,time
-  b=time.time()
+  b=time.process_time()
   fs=image_file_series(sys.argv[1])
   print(fs.filename,fs.current(toPIL=False))
   while next(fs) and fs.number<20:
     print(fs.filename,fs.current(toPIL=False))
-  e=time.time()
+  e=time.process_time()
   print((e-b))
