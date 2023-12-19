@@ -14,5 +14,13 @@ setup(
   url='http://fable.sourceforge.net',
   packages=['Fabian'],
   package_dir={"Fabian": "Fabian"},
-  scripts=["scripts/fabian.py", "scripts/collapse.py", "scripts/median.py"]
+  scripts=["scripts/fabian.py", "scripts/collapse.py", "scripts/median.py"],
+  install_requires=[
+    "pillow",
+    "pmw",
+    "pyopengltk",
+    "numpy",
+    "matplotlib",
+    "fabio"
+  ]
 )
